@@ -102,8 +102,8 @@ Files/Step 내용과 diff로 대조 확인한 뒤, 계획에 명시된 것과 �
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 4173",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "NODE_OPTIONS=--no-experimental-webstorage vitest run",
+    "test:watch": "NODE_OPTIONS=--no-experimental-webstorage vitest",
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
@@ -142,6 +142,13 @@ Files/Step 내용과 diff로 대조 확인한 뒤, 계획에 명시된 것과 �
   }
 }
 ```
+
+`test`/`test:watch`의 `NODE_OPTIONS=--no-experimental-webstorage`는 Node
+22+에 내장된 실험적 네이티브 `localStorage` 전역이 vitest 2.x의 jsdom
+환경 전역 프록시보다 먼저 전역을 선점해 `localStorage`가 테스트에서
+`undefined`가 되는 문제를 막기 위한 것이다 (jsdom 자체는 정상 동작하지만
+vitest가 이를 전역에 연결하지 못한다). 이 플래그 없이 `pnpm test`를
+실행하면 `localStorage`를 사용하는 모든 테스트가 실패한다.
 
 - [ ] **Step 2: pnpm install 실행**
 
@@ -199,6 +206,11 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "jsdom",
+    environmentOptions: {
+      jsdom: {
+        url: "http://localhost:3000",
+      },
+    },
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     exclude: ["e2e/**", "node_modules/**"],
@@ -531,7 +543,7 @@ import { useTheme } from "./useTheme";
 
 describe("useTheme", () => {
   beforeEach(() => {
-    localStorage.clear();
+    window.localStorage.clear();
     document.documentElement.classList.remove("dark");
   });
 
@@ -551,7 +563,7 @@ describe("useTheme", () => {
   it("persists the theme choice in localStorage", () => {
     const { result } = renderHook(() => useTheme());
     act(() => result.current.toggleTheme());
-    expect(localStorage.getItem("sheet-quiz-theme")).toBe("dark");
+    expect(window.localStorage.getItem("sheet-quiz-theme")).toBe("dark");
   });
 });
 ```
@@ -570,7 +582,7 @@ const STORAGE_KEY = "sheet-quiz-theme";
 type Theme = "light" | "dark";
 
 function readInitialTheme(): Theme {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = window.localStorage.getItem(STORAGE_KEY);
   return stored === "dark" ? "dark" : "light";
 }
 
@@ -583,7 +595,7 @@ export function useTheme(): { theme: Theme; toggleTheme: () => void } {
 
   useEffect(() => {
     applyThemeClass(theme);
-    localStorage.setItem(STORAGE_KEY, theme);
+    window.localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
