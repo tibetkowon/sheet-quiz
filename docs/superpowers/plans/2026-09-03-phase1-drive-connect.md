@@ -81,6 +81,7 @@ Files/Step 내용과 diff로 대조 확인한 뒤, 계획에 명시된 것과 �
 - Create: `src/main.tsx`
 - Create: `src/App.tsx`
 - Create: `src/index.css`
+- Create: `src/vite-env.d.ts`
 - Create: `.gitignore`
 - Create: `.env.example`
 - Test: `src/App.test.tsx`
@@ -269,6 +270,14 @@ export default function App() {
 body {
   margin: 0;
 }
+```
+
+`src/vite-env.d.ts` (Vite의 `import.meta.env` 타입을 위해 필요 — 이게
+없으면 `import.meta.env.VITE_GOOGLE_CLIENT_ID`를 쓰는 Task 11에서
+`tsc --noEmit`이 `Property 'env' does not exist on type 'ImportMeta'`로
+실패한다):
+```typescript
+/// <reference types="vite/client" />
 ```
 
 - [ ] **Step 8: 실패하는 테스트 작성 — src/App.test.tsx**
