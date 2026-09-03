@@ -20,6 +20,7 @@ interface AuthContextValue {
   /** Resolves true once connected, false if the connection attempt failed. */
   connect: () => Promise<boolean>;
   disconnect: () => void;
+  markExpired: () => void;
   getAccessToken: () => string | null;
 }
 
@@ -70,6 +71,11 @@ export function AuthProvider({
     setStatus("signed_out");
   }, []);
 
+  const markExpired = useCallback(() => {
+    tokenRef.current = null;
+    setStatus("expired");
+  }, []);
+
   const getAccessToken = useCallback((): string | null => {
     const token = tokenRef.current;
     if (!token || token.expiresAt - EXPIRY_BUFFER_MS < Date.now()) {
@@ -81,7 +87,7 @@ export function AuthProvider({
 
   return (
     <AuthContext.Provider
-      value={{ status, googleUserId, email, error, connect, disconnect, getAccessToken }}
+      value={{ status, googleUserId, email, error, connect, disconnect, markExpired, getAccessToken }}
     >
       {children}
     </AuthContext.Provider>

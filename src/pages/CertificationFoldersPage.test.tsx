@@ -1,5 +1,7 @@
-import { screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AuthProvider } from "../auth/AuthContext";
 import * as googleIdentity from "../auth/googleIdentity";
 import * as userInfo from "../auth/userInfo";
 import * as driveClient from "../drive/driveClient";
@@ -19,6 +21,20 @@ function mockAuthenticated() {
 
 describe("CertificationFoldersPage", () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it("prompts to reconnect when not authenticated", () => {
+    render(
+      <MemoryRouter>
+        <AuthProvider clientId="client-id">
+          <CertificationFoldersPage />
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByText("Google 연결이 필요합니다. 시작 화면에서 다시 연결해주세요."),
+    ).toBeInTheDocument();
+  });
 
   it("shows the saved top folder's child folders as certification folders", async () => {
     mockAuthenticated();

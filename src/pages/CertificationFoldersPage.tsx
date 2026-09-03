@@ -8,14 +8,19 @@ import { Breadcrumb } from "../components/Breadcrumb";
 import { ErrorBanner } from "../components/ErrorBanner";
 
 export default function CertificationFoldersPage() {
-  const { getAccessToken, googleUserId } = useAuth();
+  const { getAccessToken, googleUserId, status, markExpired } = useAuth();
   const [topFolder, setTopFolder] = useState<TopFolderSelection | null | undefined>(undefined);
   const [folders, setFolders] = useState<DriveFolder[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!googleUserId) return;
-    void getTopFolder(googleUserId).then((saved) => setTopFolder(saved ?? null));
+    void getTopFolder(googleUserId)
+      .then((saved) => setTopFolder(saved ?? null))
+      .catch(() => {
+        setTopFolder(null);
+        setError("저장된 최상위 폴더를 불러오지 못했습니다.");
+      });
   }, [googleUserId]);
 
   useEffect(() => {
@@ -24,10 +29,26 @@ export default function CertificationFoldersPage() {
     if (!accessToken) return;
     listChildFolders(accessToken, topFolder.folderId)
       .then(setFolders)
-      .catch((err) =>
-        setError(err instanceof DriveApiError ? err.message : "자격증 폴더 목록을 불러오지 못했습니다."),
-      );
-  }, [topFolder, getAccessToken]);
+      .catch((err) => {
+        if (err instanceof DriveApiError && err.status === 401) {
+          markExpired();
+        }
+        setError(err instanceof DriveApiError ? err.message : "자격증 폴더 목록을 불러오지 못했습니다.");
+      });
+  }, [topFolder, getAccessToken, markExpired]);
+
+  if (status !== "connected") {
+    return (
+      <div className="px-10 py-7">
+        <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
+          Google 연결이 필요합니다. 시작 화면에서 다시 연결해주세요.
+        </p>
+        <Link to="/" className="text-sm font-semibold text-accent dark:text-accent-dark">
+          시작 화면으로
+        </Link>
+      </div>
+    );
+  }
 
   if (topFolder === undefined) {
     return <p className="px-10 py-7 text-sm">불러오는 중…</p>;

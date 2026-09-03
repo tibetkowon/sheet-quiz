@@ -30,8 +30,11 @@ function loadGisScript(): Promise<void> {
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
-    script.onerror = () =>
+    script.onerror = () => {
+      scriptLoadPromise = null;
+      script.remove();
       reject(new GoogleAuthError("network_error", "Google 인증 스크립트를 불러오지 못했습니다."));
+    };
     document.head.appendChild(script);
   });
   return scriptLoadPromise;

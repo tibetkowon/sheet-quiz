@@ -13,7 +13,7 @@ interface FolderLevel {
 }
 
 export default function TopFolderSelectPage() {
-  const { getAccessToken, googleUserId } = useAuth();
+  const { getAccessToken, googleUserId, markExpired } = useAuth();
   const navigate = useNavigate();
   const [path, setPath] = useState<FolderLevel[]>([{ id: "root", name: "내 드라이브" }]);
   const [folders, setFolders] = useState<DriveFolder[]>([]);
@@ -25,7 +25,11 @@ export default function TopFolderSelectPage() {
 
   const load = useCallback(async () => {
     const accessToken = getAccessToken();
-    if (!accessToken) return;
+    if (!accessToken) {
+      setLoading(false);
+      setError("Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -35,11 +39,14 @@ export default function TopFolderSelectPage() {
           : await listChildFolders(accessToken, currentFolder.id);
       setFolders(result);
     } catch (err) {
+      if (err instanceof DriveApiError && err.status === 401) {
+        markExpired();
+      }
       setError(err instanceof DriveApiError ? err.message : "Drive 폴더 목록을 불러오지 못했습니다.");
     } finally {
       setLoading(false);
     }
-  }, [currentFolder.id, getAccessToken]);
+  }, [currentFolder.id, getAccessToken, markExpired]);
 
   useEffect(() => {
     void load();
@@ -52,13 +59,17 @@ export default function TopFolderSelectPage() {
 
   const selectAsTopFolder = async () => {
     if (!googleUserId) return;
-    await saveTopFolder({
-      googleUserId,
-      folderId: currentFolder.id,
-      folderName: currentFolder.name,
-      updatedAt: new Date().toISOString(),
-    });
-    navigate("/folders");
+    try {
+      await saveTopFolder({
+        googleUserId,
+        folderId: currentFolder.id,
+        folderName: currentFolder.name,
+        updatedAt: new Date().toISOString(),
+      });
+      navigate("/folders");
+    } catch {
+      setError("최상위 폴더 저장에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
   const breadcrumbItems: BreadcrumbItem[] = path.map((level, index) => ({
