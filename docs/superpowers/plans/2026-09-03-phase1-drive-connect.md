@@ -53,6 +53,15 @@ idb, Vitest, Testing Library, Playwright, ESLint, Prettier, pnpm.
    요청한 뒤 재검증한다.
 5. Claude Code는 소스 코드를 직접 작성하지 않는다.
 
+**환경 제약 (2026-09-03 확인, 사용자 승인):** 이 저장소는 외장 HFS+ 볼륨
+(`/Volumes/MAC`)에 있고, Codex 플러그인의 macOS 샌드박스가 이 볼륨에서
+임시 파일 쓰기(예: `pnpm install`의 임시 파일, Vite/Vitest의 설정 번들
+임시 `.mjs` 파일)를 `EPERM`으로 거부한다. 따라서 각 Task에서 `pnpm
+install`/`pnpm test`/`pnpm lint`/`pnpm build`/`pnpm e2e` 등 **명령
+실행은 Claude Code가 샌드박스 밖에서 대신 수행**하고 결과를 Codex에
+전달한다. Codex는 코드/테스트 코드 작성과 git 커밋만 담당한다. Codex에게
+직접 이 명령들을 실행하라고 요청하지 않는다.
+
 ---
 
 ### Task 1: 프로젝트 스캐폴딩 (Vite + React + TS strict + pnpm 스크립트)
