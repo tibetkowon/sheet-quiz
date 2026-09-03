@@ -1862,6 +1862,7 @@ describe("TopFolderSelectPage", () => {
     vi.spyOn(driveClient, "listRootFolders").mockResolvedValue([
       { id: "f1", name: "자격증 문제은행", modifiedTime: "2026-09-01T00:00:00.000Z" },
     ]);
+    vi.spyOn(driveClient, "listChildFolders").mockResolvedValue([]);
     const saveSpy = vi.spyOn(topFolderRepo, "saveTopFolder").mockResolvedValue();
 
     renderWithConnectedAuth(
@@ -1871,6 +1872,11 @@ describe("TopFolderSelectPage", () => {
       </Routes>,
     );
     await waitFor(() => screen.getByText("자격증 문제은행"));
+
+    await userEvent.click(screen.getByText("자격증 문제은행"));
+    await waitFor(() =>
+      expect(driveClient.listChildFolders).toHaveBeenCalledWith("token-abc", "f1"),
+    );
 
     await userEvent.click(screen.getByRole("button", { name: /이 폴더를 문제은행 최상위 폴더로 선택/ }));
 
