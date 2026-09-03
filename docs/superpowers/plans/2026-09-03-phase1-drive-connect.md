@@ -2542,21 +2542,24 @@ git commit -m "test: add Playwright E2E flow for Drive connect and top folder se
 **Files:**
 - (변경 없음 — 검증만 수행)
 
-- [ ] **Step 1: 전체 파이프라인 실행**
+- [x] **Step 1: 전체 파이프라인 실행**
 
 Run: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`
 Expected: 전체 PASS, `dist/` 생성 확인
+결과: PASS (lint 0 errors/2 warnings, typecheck clean, test 27/27, build 성공)
 
-- [ ] **Step 2: 빌드 산출물이 정적 파일인지 확인**
+- [x] **Step 2: 빌드 산출물이 정적 파일인지 확인**
 
 Run: `ls dist`
 Expected: `index.html`, `assets/` 등 정적 파일만 존재 (서버 코드 없음)
+결과: `dist/index.html`, `dist/assets/` 만 존재
 
-- [ ] **Step 3: 1단계 완료 조건 체크리스트 확인**
+- [x] **Step 3: 1단계 완료 조건 체크리스트 확인**
 
-- [ ] `pnpm test` / `pnpm lint` / `pnpm typecheck` / `pnpm build` / `pnpm e2e` 모두 통과
-- [ ] Google 로그인(mock) → 최상위 폴더 선택 → IndexedDB 저장 → 자격증 폴더 목록
+- [x] `pnpm test` / `pnpm lint` / `pnpm typecheck` / `pnpm build` / `pnpm e2e` 모두 통과
+- [x] Google 로그인(mock) → 최상위 폴더 선택 → IndexedDB 저장 → 자격증 폴더 목록
       표시까지 E2E로 재현됨
-- [ ] 액세스 토큰이 localStorage/IndexedDB 어디에도 저장되지 않음 (코드 검토로 확인:
+- [x] 액세스 토큰이 localStorage/IndexedDB 어디에도 저장되지 않음 (코드 검토로 확인:
       `grep -rn "accessToken" src/storage` 결과 없어야 함)
-- [ ] 다크모드 토글이 모든 화면에서 동작
+- [x] 다크모드 토글이 모든 화면에서 동작 (AppShell이 모든 라우트를 감싸고
+      헤더에 토글 버튼을 공통으로 렌더링)
