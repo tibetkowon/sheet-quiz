@@ -59,8 +59,14 @@ idb, Vitest, Testing Library, Playwright, ESLint, Prettier, pnpm.
 임시 `.mjs` 파일)를 `EPERM`으로 거부한다. 따라서 각 Task에서 `pnpm
 install`/`pnpm test`/`pnpm lint`/`pnpm build`/`pnpm e2e` 등 **명령
 실행은 Claude Code가 샌드박스 밖에서 대신 수행**하고 결과를 Codex에
-전달한다. Codex는 코드/테스트 코드 작성과 git 커밋만 담당한다. Codex에게
-직접 이 명령들을 실행하라고 요청하지 않는다.
+전달한다. Codex에게 직접 이 명령들을 실행하라고 요청하지 않는다.
+
+추가로, Codex 경유 `git commit` 요청은 Claude Code 하네스의 자동 모드
+권한 분류기에 반복적으로 차단됨을 확인했다(문구를 바꿔도 동일). 따라서
+**커밋도 Claude Code가 직접 수행**한다 — Codex가 작성한 파일을 계획의
+Files/Step 내용과 diff로 대조 확인한 뒤, 계획에 명시된 것과 동일한 파일
+목록·커밋 메시지로 커밋한다. Codex의 역할은 코드/테스트 코드 작성으로
+한정된다.
 
 ---
 
