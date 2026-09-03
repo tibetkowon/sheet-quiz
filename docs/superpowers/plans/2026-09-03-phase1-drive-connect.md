@@ -121,6 +121,7 @@ Files/Step 내용과 diff로 대조 확인한 뒤, 계획에 명시된 것과 �
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^22.7.0",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^8.5.0",
@@ -188,19 +189,32 @@ Expected: lockfile(`pnpm-lock.yaml`) 생성, 에러 없이 종료
 {
   "compilerOptions": {
     "composite": true,
+    "outDir": "./node_modules/.tsbuildcache/node",
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "types": ["node"],
     "allowSyntheticDefaultImports": true
   },
   "include": ["vite.config.ts", "playwright.config.ts"]
 }
 ```
 
+`outDir`이 필요한 이유: 이 파일은 `composite: true`이고 루트 tsconfig.json이
+`references`로 참조하므로 TS 프로젝트 레퍼런스 규칙상 `noEmit: true`를 쓸 수
+없다(`TS6310`). `outDir`을 `node_modules` 밑으로 돌려두지 않으면 `pnpm build`
+(`tsc -b`)를 실행할 때마다 `vite.config.js`/`playwright.config.js` 같은
+컴파일 산출물이 저장소 루트에 그대로 생성된다. `types: ["node"]`는
+playwright.config.ts가 쓰는 `process.env.CI`(Task 12) 때문에 필요하며,
+`@types/node`를 devDependencies에 추가해야 한다(아래 package.json 참고).
+
 - [ ] **Step 4: vite.config.ts 작성 (Vitest 설정 포함)**
 
+`defineConfig`는 `"vite"`가 아니라 `"vitest/config"`에서 가져온다 — 그래야
+`test` 옵션의 타입이 인식되어 `tsc -b`가 통과한다.
+
 ```typescript
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
@@ -313,6 +327,7 @@ dist-ssr
 coverage
 playwright-report
 test-results
+*.tsbuildinfo
 ```
 
 `.env.example`:
