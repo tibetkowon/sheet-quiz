@@ -1,0 +1,27 @@
+import { Link } from "react-router-dom";
+import { useTheme } from "./useTheme";
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const { theme, toggleTheme } = useTheme();
+
+  return (
+    <div className="min-h-screen bg-bg text-text dark:bg-bg-dark dark:text-text-dark">
+      <header className="flex items-center justify-between border-b border-border px-8 py-4 dark:border-border-dark">
+        <Link to="/" className="flex items-center gap-2.5">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent font-display text-sm font-bold text-white dark:bg-accent-dark">
+            풀
+          </span>
+          <span className="font-display text-[17px] font-semibold">풀이장</span>
+        </Link>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="rounded border border-border bg-sunken px-3 py-1.5 text-[13px] text-text-secondary dark:border-border-dark dark:bg-sunken-dark dark:text-text-dark-secondary"
+        >
+          {theme === "dark" ? "라이트 모드" : "다크 모드"}
+        </button>
+      </header>
+      <main>{children}</main>
+    </div>
+  );
+}

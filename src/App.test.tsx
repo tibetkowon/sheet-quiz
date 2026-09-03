@@ -3,8 +3,9 @@ import { describe, expect, it } from "vitest";
 import App from "./App";
 
 describe("App", () => {
-  it("renders the app name", () => {
+  it("renders the start screen at the root route", () => {
+    window.history.pushState({}, "", "/");
     render(<App />);
-    expect(screen.getByText("풀이장")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "풀이장" })).toBeInTheDocument();
   });
 });
