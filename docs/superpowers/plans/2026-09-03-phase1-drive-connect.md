@@ -1584,9 +1584,9 @@ describe("listChildFolders", () => {
       { id: "f1", name: "AWS", modifiedTime: "2026-09-01T00:00:00.000Z" },
     ]);
     const calledUrl = fetchMock.mock.calls[0][0] as string;
-    expect(calledUrl).toContain("mimeType%20%3D%20'application%2Fvnd.google-apps.folder'");
-    expect(calledUrl).toContain("trashed%20%3D%20false");
-    expect(calledUrl).toContain("'parent-1'%20in%20parents");
+    expect(calledUrl).toContain("mimeType+%3D+%27application%2Fvnd.google-apps.folder%27");
+    expect(calledUrl).toContain("trashed+%3D+false");
+    expect(calledUrl).toContain("%27parent-1%27+in+parents");
     expect(fetchMock.mock.calls[0][1]).toEqual({
       headers: { Authorization: "Bearer token-abc" },
     });
@@ -1613,7 +1613,7 @@ describe("listChildFolders", () => {
 
     await listRootFolders("token-abc");
 
-    expect(fetchMock.mock.calls[0][0]).toContain("'root'%20in%20parents");
+    expect(fetchMock.mock.calls[0][0]).toContain("%27root%27+in+parents");
   });
 });
 ```
@@ -2446,7 +2446,7 @@ export async function mockGoogleApis(page: Page) {
 
   await page.route("https://www.googleapis.com/drive/v3/files*", (route) => {
     const url = route.request().url();
-    const isRoot = url.includes("'root'%20in%20parents");
+    const isRoot = url.includes("%27root%27+in+parents");
     const files = isRoot
       ? [{ id: "top-1", name: "자격증 문제은행", modifiedTime: "2026-09-01T00:00:00.000Z" }]
       : [
