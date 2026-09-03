@@ -2436,12 +2436,16 @@ export default defineConfig({
 ```typescript
 import type { Page } from "@playwright/test";
 
+interface MockTokenClientConfig {
+  callback: (response: { access_token: string; expires_in: number }) => void;
+}
+
 export async function mockGoogleApis(page: Page) {
   await page.addInitScript(() => {
-    (window as any).google = {
+    (window as unknown as { google: unknown }).google = {
       accounts: {
         oauth2: {
-          initTokenClient: (config: any) => ({
+          initTokenClient: (config: MockTokenClientConfig) => ({
             requestAccessToken: () => {
               config.callback({ access_token: "mock-access-token", expires_in: 3600 });
             },
@@ -2494,6 +2498,7 @@ test("로그인 → 최상위 폴더 선택 → 자격증 폴더 목록 확인",
   await page.getByRole("link", { name: "최상위 폴더 선택하러 가기" }).click();
 
   await expect(page.getByText("자격증 문제은행")).toBeVisible();
+  await page.getByText("자격증 문제은행").click();
   await page
     .getByRole("button", { name: "이 폴더를 문제은행 최상위 폴더로 선택" })
     .click();
