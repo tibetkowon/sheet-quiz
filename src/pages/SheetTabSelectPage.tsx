@@ -1,0 +1,83 @@
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
+import { listSheetTabs, pickQuestionTab, SheetsApiError, SheetTab } from "../sheets/sheetsClient";
+import { ErrorBanner } from "../components/ErrorBanner";
+
+interface LocationState {
+  fileName?: string;
+}
+
+export default function SheetTabSelectPage() {
+  const { getAccessToken, markExpired } = useAuth();
+  const { spreadsheetId } = useParams<{ spreadsheetId: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const fileName = (location.state as LocationState | null)?.fileName ?? "";
+
+  const [tabs, setTabs] = useState<SheetTab[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!spreadsheetId) return;
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      setError("Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.");
+      return;
+    }
+    listSheetTabs(accessToken, spreadsheetId)
+      .then((result) => {
+        setTabs(result);
+        const { autoSelected } = pickQuestionTab(result);
+        if (autoSelected) {
+          navigate(`/sheets/${spreadsheetId}/validate`, {
+            replace: true,
+            state: { fileName, tabId: autoSelected.sheetId, tabTitle: autoSelected.title },
+          });
+        }
+      })
+      .catch((err) => {
+        if (err instanceof SheetsApiError && err.status === 401) markExpired();
+        setError(err instanceof SheetsApiError ? err.message : "Sheet 탭 목록을 불러오지 못했습니다.");
+      });
+  }, [spreadsheetId, getAccessToken, markExpired, navigate, fileName]);
+
+  const selectTab = (tab: SheetTab) => {
+    navigate(`/sheets/${spreadsheetId}/validate`, {
+      state: { fileName, tabId: tab.sheetId, tabTitle: tab.title },
+    });
+  };
+
+  if (error) {
+    return (
+      <div className="px-10 py-7">
+        <ErrorBanner message={error} />
+      </div>
+    );
+  }
+
+  if (!tabs) {
+    return <p className="px-10 py-7 text-sm">불러오는 중…</p>;
+  }
+
+  const { candidates } = pickQuestionTab(tabs);
+
+  return (
+    <div className="mx-auto max-w-2xl px-10 py-7">
+      <h1 className="mb-4 font-display text-xl font-semibold">문제 탭을 선택해주세요</h1>
+      <ul className="flex flex-col gap-2">
+        {candidates.map((tab) => (
+          <li key={tab.sheetId}>
+            <button
+              type="button"
+              onClick={() => selectTab(tab)}
+              className="w-full rounded-lg border border-border px-4 py-3 text-left text-sm dark:border-border-dark"
+            >
+              {tab.title}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
