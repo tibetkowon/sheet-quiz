@@ -1987,6 +1987,8 @@ function CaptureState() {
 
 Add `import { useLocation } from "react-router-dom";` to the top-of-file import list (it already imports `Route, Routes` from `react-router-dom`; extend that import line).
 
+This changes what the validate route renders from a bare `<div>검증 결과 화면</div>` to `<CaptureState />`, whose text is `검증 결과 화면:{...JSON...}`. The two pre-existing tests ("auto-navigates to validation when a 문제은행 tab exists" and "shows a picker and navigates on selection when no priority tab matches") assert `screen.getByText("검증 결과 화면")` with an *exact* string match, which now fails since the text node also contains the JSON suffix. Update both occurrences in this file to `screen.getByText(/검증 결과 화면/)` (regex, partial match) so they still pass.
+
 Add this test inside `describe("SheetTabSelectPage", ...)`:
 
 ```typescript
@@ -2015,6 +2017,13 @@ Add a new test to `src/pages/SheetValidationPage.test.tsx`:
       VALID_HEADER,
       ["1", "분류", "MEDIUM", "SINGLE", "문제 1", "A", "B", "", "", "A", "해설"],
     ]);
+    vi.spyOn(googleIdentity, "createGoogleIdentityClient").mockReturnValue({
+      requestAccessToken: async () => ({ accessToken: "token-abc", expiresAt: Date.now() + 3600_000 }),
+    });
+    vi.spyOn(userInfo, "fetchGoogleUserInfo").mockResolvedValue({
+      googleUserId: "user-1",
+      email: "user@example.com",
+    });
 
     render(
       <MemoryRouter
@@ -2050,10 +2059,10 @@ Add a new test to `src/pages/SheetValidationPage.test.tsx`:
   });
 ```
 
-This test needs `AuthProvider`/`ConnectGate`-equivalent wiring inline because it must assert on the real `googleUserId` used to build the attempt id — reuse the same pattern as `renderWithConnectedAuth` but inline so the test can add extra routes. Add these imports to the top of `SheetValidationPage.test.tsx`:
+This test needs `AuthProvider`/`ConnectGate`-equivalent wiring inline because it must assert on the real `googleUserId` used to build the attempt id — reuse the same pattern as `renderWithConnectedAuth` but inline so the test can add extra routes. It also needs the same `googleIdentity`/`userInfo` mocks the other tests in this file get via `renderValidation()` (added above), since this test builds its `<AuthProvider>`/`<ConnectGate>` tree directly instead of going through that helper — without the mocks, `connect()` never resolves and the "풀이 시작" button never renders. Add these imports to the top of `SheetValidationPage.test.tsx` (note: no `useLocation` — this file doesn't render any component that calls it):
 
 ```typescript
-import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -2124,6 +2133,9 @@ export default function SheetTabSelectPage() {
   const navigate = useNavigate();
   const state = (location.state as LocationState | null) ?? {};
   const fileName = state.fileName ?? "";
+  const sourceModifiedTime = state.sourceModifiedTime;
+  const parentFolderId = state.parentFolderId;
+  const certificationFolderName = state.certificationFolderName;
 
   const [tabs, setTabs] = useState<SheetTab[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -2142,7 +2154,14 @@ export default function SheetTabSelectPage() {
         if (autoSelected) {
           navigate(`/sheets/${spreadsheetId}/validate`, {
             replace: true,
-            state: { ...state, tabId: autoSelected.sheetId, tabTitle: autoSelected.title },
+            state: {
+              fileName,
+              sourceModifiedTime,
+              parentFolderId,
+              certificationFolderName,
+              tabId: autoSelected.sheetId,
+              tabTitle: autoSelected.title,
+            },
           });
         }
       })
@@ -2150,17 +2169,32 @@ export default function SheetTabSelectPage() {
         if (err instanceof SheetsApiError && err.status === 401) markExpired();
         setError(err instanceof SheetsApiError ? err.message : "Sheet 탭 목록을 불러오지 못했습니다.");
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spreadsheetId, getAccessToken, markExpired, navigate, fileName]);
+  }, [
+    spreadsheetId,
+    getAccessToken,
+    markExpired,
+    navigate,
+    fileName,
+    sourceModifiedTime,
+    parentFolderId,
+    certificationFolderName,
+  ]);
 
   const selectTab = (tab: SheetTab) => {
     navigate(`/sheets/${spreadsheetId}/validate`, {
-      state: { ...state, tabId: tab.sheetId, tabTitle: tab.title },
+      state: {
+        fileName,
+        sourceModifiedTime,
+        parentFolderId,
+        certificationFolderName,
+        tabId: tab.sheetId,
+        tabTitle: tab.title,
+      },
     });
   };
 ```
 
-The `eslint-disable-next-line` above the `useEffect` dependency array is necessary because `state` is a fresh object derived from `location.state` on every render (`(location.state as LocationState | null) ?? {}`), so including it in the deps array would re-run the effect on every render; the effect only needs to react to `spreadsheetId` changing, and `state`'s fields are read at call time inside the effect closure. This exact pattern (deliberately narrow deps on a derived-per-render object) mirrors how `fileName` alone was already in the array before this change.
+`state` is destructured into individual primitive variables (`fileName`, `sourceModifiedTime`, `parentFolderId`, `certificationFolderName`) rather than spread as `...state`, and every one of them is listed in the `useEffect` dependency array. This keeps the deps array genuinely exhaustive — no `eslint-disable` needed. (An earlier draft of this task used `...state` plus an `eslint-disable-next-line react-hooks/exhaustive-deps` comment; that combination crashes `pnpm lint` under this repo's `eslint-plugin-react-hooks@4.6.2` + ESLint 9 setup, because the rule still executes and tries to build a suggested-fix message via a removed ESLint 8 API even when the resulting warning is suppressed. Fixed during Task 9 execution — do not reintroduce `eslint-disable-next-line react-hooks/exhaustive-deps` in this codebase; make deps arrays exhaustive instead.)
 
 Everything else in the file (the `error`/`tabs` loading branches, `pickQuestionTab` rendering) is unchanged.
 
