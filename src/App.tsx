@@ -8,6 +8,7 @@ import SheetTabSelectPage from "./pages/SheetTabSelectPage";
 import SheetValidationPage from "./pages/SheetValidationPage";
 import QuizPage from "./pages/QuizPage";
 import ResumeSelectPage from "./pages/ResumeSelectPage";
+import SubmitConfirmPage from "./pages/SubmitConfirmPage";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="/sheets/:spreadsheetId/validate" element={<SheetValidationPage />} />
             <Route path="/quiz/:attemptId" element={<QuizPage />} />
             <Route path="/quiz/:attemptId/resume" element={<ResumeSelectPage />} />
+            <Route path="/quiz/:attemptId/submit" element={<SubmitConfirmPage />} />
           </Routes>
         </AppShell>
       </BrowserRouter>
