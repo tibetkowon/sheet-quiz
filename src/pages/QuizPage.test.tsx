@@ -117,4 +117,22 @@ describe("QuizPage", () => {
       expect(screen.getByText(/풀이 기록을 찾을 수 없습니다/)).toBeInTheDocument(),
     );
   });
+
+  it("navigates to the submit confirmation screen when 제출하기 is clicked", async () => {
+    await saveAttempt(makeAttempt([makeQuestion("q1", 1), makeQuestion("q2", 2)]));
+
+    render(
+      <MemoryRouter initialEntries={["/quiz/attempt-1"]}>
+        <Routes>
+          <Route path="/quiz/:attemptId" element={<QuizPage />} />
+          <Route path="/quiz/:attemptId/submit" element={<div>제출 확인 화면</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => screen.getByText("문제 1"));
+
+    await userEvent.click(screen.getByRole("button", { name: "제출하기" }));
+
+    await waitFor(() => expect(screen.getByText("제출 확인 화면")).toBeInTheDocument());
+  });
 });
