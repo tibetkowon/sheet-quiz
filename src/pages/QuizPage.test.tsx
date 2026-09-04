@@ -1,0 +1,109 @@
+// src/pages/QuizPage.test.tsx
+import { Route, Routes } from "react-router-dom";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
+import { beforeEach, describe, expect, it } from "vitest";
+import { saveAttempt } from "../storage/attemptRepo";
+import type { StudyAttempt } from "../types/studyAttempt";
+import type { Question } from "../types/question";
+import QuizPage from "./QuizPage";
+
+function makeQuestion(id: string, questionNumber: number): Question {
+  return {
+    id,
+    sourceRow: questionNumber + 1,
+    questionNumber,
+    difficulty: "MEDIUM",
+    type: "SINGLE",
+    requiredAnswerCount: 1,
+    text: `문제 ${questionNumber}`,
+    options: [
+      { key: "A", text: "보기 A" },
+      { key: "B", text: "보기 B" },
+    ],
+    correctAnswers: ["A"],
+    explanation: `해설 ${questionNumber}`,
+  };
+}
+
+function makeAttempt(questions: Question[]): StudyAttempt {
+  return {
+    id: "attempt-1",
+    googleUserId: "user-1",
+    spreadsheetId: "sheet-1",
+    spreadsheetName: "실전 모의고사 1",
+    sheetTabId: "0",
+    sheetTabName: "문제은행",
+    parentFolderId: "cert-1",
+    certificationFolderName: "AWS",
+    questionSetFingerprint: "fp-1",
+    sourceModifiedTime: "2026-09-01T00:00:00.000Z",
+    lastViewedIndex: 0,
+    startedAt: "2026-09-04T00:00:00.000Z",
+    updatedAt: "2026-09-04T00:00:00.000Z",
+    progress: questions.map((q) => ({
+      questionId: q.id,
+      selectedAnswers: [],
+      status: "UNSEEN" as const,
+      reviewMarked: false,
+      updatedAt: "2026-09-04T00:00:00.000Z",
+    })),
+    questionSnapshot: questions,
+  };
+}
+
+function renderQuiz(id: string) {
+  return render(
+    <MemoryRouter initialEntries={[`/quiz/${id}`]}>
+      <Routes>
+        <Route path="/quiz/:attemptId" element={<QuizPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+describe("QuizPage", () => {
+  beforeEach(async () => {
+    indexedDB.deleteDatabase("sheet-quiz");
+  });
+
+  it("loads the attempt from IndexedDB and shows the current question", async () => {
+    await saveAttempt(makeAttempt([makeQuestion("q1", 1), makeQuestion("q2", 2)]));
+
+    renderQuiz("attempt-1");
+
+    await waitFor(() => expect(screen.getByText("문제 1")).toBeInTheDocument());
+    expect(screen.getByText("보기 A")).toBeInTheDocument();
+  });
+
+  it("selects an option and advances with 다음", async () => {
+    await saveAttempt(makeAttempt([makeQuestion("q1", 1), makeQuestion("q2", 2)]));
+
+    renderQuiz("attempt-1");
+    await waitFor(() => screen.getByText("문제 1"));
+
+    await userEvent.click(screen.getByText("보기 A"));
+    await userEvent.click(screen.getByRole("button", { name: "다음" }));
+
+    await waitFor(() => expect(screen.getByText("문제 2")).toBeInTheDocument());
+  });
+
+  it("disables 이전 on the first question and 다음 on the last", async () => {
+    await saveAttempt(makeAttempt([makeQuestion("q1", 1)]));
+
+    renderQuiz("attempt-1");
+    await waitFor(() => screen.getByText("문제 1"));
+
+    expect(screen.getByRole("button", { name: "이전" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
+  });
+
+  it("shows a not-found message when the attempt id doesn't exist", async () => {
+    renderQuiz("missing-attempt");
+
+    await waitFor(() =>
+      expect(screen.getByText(/풀이 기록을 찾을 수 없습니다/)).toBeInTheDocument(),
+    );
+  });
+});
