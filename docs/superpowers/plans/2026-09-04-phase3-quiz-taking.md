@@ -2520,18 +2520,37 @@ test("검증 통과 → 풀이 시작 → 답변 선택 → 다음 문제 → �
   await page.getByText("가상서버").click();
   await page.getByRole("button", { name: "다음" }).click();
   await expect(page.getByText("문제 2 / 2")).toBeVisible();
+  await expect(page.getByText("저장됨")).toBeVisible();
 
+  // A raw reload on /quiz/:attemptId silently continues where autosave left off —
+  // no resume prompt, since the attempt is loaded straight from IndexedDB by URL.
   await page.reload();
+  await expect(page.getByText("문제 2 / 2")).toBeVisible();
+
+  // Re-entering through the Sheet browse → validate → 풀이 시작 flow a second time,
+  // now that progress exists, routes through the actual resume-prompt screen.
+  // The top-level folder was already saved to IndexedDB on the first pass (keyed by
+  // googleUserId, which the mock keeps stable), so DriveBrowsePage skips straight to
+  // the certification folder list instead of showing "최상위 폴더 선택하러 가기" again.
+  await page.getByText("풀이장").click();
+  await page.getByRole("button", { name: "Google Drive 연결" }).click();
+  await page.getByText("AWS").click();
+  await page.getByText("실전 모의고사 1").click();
+  await expect(page.getByText("검증 완료")).toBeVisible();
+  await page.getByRole("button", { name: "풀이 시작" }).click();
+
   await expect(page.getByText(/답변 완료/)).toBeVisible();
   await page.getByRole("button", { name: "이어서 풀기" }).click();
   await expect(page.getByText("문제 2 / 2")).toBeVisible();
 });
 ```
 
+An earlier draft of this test reloaded immediately after clicking "다음" and expected a resume prompt right there. Two things were wrong with that, found by actually running `pnpm e2e`: (1) `QuizPage` intentionally never shows a resume prompt on a raw reload — it always loads the attempt straight from IndexedDB by URL and silently continues (the resume prompt is only reached by re-entering through `SheetValidationPage`'s "풀이 시작" a second time, once progress already exists); (2) reloading right after a navigation click can race the 600ms autosave debounce and revert to the previous `lastViewedIndex`, so the test must wait for the "저장됨" autosave-indicator text before reloading. Fixed during Task 10 execution to the version above, which exercises both real behaviors (silent reload-resume, and the actual resume-prompt screen via re-entry).
+
 - [ ] **Step 3: Run the E2E suite**
 
 Run: `pnpm e2e`
-Expected: PASS (both `sheet-select.spec.ts` and the new `quiz-flow.spec.ts`)
+Expected: PASS (`drive-connect.spec.ts`, `sheet-select.spec.ts`, and the new `quiz-flow.spec.ts`)
 
 - [ ] **Step 4: Commit**
 
