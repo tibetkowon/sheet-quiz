@@ -2543,19 +2543,20 @@ git commit -m "test: add E2E flow for Sheet selection and validation"
 
 **Files:** (변경 없음 — 검증만 수행)
 
-- [ ] **Step 1: 전체 파이프라인 실행**
+- [x] **Step 1: 전체 파이프라인 실행**
 
 Run: `pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm e2e`
 Expected: 전체 PASS
+결과: PASS (lint 0 errors/2 warnings, typecheck clean, test 88/88, build 성공, e2e 2/2)
 
-- [ ] **Step 2: 2단계 완료 조건 체크리스트 확인**
+- [x] **Step 2: 2단계 완료 조건 체크리스트 확인**
 
-- [ ] `pnpm test` / `pnpm lint` / `pnpm typecheck` / `pnpm build` / `pnpm e2e` 모두 통과
-- [ ] 자격증 폴더 → 하위 폴더 재귀 탐색 → Sheet 파일 목록 → 탭 자동/수동 선택 →
+- [x] `pnpm test` / `pnpm lint` / `pnpm typecheck` / `pnpm build` / `pnpm e2e` 모두 통과
+- [x] 자격증 폴더 → 하위 폴더 재귀 탐색 → Sheet 파일 목록 → 탭 자동/수동 선택 →
       값 읽기 → 파싱 → 검증까지 E2E로 재현됨
-- [ ] 필수 헤더 누락, 문제 본문 누락, 선택지 미달/중간누락, 정답 누락/불일치,
+- [x] 필수 헤더 누락, 문제 본문 누락, 선택지 미달/중간누락, 정답 누락/불일치,
       유형 불일치, 번호 중복 등 검증 오류가 전체 수집되어 한 번에 표시됨
       (단위 테스트로 확인됨 — Task 4)
-- [ ] 헤더 순서를 바꿔도 정상 인식됨 (Task 1에서 확인)
-- [ ] 문제 ID가 행 순서가 아니라 spreadsheetId+tabId+번호+본문 해시로 생성됨
+- [x] 헤더 순서를 바꿔도 정상 인식됨 (Task 1에서 확인)
+- [x] 문제 ID가 행 순서가 아니라 spreadsheetId+tabId+번호+본문 해시로 생성됨
 
