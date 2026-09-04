@@ -38,3 +38,12 @@ export function createSetFingerprint(questions: FingerprintQuestion[]): string {
     .join("");
   return fnv1aHash(material);
 }
+
+export function createAttemptId(
+  googleUserId: string,
+  spreadsheetId: string,
+  sheetTabId: string,
+  fingerprint: string,
+): string {
+  return `${googleUserId}:${spreadsheetId}:${sheetTabId}:${fingerprint}`;
+}

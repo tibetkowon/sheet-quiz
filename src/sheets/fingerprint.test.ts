@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createQuestionId, createSetFingerprint } from "./fingerprint";
+import { createAttemptId, createQuestionId, createSetFingerprint } from "./fingerprint";
 
 describe("createQuestionId", () => {
   it("is stable for the same inputs", () => {
@@ -71,5 +71,25 @@ describe("createSetFingerprint", () => {
       base[1],
     ]);
     expect(original).not.toBe(changed);
+  });
+});
+
+describe("createAttemptId", () => {
+  it("is stable for the same inputs", () => {
+    const a = createAttemptId("user-1", "sheet-1", "0", "fp-1");
+    const b = createAttemptId("user-1", "sheet-1", "0", "fp-1");
+    expect(a).toBe(b);
+  });
+
+  it("changes when the fingerprint changes", () => {
+    const a = createAttemptId("user-1", "sheet-1", "0", "fp-1");
+    const b = createAttemptId("user-1", "sheet-1", "0", "fp-2");
+    expect(a).not.toBe(b);
+  });
+
+  it("keeps different users' attempts on the same sheet separate", () => {
+    const a = createAttemptId("user-1", "sheet-1", "0", "fp-1");
+    const b = createAttemptId("user-2", "sheet-1", "0", "fp-1");
+    expect(a).not.toBe(b);
   });
 });
