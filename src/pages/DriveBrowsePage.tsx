@@ -77,7 +77,15 @@ export default function DriveBrowsePage() {
   };
 
   const openFile = (file: DriveFile) => {
-    navigate(`/sheets/${file.id}/tabs`, { state: { fileName: file.name } });
+    const certificationFolderName = trail.length > 0 ? trail[trail.length - 1].name : topFolder?.folderName ?? "";
+    navigate(`/sheets/${file.id}/tabs`, {
+      state: {
+        fileName: file.name,
+        sourceModifiedTime: file.modifiedTime,
+        parentFolderId: currentFolderId ?? "",
+        certificationFolderName,
+      },
+    });
   };
 
   if (status !== "connected") {

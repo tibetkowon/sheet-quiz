@@ -6,6 +6,8 @@ import TopFolderSelectPage from "./pages/TopFolderSelectPage";
 import DriveBrowsePage from "./pages/DriveBrowsePage";
 import SheetTabSelectPage from "./pages/SheetTabSelectPage";
 import SheetValidationPage from "./pages/SheetValidationPage";
+import QuizPage from "./pages/QuizPage";
+import ResumeSelectPage from "./pages/ResumeSelectPage";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
@@ -21,6 +23,8 @@ export default function App() {
             <Route path="/folders/:folderId" element={<DriveBrowsePage />} />
             <Route path="/sheets/:spreadsheetId/tabs" element={<SheetTabSelectPage />} />
             <Route path="/sheets/:spreadsheetId/validate" element={<SheetValidationPage />} />
+            <Route path="/quiz/:attemptId" element={<QuizPage />} />
+            <Route path="/quiz/:attemptId/resume" element={<ResumeSelectPage />} />
           </Routes>
         </AppShell>
       </BrowserRouter>

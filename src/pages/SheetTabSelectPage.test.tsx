@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -8,7 +8,7 @@ import * as sheetsClient from "../sheets/sheetsClient";
 import { renderWithConnectedAuth } from "../test/renderWithConnectedAuth";
 import SheetTabSelectPage from "./SheetTabSelectPage";
 
-function renderTabSelect() {
+function renderTabSelect(initialState: Record<string, unknown> = {}) {
   vi.spyOn(googleIdentity, "createGoogleIdentityClient").mockReturnValue({
     requestAccessToken: async () => ({ accessToken: "token-abc", expiresAt: Date.now() + 3600_000 }),
   });
@@ -20,10 +20,18 @@ function renderTabSelect() {
   return renderWithConnectedAuth(
     <Routes>
       <Route path="/sheets/:spreadsheetId/tabs" element={<SheetTabSelectPage />} />
-      <Route path="/sheets/:spreadsheetId/validate" element={<div>검증 결과 화면</div>} />
+      <Route
+        path="/sheets/:spreadsheetId/validate"
+        element={<CaptureState />}
+      />
     </Routes>,
-    ["/sheets/sheet-1/tabs"],
+    [{ pathname: "/sheets/sheet-1/tabs", state: initialState }],
   );
+}
+
+function CaptureState() {
+  const location = useLocation();
+  return <div>검증 결과 화면:{JSON.stringify(location.state)}</div>;
 }
 
 describe("SheetTabSelectPage", () => {
@@ -37,7 +45,7 @@ describe("SheetTabSelectPage", () => {
 
     renderTabSelect();
 
-    await waitFor(() => expect(screen.getByText("검증 결과 화면")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/검증 결과 화면/)).toBeInTheDocument());
   });
 
   it("shows a picker and navigates on selection when no priority tab matches", async () => {
@@ -53,7 +61,7 @@ describe("SheetTabSelectPage", () => {
 
     await userEvent.click(screen.getByText("2과목"));
 
-    await waitFor(() => expect(screen.getByText("검증 결과 화면")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/검증 결과 화면/)).toBeInTheDocument());
   });
 
   it("shows an error banner when the tab list request fails", async () => {
@@ -64,5 +72,21 @@ describe("SheetTabSelectPage", () => {
     renderTabSelect();
 
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Sheet 탭 목록을 불러오지 못했습니다."));
+  });
+
+  it("forwards folder context and modifiedTime through to the validate route", async () => {
+    vi.spyOn(sheetsClient, "listSheetTabs").mockResolvedValue([{ sheetId: 0, title: "문제은행" }]);
+
+    renderTabSelect({
+      fileName: "실전 모의고사 1",
+      sourceModifiedTime: "2026-09-01T00:00:00.000Z",
+      parentFolderId: "cert-1",
+      certificationFolderName: "AWS",
+    });
+
+    await waitFor(() => screen.getByText(/검증 결과 화면/));
+    expect(screen.getByText(/"parentFolderId":"cert-1"/)).toBeInTheDocument();
+    expect(screen.getByText(/"certificationFolderName":"AWS"/)).toBeInTheDocument();
+    expect(screen.getByText(/"sourceModifiedTime":"2026-09-01T00:00:00.000Z"/)).toBeInTheDocument();
   });
 });

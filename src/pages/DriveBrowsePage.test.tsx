@@ -104,6 +104,26 @@ describe("DriveBrowsePage", () => {
     await waitFor(() => expect(screen.getByText("탭 선택 화면")).toBeInTheDocument());
   });
 
+  it("carries folder context and source modifiedTime when a Sheet file is clicked", async () => {
+    mockAuthenticated();
+    vi.spyOn(topFolderRepo, "getTopFolder").mockResolvedValue({
+      googleUserId: "user-1",
+      folderId: "top-1",
+      folderName: "AWS",
+      updatedAt: "2026-09-01T00:00:00.000Z",
+    });
+    vi.spyOn(driveClient, "listChildFolders").mockResolvedValue([]);
+    vi.spyOn(driveClient, "listSheetFiles").mockResolvedValue([
+      { id: "sheet-1", name: "실전 모의고사 1", modifiedTime: "2026-09-01T00:00:00.000Z" },
+    ]);
+
+    renderBrowse();
+    await waitFor(() => screen.getByText("실전 모의고사 1"));
+    await userEvent.click(screen.getByText("실전 모의고사 1"));
+
+    await waitFor(() => expect(screen.getByText("탭 선택 화면")).toBeInTheDocument());
+  });
+
   it("prompts to select a top folder when none is saved yet", async () => {
     mockAuthenticated();
     vi.spyOn(topFolderRepo, "getTopFolder").mockResolvedValue(undefined);

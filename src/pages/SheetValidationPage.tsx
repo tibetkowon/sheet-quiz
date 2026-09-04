@@ -1,23 +1,31 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getSheetValues, SheetsApiError } from "../sheets/sheetsClient";
 import { parseSheetRows } from "../sheets/parseQuestions";
 import { validateQuestions } from "../sheets/validateQuestions";
+import { createAttemptId, createSetFingerprint } from "../sheets/fingerprint";
 import type { ValidationIssue } from "../sheets/types";
 import type { Question } from "../types/question";
+import { createInitialProgress } from "../types/progress";
+import type { StudyAttempt } from "../types/studyAttempt";
+import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import { ErrorBanner } from "../components/ErrorBanner";
 
 interface LocationState {
   fileName?: string;
   tabId?: number;
   tabTitle?: string;
+  sourceModifiedTime?: string;
+  parentFolderId?: string;
+  certificationFolderName?: string;
 }
 
 export default function SheetValidationPage() {
-  const { getAccessToken, markExpired } = useAuth();
+  const { getAccessToken, markExpired, googleUserId } = useAuth();
   const { spreadsheetId } = useParams<{ spreadsheetId: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const state = (location.state as LocationState | null) ?? {};
   const fileName = state.fileName ?? "";
   const tabTitle = state.tabTitle ?? "";
@@ -27,6 +35,7 @@ export default function SheetValidationPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
+  const [starting, setStarting] = useState(false);
 
   const load = useCallback(() => {
     if (!spreadsheetId) return;
@@ -65,6 +74,54 @@ export default function SheetValidationPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const startQuiz = useCallback(async () => {
+    if (!spreadsheetId || !googleUserId) return;
+    setStarting(true);
+    try {
+      const fingerprint = createSetFingerprint(questions);
+      const attemptId = createAttemptId(googleUserId, spreadsheetId, tabId, fingerprint);
+      const existing = await getAttempt(attemptId);
+      if (existing) {
+        const hasProgress = existing.progress.some((p) => p.status !== "UNSEEN");
+        navigate(hasProgress ? `/quiz/${attemptId}/resume` : `/quiz/${attemptId}`);
+        return;
+      }
+      const now = new Date().toISOString();
+      const attempt: StudyAttempt = {
+        id: attemptId,
+        googleUserId,
+        spreadsheetId,
+        spreadsheetName: fileName,
+        sheetTabId: tabId,
+        sheetTabName: tabTitle,
+        parentFolderId: state.parentFolderId ?? "",
+        certificationFolderName: state.certificationFolderName ?? fileName,
+        questionSetFingerprint: fingerprint,
+        sourceModifiedTime: state.sourceModifiedTime ?? "",
+        lastViewedIndex: 0,
+        startedAt: now,
+        updatedAt: now,
+        progress: questions.map((q) => createInitialProgress(q.id)),
+        questionSnapshot: questions,
+      };
+      await saveAttempt(attempt);
+      navigate(`/quiz/${attemptId}`);
+    } finally {
+      setStarting(false);
+    }
+  }, [
+    spreadsheetId,
+    googleUserId,
+    questions,
+    tabId,
+    tabTitle,
+    fileName,
+    state.parentFolderId,
+    state.certificationFolderName,
+    state.sourceModifiedTime,
+    navigate,
+  ]);
 
   if (status === "loading") {
     return <p className="px-10 py-7 text-sm">불러오는 중…</p>;
@@ -144,6 +201,14 @@ export default function SheetValidationPage() {
           ))}
         </ul>
       )}
+      <button
+        type="button"
+        onClick={() => void startQuiz()}
+        disabled={starting}
+        className="rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 dark:bg-accent-dark"
+      >
+        {starting ? "준비 중…" : "풀이 시작"}
+      </button>
     </div>
   );
 }

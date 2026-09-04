@@ -6,6 +6,9 @@ import { ErrorBanner } from "../components/ErrorBanner";
 
 interface LocationState {
   fileName?: string;
+  sourceModifiedTime?: string;
+  parentFolderId?: string;
+  certificationFolderName?: string;
 }
 
 export default function SheetTabSelectPage() {
@@ -13,7 +16,11 @@ export default function SheetTabSelectPage() {
   const { spreadsheetId } = useParams<{ spreadsheetId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
-  const fileName = (location.state as LocationState | null)?.fileName ?? "";
+  const state = (location.state as LocationState | null) ?? {};
+  const fileName = state.fileName ?? "";
+  const sourceModifiedTime = state.sourceModifiedTime;
+  const parentFolderId = state.parentFolderId;
+  const certificationFolderName = state.certificationFolderName;
 
   const [tabs, setTabs] = useState<SheetTab[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +39,14 @@ export default function SheetTabSelectPage() {
         if (autoSelected) {
           navigate(`/sheets/${spreadsheetId}/validate`, {
             replace: true,
-            state: { fileName, tabId: autoSelected.sheetId, tabTitle: autoSelected.title },
+            state: {
+              fileName,
+              sourceModifiedTime,
+              parentFolderId,
+              certificationFolderName,
+              tabId: autoSelected.sheetId,
+              tabTitle: autoSelected.title,
+            },
           });
         }
       })
@@ -40,11 +54,27 @@ export default function SheetTabSelectPage() {
         if (err instanceof SheetsApiError && err.status === 401) markExpired();
         setError(err instanceof SheetsApiError ? err.message : "Sheet 탭 목록을 불러오지 못했습니다.");
       });
-  }, [spreadsheetId, getAccessToken, markExpired, navigate, fileName]);
+  }, [
+    spreadsheetId,
+    getAccessToken,
+    markExpired,
+    navigate,
+    fileName,
+    sourceModifiedTime,
+    parentFolderId,
+    certificationFolderName,
+  ]);
 
   const selectTab = (tab: SheetTab) => {
     navigate(`/sheets/${spreadsheetId}/validate`, {
-      state: { fileName, tabId: tab.sheetId, tabTitle: tab.title },
+      state: {
+        fileName,
+        sourceModifiedTime,
+        parentFolderId,
+        certificationFolderName,
+        tabId: tab.sheetId,
+        tabTitle: tab.title,
+      },
     });
   };
 

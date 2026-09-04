@@ -3,7 +3,7 @@ import { render, RenderResult } from "@testing-library/react";
 import { MemoryRouter, MemoryRouterProps } from "react-router-dom";
 import { AuthProvider, useAuth } from "../auth/AuthContext";
 
-function ConnectGate({ children }: { children: ReactNode }) {
+export function ConnectGate({ children }: { children: ReactNode }) {
   const { status, connect } = useAuth();
   useEffect(() => {
     if (status === "signed_out") void connect();

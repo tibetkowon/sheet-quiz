@@ -1,11 +1,12 @@
-import { Route, Routes } from "react-router-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as googleIdentity from "../auth/googleIdentity";
 import * as userInfo from "../auth/userInfo";
 import * as sheetsClient from "../sheets/sheetsClient";
-import { renderWithConnectedAuth } from "../test/renderWithConnectedAuth";
+import { AuthProvider } from "../auth/AuthContext";
+import { ConnectGate, renderWithConnectedAuth } from "../test/renderWithConnectedAuth";
 import SheetValidationPage from "./SheetValidationPage";
 
 const VALID_HEADER = [
@@ -46,6 +47,10 @@ function renderValidation() {
 
 describe("SheetValidationPage", () => {
   afterEach(() => vi.restoreAllMocks());
+
+  beforeEach(() => {
+    indexedDB.deleteDatabase("sheet-quiz");
+  });
 
   it("shows the question count when validation has no errors", async () => {
     vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([
@@ -109,5 +114,51 @@ describe("SheetValidationPage", () => {
     await waitFor(() => expect(screen.getByText(/문제 1개/)).toBeInTheDocument());
     expect(screen.getByText(/경고 1건/)).toBeInTheDocument();
     expect(screen.getByText(/해설이 비어 있습니다\./)).toBeInTheDocument();
+  });
+
+  it("creates a new attempt and navigates to the quiz when 풀이 시작 is clicked", async () => {
+    vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([
+      VALID_HEADER,
+      ["1", "분류", "MEDIUM", "SINGLE", "문제 1", "A", "B", "", "", "A", "해설"],
+    ]);
+    vi.spyOn(googleIdentity, "createGoogleIdentityClient").mockReturnValue({
+      requestAccessToken: async () => ({ accessToken: "token-abc", expiresAt: Date.now() + 3600_000 }),
+    });
+    vi.spyOn(userInfo, "fetchGoogleUserInfo").mockResolvedValue({
+      googleUserId: "user-1",
+      email: "user@example.com",
+    });
+
+    render(
+      <MemoryRouter
+        initialEntries={[
+          {
+            pathname: "/sheets/sheet-1/validate",
+            state: {
+              fileName: "1주차 문제",
+              tabId: 0,
+              tabTitle: "문제은행",
+              parentFolderId: "cert-1",
+              certificationFolderName: "AWS",
+              sourceModifiedTime: "2026-09-01T00:00:00.000Z",
+            },
+          },
+        ]}
+      >
+        <AuthProvider clientId="client-id">
+          <ConnectGate>
+            <Routes>
+              <Route path="/sheets/:spreadsheetId/validate" element={<SheetValidationPage />} />
+              <Route path="/quiz/:attemptId" element={<div>퀴즈 화면</div>} />
+            </Routes>
+          </ConnectGate>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => screen.getByRole("button", { name: "풀이 시작" }));
+    await userEvent.click(screen.getByRole("button", { name: "풀이 시작" }));
+
+    await waitFor(() => expect(screen.getByText("퀴즈 화면")).toBeInTheDocument());
   });
 });
