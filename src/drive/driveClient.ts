@@ -45,3 +45,38 @@ export async function listChildFolders(
 export function listRootFolders(accessToken: string): Promise<DriveFolder[]> {
   return listChildFolders(accessToken, "root");
 }
+
+export interface DriveFile {
+  id: string;
+  name: string;
+  modifiedTime: string;
+}
+
+export async function listSheetFiles(accessToken: string, parentId: string): Promise<DriveFile[]> {
+  const query = [
+    `'${parentId}' in parents`,
+    "mimeType = 'application/vnd.google-apps.spreadsheet'",
+    "trashed = false",
+  ].join(" and ");
+
+  const params = new URLSearchParams({
+    q: query,
+    fields: "files(id,name,modifiedTime)",
+    orderBy: "name",
+    pageSize: "1000",
+  });
+
+  const response = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (response.status === 401) {
+    throw new DriveApiError(401, "Google 연결이 만료되었습니다.");
+  }
+  if (!response.ok) {
+    throw new DriveApiError(response.status, "Sheet 파일 목록을 불러오지 못했습니다.");
+  }
+
+  const data = (await response.json()) as { files: DriveFile[] };
+  return data.files ?? [];
+}
