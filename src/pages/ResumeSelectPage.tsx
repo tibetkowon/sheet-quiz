@@ -15,7 +15,7 @@ export default function ResumeSelectPage() {
   useEffect(() => {
     if (!attemptId) return;
     getAttempt(attemptId).then((found) => {
-      if (!found) {
+      if (!found || !found.questionSnapshot || found.questionSnapshot.length === 0) {
         setState("not-found");
         return;
       }

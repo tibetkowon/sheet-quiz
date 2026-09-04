@@ -10,11 +10,13 @@ function updateProgress(
   questionId: string,
   updater: (progress: QuestionProgress) => QuestionProgress,
 ): StudyAttempt {
-  return {
-    ...attempt,
-    progress: attempt.progress.map((p) => (p.questionId === questionId ? updater(p) : p)),
-    updatedAt: nowIso(),
-  };
+  const index = attempt.progress.findIndex((p) => p.questionId === questionId);
+  if (index === -1) return attempt;
+  const updated = updater(attempt.progress[index]);
+  if (updated === attempt.progress[index]) return attempt;
+  const progress = attempt.progress.slice();
+  progress[index] = updated;
+  return { ...attempt, progress, updatedAt: nowIso() };
 }
 
 export function selectSingleAnswer(attempt: StudyAttempt, questionId: string, optionKey: string): StudyAttempt {
@@ -42,7 +44,7 @@ export function toggleMultipleAnswer(attempt: StudyAttempt, questionId: string, 
 }
 
 export function markHeld(attempt: StudyAttempt, questionId: string): StudyAttempt {
-  return updateProgress(attempt, questionId, (p) => ({ ...p, status: "SKIPPED" }));
+  return updateProgress(attempt, questionId, (p) => (p.status === "SKIPPED" ? p : { ...p, status: "SKIPPED" }));
 }
 
 export function toggleReviewMarked(attempt: StudyAttempt, questionId: string): StudyAttempt {
@@ -54,6 +56,7 @@ export function markFirstViewed(attempt: StudyAttempt, questionId: string): Stud
 }
 
 export function moveToIndex(attempt: StudyAttempt, index: number): StudyAttempt {
+  if (index === attempt.lastViewedIndex) return attempt;
   return { ...attempt, lastViewedIndex: index, updatedAt: nowIso() };
 }
 

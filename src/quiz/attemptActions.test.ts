@@ -83,6 +83,12 @@ describe("markHeld", () => {
     expect(progress.status).toBe("SKIPPED");
     expect(progress.selectedAnswers).toEqual(["A"]);
   });
+
+  it("returns the exact same attempt reference when already SKIPPED", () => {
+    const once = markHeld(makeAttempt(), "q2");
+    const twice = markHeld(once, "q2");
+    expect(twice).toBe(once);
+  });
 });
 
 describe("toggleReviewMarked", () => {
@@ -103,12 +109,24 @@ describe("markFirstViewed", () => {
     const twice = markFirstViewed(once, "q1");
     expect(twice.progress.find((p) => p.questionId === "q1")!.firstViewedAt).toBe(firstTimestamp);
   });
+
+  it("returns the exact same attempt reference when already viewed (no-op)", () => {
+    const once = markFirstViewed(makeAttempt(), "q1");
+    const twice = markFirstViewed(once, "q1");
+    expect(twice).toBe(once);
+  });
 });
 
 describe("moveToIndex", () => {
   it("updates lastViewedIndex", () => {
     const result = moveToIndex(makeAttempt(), 1);
     expect(result.lastViewedIndex).toBe(1);
+  });
+
+  it("returns the exact same attempt reference when the index is unchanged", () => {
+    const attempt = makeAttempt();
+    const result = moveToIndex(attempt, attempt.lastViewedIndex);
+    expect(result).toBe(attempt);
   });
 });
 

@@ -18,7 +18,7 @@ test("검증 통과 → 풀이 시작 → 답변 선택 → 다음 문제 → �
 
   await expect(page.getByText("문제 1 / 2")).toBeVisible();
   await page.getByText("가상서버").click();
-  await page.getByRole("button", { name: "다음" }).click();
+  await page.getByRole("button", { name: "다음", exact: true }).click();
   await expect(page.getByText("문제 2 / 2")).toBeVisible();
   await expect(page.getByText("저장됨")).toBeVisible();
 

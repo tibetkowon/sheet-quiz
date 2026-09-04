@@ -65,6 +65,9 @@ function QuizPageContent() {
     goToIndex,
     goPrev,
     goNext,
+    goNextUnseen,
+    goNextHeld,
+    goNextFlagged,
   } = useQuiz();
   const [showExplanation, setShowExplanation] = useState(false);
 
@@ -163,7 +166,35 @@ function QuizPageContent() {
           </div>
         </div>
 
-        <QuestionNavigatorGrid items={navigatorItems} onJump={goToIndex} />
+        <div className="flex flex-col gap-3">
+          <QuestionNavigatorGrid items={navigatorItems} onJump={goToIndex} />
+          <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 dark:border-border-dark dark:bg-surface-dark">
+            <button
+              type="button"
+              onClick={goNextUnseen}
+              disabled={progressSummary.unseen === 0}
+              className="rounded border border-border px-3 py-2 text-left text-xs disabled:opacity-40 dark:border-border-dark"
+            >
+              다음 미응답 문제로 이동
+            </button>
+            <button
+              type="button"
+              onClick={goNextHeld}
+              disabled={progressSummary.held === 0}
+              className="rounded border border-border px-3 py-2 text-left text-xs disabled:opacity-40 dark:border-border-dark"
+            >
+              다음 보류 문제로 이동
+            </button>
+            <button
+              type="button"
+              onClick={goNextFlagged}
+              disabled={progressSummary.flagged === 0}
+              className="rounded border border-border px-3 py-2 text-left text-xs disabled:opacity-40 dark:border-border-dark"
+            >
+              다음 다시 볼 문제로 이동
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="fixed inset-x-0 bottom-0 flex justify-center gap-2.5 border-t border-border bg-surface px-8 py-3.5 dark:border-border-dark dark:bg-surface-dark">

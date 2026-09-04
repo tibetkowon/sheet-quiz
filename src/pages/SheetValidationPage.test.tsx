@@ -161,4 +161,13 @@ describe("SheetValidationPage", () => {
 
     await waitFor(() => expect(screen.getByText("퀴즈 화면")).toBeInTheDocument());
   });
+
+  it("shows an empty-state message instead of 풀이 시작 when the sheet has zero questions", async () => {
+    vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([VALID_HEADER]);
+
+    renderValidation();
+
+    await waitFor(() => expect(screen.getByText(/이 시트에는 풀 수 있는 문제가 없습니다/)).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: "풀이 시작" })).not.toBeInTheDocument();
+  });
 });

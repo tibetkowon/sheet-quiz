@@ -99,6 +99,17 @@ describe("QuizPage", () => {
     expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
   });
 
+  it("jumps to the next unseen question via the quick-jump button", async () => {
+    await saveAttempt(makeAttempt([makeQuestion("q1", 1), makeQuestion("q2", 2), makeQuestion("q3", 3)]));
+
+    renderQuiz("attempt-1");
+    await waitFor(() => screen.getByText("문제 1"));
+
+    await userEvent.click(screen.getByRole("button", { name: "다음 미응답 문제로 이동" }));
+
+    await waitFor(() => expect(screen.getByText("문제 2")).toBeInTheDocument());
+  });
+
   it("shows a not-found message when the attempt id doesn't exist", async () => {
     renderQuiz("missing-attempt");
 

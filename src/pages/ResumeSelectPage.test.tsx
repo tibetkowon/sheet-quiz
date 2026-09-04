@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import type { StudyAttempt } from "../types/studyAttempt";
+import type { Question } from "../types/question";
 import ResumeSelectPage from "./ResumeSelectPage";
 
 function makeAttempt(): StudyAttempt {
@@ -37,6 +38,38 @@ function makeAttempt(): StudyAttempt {
         updatedAt: "2026-09-04T00:00:00.000Z",
       },
     ],
+    questionSnapshot: [
+      {
+        id: "q1",
+        sourceRow: 2,
+        questionNumber: 1,
+        difficulty: "MEDIUM",
+        type: "SINGLE",
+        requiredAnswerCount: 1,
+        text: "문제 1",
+        options: [
+          { key: "A", text: "보기 A" },
+          { key: "B", text: "보기 B" },
+        ],
+        correctAnswers: ["A"],
+        explanation: "해설",
+      },
+      {
+        id: "q2",
+        sourceRow: 3,
+        questionNumber: 2,
+        difficulty: "MEDIUM",
+        type: "SINGLE",
+        requiredAnswerCount: 1,
+        text: "문제 2",
+        options: [
+          { key: "A", text: "보기 A" },
+          { key: "B", text: "보기 B" },
+        ],
+        correctAnswers: ["A"],
+        explanation: "해설",
+      },
+    ] satisfies Question[],
   };
 }
 
@@ -82,6 +115,15 @@ describe("ResumeSelectPage", () => {
 
   it("shows a not-found message when the attempt id doesn't exist", async () => {
     renderResume("missing-attempt");
+
+    await waitFor(() =>
+      expect(screen.getByText(/풀이 기록을 찾을 수 없습니다/)).toBeInTheDocument(),
+    );
+  });
+
+  it("shows a not-found message when the attempt has no question snapshot", async () => {
+    await saveAttempt({ ...makeAttempt(), questionSnapshot: undefined });
+    renderResume("attempt-1");
 
     await waitFor(() =>
       expect(screen.getByText(/풀이 기록을 찾을 수 없습니다/)).toBeInTheDocument(),
