@@ -2005,7 +2005,8 @@ git commit -m "feat: add question tab selection screen with priority auto-select
 
 **Files:**
 - Modify: `src/test/renderWithConnectedAuth.tsx` (`initialEntries` 타입을
-  `string[]`에서 `InitialEntry[]`로 넓혀 location state를 실어 보낼 수 있게 함)
+  `string[]`에서 `MemoryRouterProps["initialEntries"]`로 넓혀 location
+  state를 실어 보낼 수 있게 함)
 - Create: `src/pages/SheetValidationPage.tsx`
 - Create: `src/pages/SheetValidationPage.test.tsx`
 
@@ -2017,9 +2018,10 @@ git commit -m "feat: add question tab selection screen with priority auto-select
 
 - [ ] **Step 0: src/test/renderWithConnectedAuth.tsx 수정**
 
-`initialEntries` 매개변수 타입을 `string[]`에서 `react-router-dom`의
-`InitialEntry[]`로 넓힌다 (문자열 배열은 여전히 유효하므로 기존 호출부는
-그대로 동작한다). 함수 시그니처를:
+`initialEntries` 매개변수 타입을 `string[]`에서 넓힌다. `react-router-dom`은
+`InitialEntry` 타입을 직접 재수출하지 않으므로(재수출 목록에는
+`MemoryRouterProps`만 있다), `MemoryRouterProps["initialEntries"]`를 쓴다.
+함수 시그니처를:
 
 ```typescript
 export function renderWithConnectedAuth(
@@ -2033,13 +2035,13 @@ export function renderWithConnectedAuth(
 ```typescript
 export function renderWithConnectedAuth(
   ui: ReactElement,
-  initialEntries: InitialEntry[] = ["/"],
+  initialEntries: MemoryRouterProps["initialEntries"] = ["/"],
 ): RenderResult {
 ```
 
 파일 상단 import도 `import { MemoryRouter } from "react-router-dom";`를
-`import { InitialEntry, MemoryRouter } from "react-router-dom";`로 바꾼다.
-다른 부분은 그대로 둔다.
+`import { MemoryRouter, MemoryRouterProps } from "react-router-dom";`로
+바꾼다. 다른 부분은 그대로 둔다.
 
 - [ ] **Step 1: 실패하는 테스트 작성 — src/pages/SheetValidationPage.test.tsx**
 
