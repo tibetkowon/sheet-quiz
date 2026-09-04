@@ -1,6 +1,6 @@
 import { ReactElement, ReactNode, useEffect } from "react";
 import { render, RenderResult } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { InitialEntry, MemoryRouter } from "react-router-dom";
 import { AuthProvider, useAuth } from "../auth/AuthContext";
 
 function ConnectGate({ children }: { children: ReactNode }) {
@@ -14,7 +14,7 @@ function ConnectGate({ children }: { children: ReactNode }) {
 
 export function renderWithConnectedAuth(
   ui: ReactElement,
-  initialEntries: string[] = ["/"],
+  initialEntries: InitialEntry[] = ["/"],
 ): RenderResult {
   return render(
     <MemoryRouter initialEntries={initialEntries}>
