@@ -5,10 +5,12 @@ import {
   moveToIndex,
   restartAttempt,
   selectSingleAnswer,
+  submitAttempt,
   toggleMultipleAnswer,
   toggleReviewMarked,
 } from "./attemptActions";
 import type { StudyAttempt } from "../types/studyAttempt";
+import type { StudyResult } from "../types/studyAttempt";
 
 function makeAttempt(): StudyAttempt {
   return {
@@ -141,5 +143,32 @@ describe("restartAttempt", () => {
       expect(p.firstViewedAt).toBeUndefined();
       expect(p.answeredAt).toBeUndefined();
     }
+  });
+});
+
+function makeResult(): StudyResult {
+  return {
+    scorePercent: 100,
+    correctCount: 2,
+    incorrectCount: 0,
+    unansweredCount: 0,
+    categoryStats: [],
+    difficultyStats: [],
+  };
+}
+
+describe("submitAttempt", () => {
+  it("stamps the result and submittedAt", () => {
+    const result = submitAttempt(makeAttempt(), makeResult());
+    expect(result.result).toEqual(makeResult());
+    expect(result.submittedAt).toBeDefined();
+    expect(() => new Date(result.submittedAt as string).toISOString()).not.toThrow();
+  });
+
+  it("does not mutate the original attempt", () => {
+    const original = makeAttempt();
+    submitAttempt(original, makeResult());
+    expect(original.result).toBeUndefined();
+    expect(original.submittedAt).toBeUndefined();
   });
 });

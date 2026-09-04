@@ -1,4 +1,4 @@
-import type { StudyAttempt } from "../types/studyAttempt";
+import type { StudyAttempt, StudyResult } from "../types/studyAttempt";
 import type { QuestionProgress } from "../types/progress";
 
 function nowIso(): string {
@@ -73,4 +73,9 @@ export function restartAttempt(attempt: StudyAttempt): StudyAttempt {
     lastViewedIndex: 0,
     updatedAt: nowIso(),
   };
+}
+
+export function submitAttempt(attempt: StudyAttempt, result: StudyResult): StudyAttempt {
+  const timestamp = nowIso();
+  return { ...attempt, result, submittedAt: timestamp, updatedAt: timestamp };
 }
