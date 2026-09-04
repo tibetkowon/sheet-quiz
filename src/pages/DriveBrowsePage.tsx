@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { DriveApiError } from "../drive/driveApiError";
 import { DriveFile, DriveFolder, listChildFolders, listSheetFiles } from "../drive/driveClient";
@@ -98,6 +98,9 @@ export default function DriveBrowsePage() {
         <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
           먼저 문제은행 최상위 폴더를 선택해주세요.
         </p>
+        <Link to="/folders/select" className="text-sm font-semibold text-accent dark:text-accent-dark">
+          최상위 폴더 선택하러 가기
+        </Link>
       </div>
     );
   }
