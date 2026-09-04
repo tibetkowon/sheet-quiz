@@ -62,6 +62,16 @@ export default function SheetTabSelectPage() {
 
   const { candidates } = pickQuestionTab(tabs);
 
+  if (tabs.length === 0) {
+    return (
+      <div className="px-10 py-7">
+        <p className="text-sm text-text-secondary dark:text-text-dark-secondary">
+          이 Sheet 파일에 탭이 없습니다. 다른 파일을 선택해주세요.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-10 py-7">
       <h1 className="mb-4 font-display text-xl font-semibold">문제 탭을 선택해주세요</h1>

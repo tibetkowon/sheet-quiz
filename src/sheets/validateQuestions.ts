@@ -75,18 +75,35 @@ export function validateQuestions(
 
     autoNumber += 1;
 
+    const rowIssues: ValidationIssue[] = [];
+    let hasBlockingError = false;
+
     const questionText = v.question ?? "";
     if (!questionText) {
-      issues.push(issue(context, row.rowNumber, null, "question", "문제 본문이 비어 있습니다.", "error"));
-      continue;
+      rowIssues.push(issue(context, row.rowNumber, null, "question", "문제 본문이 비어 있습니다.", "error"));
+      hasBlockingError = true;
     }
 
     let questionNumber = autoNumber;
     const rawNumber = v.question_no ? Number(v.question_no) : NaN;
-    if (Number.isFinite(rawNumber)) questionNumber = rawNumber;
+    if (v.question_no && !Number.isFinite(rawNumber)) {
+      rowIssues.push(
+        issue(
+          context,
+          row.rowNumber,
+          null,
+          "question_no",
+          `문제 번호를 숫자로 해석할 수 없습니다: ${v.question_no}`,
+          "error",
+        ),
+      );
+      hasBlockingError = true;
+    } else if (Number.isFinite(rawNumber)) {
+      questionNumber = rawNumber;
+    }
 
     if (seenNumbers.has(questionNumber)) {
-      issues.push(
+      rowIssues.push(
         issue(
           context,
           row.rowNumber,
@@ -96,9 +113,10 @@ export function validateQuestions(
           "error",
         ),
       );
-      continue;
+      hasBlockingError = true;
+    } else {
+      seenNumbers.set(questionNumber, row.rowNumber);
     }
-    seenNumbers.set(questionNumber, row.rowNumber);
 
     const rawOptionTexts = OPTION_KEYS.map((key) => v[key] ?? "");
     let lastFilledIndex = -1;
@@ -109,32 +127,32 @@ export function validateQuestions(
       }
     }
 
+    let questionOptions: QuestionOption[] | null = null;
     if (lastFilledIndex === -1) {
-      issues.push(
-        issue(context, row.rowNumber, questionNumber, "options", "선택지가 2개 미만입니다.", "error"),
-      );
-      continue;
-    }
-
-    const hasGap = rawOptionTexts.slice(0, lastFilledIndex + 1).some((text) => !text);
-    if (hasGap) {
-      issues.push(
-        issue(context, row.rowNumber, questionNumber, "options", "선택지 중간이 비어 있습니다.", "error"),
-      );
-      continue;
-    }
-
-    const questionOptions: QuestionOption[] = rawOptionTexts.slice(0, lastFilledIndex + 1).map((text, i) => ({
-      key: OPTION_LETTERS[i],
-      text,
-      explanation: v[`${OPTION_KEYS[i]}_explanation`] || undefined,
-    }));
-
-    if (questionOptions.length < 2) {
-      issues.push(
-        issue(context, row.rowNumber, questionNumber, "options", "선택지가 2개 미만입니다.", "error"),
-      );
-      continue;
+      rowIssues.push(issue(context, row.rowNumber, questionNumber, "options", "선택지가 2개 미만입니다.", "error"));
+      hasBlockingError = true;
+    } else {
+      const hasGap = rawOptionTexts.slice(0, lastFilledIndex + 1).some((text) => !text);
+      if (hasGap) {
+        rowIssues.push(
+          issue(context, row.rowNumber, questionNumber, "options", "선택지 중간이 비어 있습니다.", "error"),
+        );
+        hasBlockingError = true;
+      } else {
+        const built = rawOptionTexts.slice(0, lastFilledIndex + 1).map((text, i) => ({
+          key: OPTION_LETTERS[i],
+          text,
+          explanation: v[`${OPTION_KEYS[i]}_explanation`] || undefined,
+        }));
+        if (built.length < 2) {
+          rowIssues.push(
+            issue(context, row.rowNumber, questionNumber, "options", "선택지가 2개 미만입니다.", "error"),
+          );
+          hasBlockingError = true;
+        } else {
+          questionOptions = built;
+        }
+      }
     }
 
     const rawAnswers = (v.correct_answers ?? "")
@@ -143,44 +161,46 @@ export function validateQuestions(
       .filter((a) => a.length > 0);
 
     if (rawAnswers.length === 0) {
-      issues.push(issue(context, row.rowNumber, questionNumber, "correct_answers", "정답이 비어 있습니다.", "error"));
-      continue;
-    }
-
-    const uniqueAnswers = new Set(rawAnswers);
-    if (uniqueAnswers.size !== rawAnswers.length) {
-      issues.push(
-        issue(
-          context,
-          row.rowNumber,
-          questionNumber,
-          "correct_answers",
-          "정답에 동일한 선택지가 중복 지정되었습니다.",
-          "error",
-        ),
+      rowIssues.push(
+        issue(context, row.rowNumber, questionNumber, "correct_answers", "정답이 비어 있습니다.", "error"),
       );
-      continue;
-    }
-
-    const optionKeys = new Set(questionOptions.map((o) => o.key));
-    const unknownAnswer = rawAnswers.find((a) => !optionKeys.has(a));
-    if (unknownAnswer) {
-      issues.push(
-        issue(
-          context,
-          row.rowNumber,
-          questionNumber,
-          "correct_answers",
-          `존재하지 않는 선택지가 정답으로 지정되었습니다: ${unknownAnswer}`,
-          "error",
-        ),
-      );
-      continue;
+      hasBlockingError = true;
+    } else {
+      const uniqueAnswers = new Set(rawAnswers);
+      if (uniqueAnswers.size !== rawAnswers.length) {
+        rowIssues.push(
+          issue(
+            context,
+            row.rowNumber,
+            questionNumber,
+            "correct_answers",
+            "정답에 동일한 선택지가 중복 지정되었습니다.",
+            "error",
+          ),
+        );
+        hasBlockingError = true;
+      } else if (questionOptions) {
+        const optionKeys = new Set(questionOptions.map((o) => o.key));
+        const unknownAnswer = rawAnswers.find((a) => !optionKeys.has(a));
+        if (unknownAnswer) {
+          rowIssues.push(
+            issue(
+              context,
+              row.rowNumber,
+              questionNumber,
+              "correct_answers",
+              `존재하지 않는 선택지가 정답으로 지정되었습니다: ${unknownAnswer}`,
+              "error",
+            ),
+          );
+          hasBlockingError = true;
+        }
+      }
     }
 
     const questionType = TYPE_MAP[v.question_type ?? ""];
     if (!questionType) {
-      issues.push(
+      rowIssues.push(
         issue(
           context,
           row.rowNumber,
@@ -190,26 +210,37 @@ export function validateQuestions(
           "error",
         ),
       );
-      continue;
-    }
-
-    if (questionType === "SINGLE" && rawAnswers.length > 1) {
-      issues.push(
-        issue(context, row.rowNumber, questionNumber, "type", "단일 정답 문제인데 정답이 여러 개입니다.", "error"),
-      );
-      continue;
-    }
-    if (questionType === "MULTIPLE" && rawAnswers.length < 2) {
-      issues.push(
-        issue(context, row.rowNumber, questionNumber, "type", "복수 정답 문제인데 정답이 1개뿐입니다.", "error"),
-      );
-      continue;
+      hasBlockingError = true;
+    } else if (rawAnswers.length > 0) {
+      if (questionType === "SINGLE" && rawAnswers.length > 1) {
+        rowIssues.push(
+          issue(context, row.rowNumber, questionNumber, "type", "단일 정답 문제인데 정답이 여러 개입니다.", "error"),
+        );
+        hasBlockingError = true;
+      } else if (questionType === "MULTIPLE" && rawAnswers.length < 2) {
+        rowIssues.push(
+          issue(context, row.rowNumber, questionNumber, "type", "복수 정답 문제인데 정답이 1개뿐입니다.", "error"),
+        );
+        hasBlockingError = true;
+      }
     }
 
     if (v.required_answer_count) {
       const requiredCount = Number(v.required_answer_count);
-      if (Number.isFinite(requiredCount) && requiredCount !== rawAnswers.length) {
-        issues.push(
+      if (!Number.isFinite(requiredCount)) {
+        rowIssues.push(
+          issue(
+            context,
+            row.rowNumber,
+            questionNumber,
+            "required_answer_count",
+            `정답 개수를 숫자로 해석할 수 없습니다: ${v.required_answer_count}`,
+            "error",
+          ),
+        );
+        hasBlockingError = true;
+      } else if (requiredCount !== rawAnswers.length) {
+        rowIssues.push(
           issue(
             context,
             row.rowNumber,
@@ -219,14 +250,14 @@ export function validateQuestions(
             "error",
           ),
         );
-        continue;
+        hasBlockingError = true;
       }
     }
 
     let difficulty = DIFFICULTY_MAP[v.difficulty ?? ""];
     if (!difficulty) {
       difficulty = "MEDIUM";
-      issues.push(
+      rowIssues.push(
         issue(
           context,
           row.rowNumber,
@@ -241,8 +272,14 @@ export function validateQuestions(
     }
 
     if (!v.explanation) {
-      issues.push(issue(context, row.rowNumber, questionNumber, "explanation", "해설이 비어 있습니다.", "warning"));
+      rowIssues.push(
+        issue(context, row.rowNumber, questionNumber, "explanation", "해설이 비어 있습니다.", "warning"),
+      );
     }
+
+    issues.push(...rowIssues);
+
+    if (hasBlockingError || !questionOptions || !questionType) continue;
 
     questions.push({
       id: createQuestionId(context.spreadsheetId, context.sheetTabId, questionNumber, questionText),

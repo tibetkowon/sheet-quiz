@@ -29,7 +29,12 @@ export default function SheetValidationPage() {
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
 
   const load = useCallback(() => {
-    if (!spreadsheetId || !tabTitle) return;
+    if (!spreadsheetId) return;
+    if (!tabTitle) {
+      setStatus("error");
+      setLoadError("탭 정보를 찾을 수 없습니다. Sheet 파일을 다시 선택해주세요.");
+      return;
+    }
     const accessToken = getAccessToken();
     if (!accessToken) {
       setStatus("error");

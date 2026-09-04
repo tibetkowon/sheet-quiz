@@ -173,6 +173,19 @@ describe("validateQuestions", () => {
     ]);
   });
 
+  it("collects every issue on a row instead of stopping at the first one", () => {
+    const { issues } = run([
+      ["1", "분류", "MEDIUM", "OX", "", "A", "B", "", "", "A", "해설"],
+    ]);
+    expect(issues).toHaveLength(2);
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: "question", severity: "error" }),
+        expect.objectContaining({ field: "question_type", severity: "error" }),
+      ]),
+    );
+  });
+
   it("errors on duplicate question numbers", () => {
     const { issues, questions } = run([
       ["1", "분류", "MEDIUM", "SINGLE", "문제 1", "A", "B", "", "", "A", "해설"],

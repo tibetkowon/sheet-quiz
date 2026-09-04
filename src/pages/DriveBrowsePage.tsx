@@ -51,6 +51,8 @@ export default function DriveBrowsePage() {
     }
     setLoading(true);
     setError(null);
+    setFolders([]);
+    setFiles([]);
     try {
       const [folderResult, fileResult] = await Promise.all([
         listChildFolders(accessToken, currentFolderId),
