@@ -13,7 +13,11 @@
 UI와 분리된 순수 함수 모듈(`src/sheets/`)로 만들어 단위 테스트로 촘촘히
 검증한다.
 
-**Tech Stack:** 1단계와 동일 + Zod (신규 추가).
+**Tech Stack:** 1단계와 동일. 검증 규칙은 순수 TypeScript 함수로 구현한다 —
+행마다 필드 몇 개를 교차 검사하는 규칙이 대부분이라 Zod 스키마로 감싸도
+크게 단순해지지 않으므로, 의존성을 하나 더 늘리지 않고 `src/sheets/
+validateQuestions.ts`의 일반 함수로 작성한다 (아키텍처 문서의 Zod 언급은
+선택이었다).
 
 **Spec:** `docs/superpowers/specs/2026-09-03-sheet-quiz-architecture-design.md`
 (6절: 라우팅, 7절: 데이터 모델, 8절: Sheet 파싱·검증 파이프라인),
