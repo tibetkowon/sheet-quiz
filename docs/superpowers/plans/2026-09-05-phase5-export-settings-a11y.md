@@ -1572,7 +1572,7 @@ test("결과 내보내기, 기록 목록, 설정에서 데이터 삭제", async 
   expect(jsonDownload.suggestedFilename()).toMatch(/\.json$/);
 
   await page.getByRole("link", { name: "기록" }).click();
-  await expect(page.getByText(/AWS · 실전 모의고사 1/)).toBeVisible();
+  await expect(page.getByText(/AWS · 문제은행/)).toBeVisible();
   await expect(page.getByText(/100%/)).toBeVisible();
 
   await page.getByRole("link", { name: "설정" }).click();
@@ -1583,14 +1583,13 @@ test("결과 내보내기, 기록 목록, 설정에서 데이터 삭제", async 
 ```
 
 Before writing this file, run `cat e2e/support/googleApiMock.ts` to confirm the fixed
-folder/spreadsheet/tab names ("자격증 문제은행", "AWS", "실전 모의고사 1",
-"가상서버", "객체스토리지") still match what the mock returns — the earlier
+folder/spreadsheet/tab names still match what the mock returns — the earlier
 `quiz-flow.spec.ts`/`results-flow.spec.ts` specs already depend on these same names,
-so this is only a sanity check, not new fixture work. If the sheet tab's
-`sheetTabName` fixture text differs from "실전 모의고사 1", adjust the history-list
-assertion text to match whatever `sheetTabName` the mock actually produces (the
+so this is only a sanity check, not new fixture work. Note the mock's spreadsheet
+*file* name is "실전 모의고사 1" but its sheet *tab* title is "문제은행" — the
 history entry format is `${certificationFolderName} · ${sheetTabName}`, i.e. `AWS ·
-<tab name>`).
+문제은행`, not `AWS · 실전 모의고사 1` (that would be the file name, which
+`HistoryPage` does not display).
 
 - [ ] **Step 2: Run the test to verify it passes**
 
