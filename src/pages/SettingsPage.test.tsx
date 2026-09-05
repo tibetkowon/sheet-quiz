@@ -87,6 +87,23 @@ describe("SettingsPage", () => {
     await screen.findByText("시작 화면");
   });
 
+  it("still clears the top folder and returns to start even if one attempt fails to delete", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.spyOn(attemptRepo, "deleteAttempt").mockImplementation((id) =>
+      id === "a1" ? Promise.reject(new Error("boom")) : Promise.resolve(undefined),
+    );
+    renderPage();
+    await screen.findByText("user@example.com");
+    fireEvent.click(screen.getByRole("button", { name: "모든 데이터 삭제" }));
+
+    await waitFor(() => {
+      expect(attemptRepo.deleteAttempt).toHaveBeenCalledWith("a1");
+      expect(attemptRepo.deleteAttempt).toHaveBeenCalledWith("a2");
+      expect(topFolderRepo.clearTopFolder).toHaveBeenCalledWith("user-1");
+    });
+    await screen.findByText("시작 화면");
+  });
+
   it("does not delete anything when the user cancels the confirmation", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(false);
     renderPage();

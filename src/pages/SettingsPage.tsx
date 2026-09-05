@@ -24,15 +24,12 @@ export default function SettingsPage() {
     if (!googleUserId) return;
     if (!window.confirm("저장된 모든 풀이 기록과 폴더 설정을 삭제할까요? 되돌릴 수 없습니다.")) return;
     setBusy(true);
-    try {
-      const attempts = await listAttemptsByUser(googleUserId);
-      await Promise.all(attempts.map((attempt) => deleteAttempt(attempt.id)));
-      await clearTopFolder(googleUserId);
-      disconnect();
-      navigate("/");
-    } finally {
-      setBusy(false);
-    }
+    const attempts = await listAttemptsByUser(googleUserId);
+    await Promise.allSettled(attempts.map((attempt) => deleteAttempt(attempt.id)));
+    await clearTopFolder(googleUserId).catch(() => undefined);
+    setBusy(false);
+    disconnect();
+    navigate("/");
   };
 
   if (!googleUserId) {
