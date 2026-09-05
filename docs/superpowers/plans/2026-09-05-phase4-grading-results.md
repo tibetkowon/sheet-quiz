@@ -1240,6 +1240,7 @@ test("문제풀이 → 제출 확인 → 제출 → 결과 확인", async ({ pag
   await page.getByRole("button", { name: "다음", exact: true }).click();
   await expect(page.getByText("문제 2 / 2")).toBeVisible();
   await page.getByText("객체스토리지").click();
+  await expect(page.getByText("저장됨")).toBeVisible();
 
   await page.getByRole("button", { name: "제출하기" }).click();
   await expect(page.getByText("제출하기 전에 확인하세요")).toBeVisible();
@@ -1249,6 +1250,8 @@ test("문제풀이 → 제출 확인 → 제출 → 결과 확인", async ({ pag
   await expect(page.getByText("2/2")).toBeVisible();
 });
 ```
+
+An earlier draft clicked "제출하기" immediately after selecting question 2's answer, without waiting for the 600ms autosave debounce (`AUTOSAVE_DEBOUNCE_MS` in `src/quiz/QuizContext.tsx`) to actually persist that answer to IndexedDB. `SubmitConfirmPage` loads the attempt straight from IndexedDB, so it could read a stale attempt missing the just-selected answer, producing a wrong score. Found by actually running `pnpm e2e` (the score came out short of 100%), fixed the same way the identical race was fixed in `e2e/quiz-flow.spec.ts` (Phase 3) — wait for the "저장됨" autosave-indicator text before navigating away.
 
 - [ ] **Step 2: Run the E2E suite**
 
