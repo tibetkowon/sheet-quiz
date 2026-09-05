@@ -43,6 +43,8 @@ export default function SubmitConfirmPage() {
   }
 
   const summary = summarizeProgress(attempt.progress);
+  const answeredCount = attempt.progress.filter((p) => p.selectedAnswers.length > 0).length;
+  const unansweredCount = summary.total - answeredCount;
 
   const submit = async () => {
     if (!attemptId || !attempt.questionSnapshot) return;
@@ -71,7 +73,7 @@ export default function SubmitConfirmPage() {
         <div className="rounded-lg border border-status-answered bg-surface p-4 dark:border-status-answered-dark dark:bg-surface-dark">
           <div className="mb-1 text-xs text-status-answered dark:text-status-answered-dark">답변완료</div>
           <div className="font-mono text-xl font-semibold text-status-answered dark:text-status-answered-dark">
-            {summary.answered}
+            {answeredCount}
           </div>
         </div>
         <div className="rounded-lg border border-status-held bg-surface p-4 dark:border-status-held-dark dark:bg-surface-dark">
@@ -82,7 +84,7 @@ export default function SubmitConfirmPage() {
         </div>
         <div className="rounded-lg border border-border bg-sunken p-4 dark:border-border-dark dark:bg-sunken-dark">
           <div className="mb-1 text-xs text-text-secondary dark:text-text-dark-secondary">미응답</div>
-          <div className="font-mono text-xl font-semibold">{summary.unseen}</div>
+          <div className="font-mono text-xl font-semibold">{unansweredCount}</div>
         </div>
         <div className="col-span-2 rounded-lg border border-status-review bg-surface p-4 dark:border-status-review-dark dark:bg-surface-dark">
           <div className="mb-1 text-xs text-status-review dark:text-status-review-dark">다시 볼 문제</div>

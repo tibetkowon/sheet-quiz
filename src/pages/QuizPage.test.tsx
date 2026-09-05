@@ -4,7 +4,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
-import { saveAttempt } from "../storage/attemptRepo";
+import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import type { StudyAttempt } from "../types/studyAttempt";
 import type { Question } from "../types/question";
 import QuizPage from "./QuizPage";
@@ -134,5 +134,26 @@ describe("QuizPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "제출하기" }));
 
     await waitFor(() => expect(screen.getByText("제출 확인 화면")).toBeInTheDocument());
+  });
+
+  it("flushes the latest answer to storage immediately when 제출하기 is clicked, before the autosave debounce would fire", async () => {
+    await saveAttempt(makeAttempt([makeQuestion("q1", 1)]));
+
+    render(
+      <MemoryRouter initialEntries={["/quiz/attempt-1"]}>
+        <Routes>
+          <Route path="/quiz/:attemptId" element={<QuizPage />} />
+          <Route path="/quiz/:attemptId/submit" element={<div>제출 확인 화면</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => screen.getByText("문제 1"));
+
+    await userEvent.click(screen.getByText("보기 A"));
+    await userEvent.click(screen.getByRole("button", { name: "제출하기" }));
+
+    await waitFor(() => expect(screen.getByText("제출 확인 화면")).toBeInTheDocument());
+    const saved = await getAttempt("attempt-1");
+    expect(saved?.progress.find((p) => p.questionId === "q1")?.selectedAnswers).toEqual(["A"]);
   });
 });

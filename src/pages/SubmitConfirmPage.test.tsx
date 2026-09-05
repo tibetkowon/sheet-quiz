@@ -1,5 +1,5 @@
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
@@ -115,5 +115,20 @@ describe("SubmitConfirmPage", () => {
     await waitFor(() =>
       expect(screen.getByText(/풀이 기록을 찾을 수 없습니다/)).toBeInTheDocument(),
     );
+  });
+
+  it("counts a held-but-answered question as 답변완료, not 미응답", async () => {
+    await saveAttempt(
+      makeAttempt([makeQuestion("q1", 1)], [{ status: "SKIPPED", selectedAnswers: ["A"] }]),
+    );
+
+    renderConfirm("attempt-1");
+    await waitFor(() => screen.getByText("제출하기 전에 확인하세요"));
+
+    const answeredTile = screen.getByText("답변완료").parentElement;
+    expect(within(answeredTile as HTMLElement).getByText("1")).toBeInTheDocument();
+
+    const unseenTile = screen.getByText("미응답").parentElement;
+    expect(within(unseenTile as HTMLElement).getByText("0")).toBeInTheDocument();
   });
 });

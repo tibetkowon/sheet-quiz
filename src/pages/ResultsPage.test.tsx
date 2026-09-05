@@ -100,6 +100,62 @@ describe("ResultsPage", () => {
     expect(screen.queryByText("문제 3 본문")).not.toBeInTheDocument();
   });
 
+  it("reflects live progress even when the stored result snapshot is stale", async () => {
+    const attempt = makeSubmittedAttempt();
+    // Simulate a post-submission edit: q3 was originally unanswered (incorrect for
+    // scoring purposes) but the user went back and answered it correctly, WITHOUT
+    // resubmitting — attempt.result is now stale relative to attempt.progress.
+    const editedProgress = attempt.progress.map((p) =>
+      p.questionId === "q3" ? { ...p, selectedAnswers: ["A"], status: "ANSWERED" as const } : p,
+    );
+    await saveAttempt({ ...attempt, progress: editedProgress });
+
+    renderResults("attempt-1");
+
+    // Original stored result was 33% (1/3); live recomputation should now show 67% (2/3).
+    await waitFor(() => expect(screen.getByText("67%")).toBeInTheDocument());
+    expect(screen.getByText("2/3")).toBeInTheDocument();
+  });
+
+  it("filters to only correct questions when 정답 is selected", async () => {
+    await saveAttempt(makeSubmittedAttempt());
+
+    renderResults("attempt-1");
+    await waitFor(() => screen.getByText("문제 1 본문"));
+
+    await userEvent.click(screen.getByRole("button", { name: "정답" }));
+
+    expect(screen.getByText("문제 1 본문")).toBeInTheDocument();
+    expect(screen.queryByText("문제 2 본문")).not.toBeInTheDocument();
+    expect(screen.queryByText("문제 3 본문")).not.toBeInTheDocument();
+  });
+
+  it("filters to only unanswered questions when 미응답 is selected", async () => {
+    await saveAttempt(makeSubmittedAttempt());
+
+    renderResults("attempt-1");
+    await waitFor(() => screen.getByText("문제 1 본문"));
+
+    await userEvent.click(screen.getByRole("button", { name: "미응답" }));
+
+    expect(screen.queryByText("문제 1 본문")).not.toBeInTheDocument();
+    expect(screen.queryByText("문제 2 본문")).not.toBeInTheDocument();
+    expect(screen.getByText("문제 3 본문")).toBeInTheDocument();
+  });
+
+  it("filters to only flagged questions when 다시 볼 문제 is selected", async () => {
+    await saveAttempt(makeSubmittedAttempt());
+
+    renderResults("attempt-1");
+    await waitFor(() => screen.getByText("문제 1 본문"));
+
+    await userEvent.click(screen.getByRole("button", { name: "다시 볼 문제" }));
+
+    expect(screen.queryByText("문제 1 본문")).not.toBeInTheDocument();
+    expect(screen.getByText("문제 2 본문")).toBeInTheDocument();
+    expect(screen.queryByText("문제 3 본문")).not.toBeInTheDocument();
+  });
+
   it("expands a question to show per-option correctness and explanations", async () => {
     await saveAttempt(makeSubmittedAttempt());
 

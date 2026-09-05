@@ -1,7 +1,7 @@
 // src/pages/QuizPage.tsx
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getAttempt } from "../storage/attemptRepo";
+import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import type { StudyAttempt } from "../types/studyAttempt";
 import { QuizProvider, useQuiz } from "../quiz/QuizContext";
 import { AutosaveIndicator } from "../components/AutosaveIndicator";
@@ -72,6 +72,11 @@ function QuizPageContent() {
   } = useQuiz();
   const navigate = useNavigate();
   const [showExplanation, setShowExplanation] = useState(false);
+
+  const goSubmit = async () => {
+    await saveAttempt(attempt);
+    navigate(`/quiz/${attempt.id}/submit`);
+  };
 
   useEffect(() => setShowExplanation(false), [currentIndex]);
 
@@ -236,7 +241,7 @@ function QuizPageContent() {
         </button>
         <button
           type="button"
-          onClick={() => navigate(`/quiz/${attempt.id}/submit`)}
+          onClick={() => void goSubmit()}
           className="rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white dark:bg-accent-dark"
         >
           제출하기

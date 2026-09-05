@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getAttempt } from "../storage/attemptRepo";
-import { gradeAttempt } from "../quiz/grading";
+import { computeStudyResult, gradeAttempt } from "../quiz/grading";
 import { ProgressBar } from "../components/ProgressBar";
 import type { StudyAttempt } from "../types/studyAttempt";
 
@@ -50,21 +50,20 @@ export default function ResultsPage() {
     );
   }
 
-  return <ResultsPageContent attempt={attempt} result={attempt.result} questions={attempt.questionSnapshot} />;
+  return <ResultsPageContent attempt={attempt} questions={attempt.questionSnapshot} />;
 }
 
 function ResultsPageContent({
   attempt,
-  result,
   questions,
 }: {
   attempt: StudyAttempt;
-  result: NonNullable<StudyAttempt["result"]>;
   questions: NonNullable<StudyAttempt["questionSnapshot"]>;
 }) {
   const [filter, setFilter] = useState<ResultFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const result = computeStudyResult(questions, attempt.progress);
   const progressByQuestionId = new Map(attempt.progress.map((p) => [p.questionId, p]));
   const grades = gradeAttempt(questions, attempt.progress);
   const gradeByQuestionId = new Map(grades.map((g) => [g.questionId, g]));
