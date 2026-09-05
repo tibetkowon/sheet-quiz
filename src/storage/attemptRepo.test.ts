@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { getAttempt, saveAttempt } from "./attemptRepo";
+import { deleteAttempt, getAttempt, listAttemptsByUser, saveAttempt } from "./attemptRepo";
+import { getDb } from "./db";
 import type { StudyAttempt } from "../types/studyAttempt";
 
 function makeAttempt(overrides: Partial<StudyAttempt> = {}): StudyAttempt {
@@ -24,7 +25,8 @@ function makeAttempt(overrides: Partial<StudyAttempt> = {}): StudyAttempt {
 
 describe("attemptRepo", () => {
   beforeEach(async () => {
-    indexedDB.deleteDatabase("sheet-quiz");
+    const db = await getDb();
+    await db.clear("attempts");
   });
 
   it("returns undefined when no attempt is saved", async () => {
@@ -48,5 +50,29 @@ describe("attemptRepo", () => {
     await saveAttempt(makeAttempt({ id: "attempt-2", sheetTabName: "다른 탭" }));
     expect((await getAttempt("attempt-1"))?.sheetTabName).toBe("문제은행");
     expect((await getAttempt("attempt-2"))?.sheetTabName).toBe("다른 탭");
+  });
+
+  it("lists only attempts belonging to the given user, most-recent-first not required", async () => {
+    await saveAttempt(makeAttempt({ id: "a1", googleUserId: "user-1" }));
+    await saveAttempt(makeAttempt({ id: "a2", googleUserId: "user-1" }));
+    await saveAttempt(makeAttempt({ id: "a3", googleUserId: "user-2" }));
+
+    const found = await listAttemptsByUser("user-1");
+
+    expect(found.map((a) => a.id).sort()).toEqual(["a1", "a2"]);
+  });
+
+  it("returns an empty array when the user has no attempts", async () => {
+    expect(await listAttemptsByUser("nobody")).toEqual([]);
+  });
+
+  it("deletes an attempt by id", async () => {
+    await saveAttempt(makeAttempt({ id: "a1" }));
+    await deleteAttempt("a1");
+    expect(await getAttempt("a1")).toBeUndefined();
+  });
+
+  it("does not throw when deleting an id that does not exist", async () => {
+    await expect(deleteAttempt("missing")).resolves.toBeUndefined();
   });
 });
