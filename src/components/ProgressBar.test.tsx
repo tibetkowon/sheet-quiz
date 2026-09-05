@@ -28,4 +28,9 @@ describe("ProgressBar", () => {
     expect(bar).toHaveAttribute("aria-valuemin", "0");
     expect(bar).toHaveAttribute("aria-valuemax", "100");
   });
+
+  it("sets aria-label when a label is provided", () => {
+    render(<ProgressBar percent={40} label="분류: 컴퓨팅" />);
+    expect(screen.getByRole("progressbar", { name: "분류: 컴퓨팅" })).toBeInTheDocument();
+  });
 });

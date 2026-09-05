@@ -77,6 +77,7 @@ export default function HistoryPage() {
                   <button
                     type="button"
                     onClick={() => navigate(isSubmitted ? `/results/${attempt.id}` : `/quiz/${attempt.id}`)}
+                    aria-label={`${attempt.certificationFolderName} ${attempt.sheetTabName} ${isSubmitted ? "결과 보기" : "이어서 풀기"}`}
                     className="rounded border border-border px-3 py-1.5 text-xs dark:border-border-dark"
                   >
                     {isSubmitted ? "결과 보기" : "이어서 풀기"}
@@ -84,6 +85,7 @@ export default function HistoryPage() {
                   <button
                     type="button"
                     onClick={() => void handleDelete(attempt.id)}
+                    aria-label={`${attempt.certificationFolderName} ${attempt.sheetTabName} 삭제`}
                     className="rounded border border-danger px-3 py-1.5 text-xs text-danger"
                   >
                     삭제

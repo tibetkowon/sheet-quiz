@@ -1,8 +1,9 @@
-export function ProgressBar({ percent }: { percent: number }) {
+export function ProgressBar({ percent, label }: { percent: number; label?: string }) {
   const clamped = Number.isFinite(percent) ? Math.min(100, Math.max(0, percent)) : 0;
   return (
     <div
       role="progressbar"
+      aria-label={label}
       aria-valuenow={Math.round(clamped)}
       aria-valuemin={0}
       aria-valuemax={100}

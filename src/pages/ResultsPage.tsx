@@ -124,7 +124,7 @@ function ResultsPageContent({
                     {stat.correct}/{stat.total}
                   </span>
                 </div>
-                <ProgressBar percent={stat.total > 0 ? (stat.correct / stat.total) * 100 : 0} />
+                <ProgressBar percent={stat.total > 0 ? (stat.correct / stat.total) * 100 : 0} label={`분류: ${stat.name}`} />
               </div>
             ))}
           </div>
@@ -142,7 +142,7 @@ function ResultsPageContent({
                     {stat.correct}/{stat.total}
                   </span>
                 </div>
-                <ProgressBar percent={stat.total > 0 ? (stat.correct / stat.total) * 100 : 0} />
+                <ProgressBar percent={stat.total > 0 ? (stat.correct / stat.total) * 100 : 0} label={`난이도: ${stat.name}`} />
               </div>
             ))}
           </div>
@@ -204,6 +204,8 @@ function ResultsPageContent({
               <button
                 type="button"
                 onClick={() => setExpandedId(isExpanded ? null : question.id)}
+                aria-expanded={isExpanded}
+                aria-controls={`question-detail-${question.id}`}
                 className="flex w-full items-center gap-3 px-4.5 py-3.5 text-left"
               >
                 <span className="w-7 font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
@@ -221,7 +223,7 @@ function ResultsPageContent({
                 <span className={`text-xs font-semibold ${resultColorClass}`}>{resultLabel}</span>
               </button>
               {isExpanded && (
-                <div className="flex flex-col gap-2 px-4.5 pb-4 pl-14">
+                <div id={`question-detail-${question.id}`} className="flex flex-col gap-2 px-4.5 pb-4 pl-14">
                   {question.options.map((option) => {
                     const isCorrectOption = grade.correctAnswers.includes(option.key);
                     const isSelected = grade.selectedAnswers.includes(option.key);

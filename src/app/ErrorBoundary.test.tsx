@@ -28,6 +28,16 @@ describe("ErrorBoundary", () => {
     expect(screen.getByText("문제가 발생했어요")).toBeInTheDocument();
   });
 
+  it("marks the fallback screen with role=alert so screen readers announce it", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    render(
+      <ErrorBoundary>
+        <Bomb />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+  });
+
   it("navigates to the start screen when the reset button is clicked", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const assignSpy = vi.fn();

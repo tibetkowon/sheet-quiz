@@ -62,7 +62,7 @@ describe("HistoryPage", () => {
     renderPage();
 
     await screen.findByText(/AWS · 1회차/);
-    expect(screen.getByRole("button", { name: "이어서 풀기" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "AWS 1회차 이어서 풀기" })).toBeInTheDocument();
   });
 
   it("shows a submitted attempt with a 결과 보기 action and its score", async () => {
@@ -74,7 +74,7 @@ describe("HistoryPage", () => {
     ]);
     renderPage();
 
-    await screen.findByRole("button", { name: "결과 보기" });
+    await screen.findByRole("button", { name: "AWS 1회차 결과 보기" });
     expect(screen.getByText(/80%/)).toBeInTheDocument();
   });
 
@@ -93,7 +93,7 @@ describe("HistoryPage", () => {
     renderPage();
 
     await screen.findByText(/AWS · 1회차/);
-    fireEvent.click(screen.getByRole("button", { name: "삭제" }));
+    fireEvent.click(screen.getByRole("button", { name: "AWS 1회차 삭제" }));
 
     await waitFor(() => expect(attemptRepo.deleteAttempt).toHaveBeenCalledWith("attempt-1"));
     await screen.findByText("아직 저장된 풀이 기록이 없습니다.");
@@ -105,7 +105,7 @@ describe("HistoryPage", () => {
     renderPage();
 
     await screen.findByText(/AWS · 1회차/);
-    fireEvent.click(screen.getByRole("button", { name: "삭제" }));
+    fireEvent.click(screen.getByRole("button", { name: "AWS 1회차 삭제" }));
 
     expect(attemptRepo.deleteAttempt).not.toHaveBeenCalled();
   });
