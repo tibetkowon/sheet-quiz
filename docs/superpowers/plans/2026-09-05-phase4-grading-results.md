@@ -825,9 +825,9 @@ function makeQuestion(id: string, questionNumber: number, overrides: Partial<Que
 
 function makeSubmittedAttempt(): StudyAttempt {
   const questions = [
-    makeQuestion("q1", 1),
-    makeQuestion("q2", 2),
-    makeQuestion("q3", 3),
+    makeQuestion("q1", 1, { category: "컴퓨팅", difficulty: "EASY" }),
+    makeQuestion("q2", 2, { category: "보안", difficulty: "MEDIUM" }),
+    makeQuestion("q3", 3, { category: "네트워크", difficulty: "HARD" }),
   ];
   const progress = [
     { questionId: "q1", selectedAnswers: ["A"], status: "ANSWERED" as const, reviewMarked: false, updatedAt: "" },
@@ -918,6 +918,8 @@ describe("ResultsPage", () => {
   });
 });
 ```
+
+`makeSubmittedAttempt`'s three questions deliberately use distinct category/difficulty pairs. An earlier draft gave all three the same category ("컴퓨팅") and difficulty ("MEDIUM"), which made `computeStudyResult` produce a categoryStat of `{total:3,correct:1}` and a difficultyStat of `{total:3,correct:1}` — both rendering as "1/3", the same text as the "정답 / 전체" summary card. `screen.getByText("1/3")` then failed with a multiple-elements-found error. Found by actually running the test, fixed by giving each question its own category and difficulty so no stat group's fraction collides with another's.
 
 - [ ] **Step 2: Run test to verify it fails**
 
