@@ -17,6 +17,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link to="/history" className="hover:text-text dark:hover:text-text-dark">
             기록
           </Link>
+          <Link to="/settings" className="hover:text-text dark:hover:text-text-dark">
+            설정
+          </Link>
         </nav>
         <button
           type="button"
