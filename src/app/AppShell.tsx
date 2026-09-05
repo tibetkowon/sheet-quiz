@@ -13,6 +13,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </span>
           <span className="font-display text-[17px] font-semibold">풀이장</span>
         </Link>
+        <nav className="flex items-center gap-4 text-[13px] font-semibold text-text-secondary dark:text-text-dark-secondary">
+          <Link to="/history" className="hover:text-text dark:hover:text-text-dark">
+            기록
+          </Link>
+        </nav>
         <button
           type="button"
           onClick={toggleTheme}

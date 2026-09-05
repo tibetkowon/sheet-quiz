@@ -10,6 +10,7 @@ import QuizPage from "./pages/QuizPage";
 import ResumeSelectPage from "./pages/ResumeSelectPage";
 import SubmitConfirmPage from "./pages/SubmitConfirmPage";
 import ResultsPage from "./pages/ResultsPage";
+import HistoryPage from "./pages/HistoryPage";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/quiz/:attemptId/resume" element={<ResumeSelectPage />} />
             <Route path="/quiz/:attemptId/submit" element={<SubmitConfirmPage />} />
             <Route path="/results/:attemptId" element={<ResultsPage />} />
+            <Route path="/history" element={<HistoryPage />} />
           </Routes>
         </AppShell>
       </BrowserRouter>
