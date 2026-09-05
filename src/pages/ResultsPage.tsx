@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getAttempt } from "../storage/attemptRepo";
 import { computeStudyResult, gradeAttempt } from "../quiz/grading";
+import { buildResultJson, buildResultMarkdown, downloadTextFile } from "../quiz/export";
 import { ProgressBar } from "../components/ProgressBar";
 import type { StudyAttempt } from "../types/studyAttempt";
 
@@ -64,6 +65,14 @@ function ResultsPageContent({
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const result = computeStudyResult(questions, attempt.progress);
+  const downloadMarkdown = () => {
+    downloadTextFile(`${attempt.sheetTabName}-result.md`, buildResultMarkdown(attempt, questions), "text/markdown");
+  };
+
+  const downloadJson = () => {
+    downloadTextFile(`${attempt.sheetTabName}-result.json`, buildResultJson(attempt, questions), "application/json");
+  };
+
   const progressByQuestionId = new Map(attempt.progress.map((p) => [p.questionId, p]));
   const grades = gradeAttempt(questions, attempt.progress);
   const gradeByQuestionId = new Map(grades.map((g) => [g.questionId, g]));
@@ -138,6 +147,23 @@ function ResultsPageContent({
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="mb-4 flex gap-2.5">
+        <button
+          type="button"
+          onClick={downloadMarkdown}
+          className="rounded border border-border px-3.5 py-2 text-xs dark:border-border-dark"
+        >
+          Markdown 다운로드
+        </button>
+        <button
+          type="button"
+          onClick={downloadJson}
+          className="rounded border border-border px-3.5 py-2 text-xs dark:border-border-dark"
+        >
+          JSON 다운로드
+        </button>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">

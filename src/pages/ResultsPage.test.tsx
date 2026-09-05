@@ -2,12 +2,18 @@
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { saveAttempt } from "../storage/attemptRepo";
 import { computeStudyResult } from "../quiz/grading";
 import type { StudyAttempt } from "../types/studyAttempt";
 import type { Question } from "../types/question";
 import ResultsPage from "./ResultsPage";
+import * as exportModule from "../quiz/export";
+
+vi.mock("../quiz/export", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../quiz/export")>();
+  return { ...actual, downloadTextFile: vi.fn() };
+});
 
 function makeQuestion(id: string, questionNumber: number, overrides: Partial<Question> = {}): Question {
   return {
@@ -166,6 +172,34 @@ describe("ResultsPage", () => {
 
     expect(screen.getByText("A가 정답인 이유")).toBeInTheDocument();
     expect(screen.getByText("B가 오답인 이유")).toBeInTheDocument();
+  });
+
+  it("downloads a Markdown file with the score when Markdown 다운로드 is clicked", async () => {
+    await saveAttempt(makeSubmittedAttempt());
+    renderResults("attempt-1");
+    await waitFor(() => screen.getByText("문제 1 본문"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Markdown 다운로드" }));
+
+    expect(exportModule.downloadTextFile).toHaveBeenCalledWith(
+      expect.stringMatching(/\.md$/),
+      expect.stringContaining("점수:"),
+      "text/markdown",
+    );
+  });
+
+  it("downloads a JSON file when JSON 다운로드 is clicked", async () => {
+    await saveAttempt(makeSubmittedAttempt());
+    renderResults("attempt-1");
+    await waitFor(() => screen.getByText("문제 1 본문"));
+
+    await userEvent.click(screen.getByRole("button", { name: "JSON 다운로드" }));
+
+    expect(exportModule.downloadTextFile).toHaveBeenCalledWith(
+      expect.stringMatching(/\.json$/),
+      expect.stringContaining("\"scorePercent\""),
+      "application/json",
+    );
   });
 
   it("shows a not-found message when the attempt hasn't been submitted", async () => {
