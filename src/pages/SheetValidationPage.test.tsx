@@ -79,6 +79,23 @@ describe("SheetValidationPage", () => {
     expect(screen.getByText("문제 본문이 비어 있습니다.")).toBeInTheDocument();
   });
 
+  it("copies the error list to the clipboard and shows confirmation", async () => {
+    vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([
+      VALID_HEADER,
+      ["1", "분류", "MEDIUM", "SINGLE", "", "A", "B", "", "", "A", "해설"],
+    ]);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+
+    renderValidation();
+    await waitFor(() => screen.getByRole("button", { name: "오류 목록 복사" }));
+
+    await userEvent.click(screen.getByRole("button", { name: "오류 목록 복사" }));
+
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("# 시트 검증 결과"));
+    await screen.findByText("복사됨");
+  });
+
   it("re-fetches when 다시 검증 is clicked", async () => {
     const spy = vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([
       VALID_HEADER,

@@ -5,7 +5,9 @@ import { getSheetValues, SheetsApiError } from "../sheets/sheetsClient";
 import { parseSheetRows } from "../sheets/parseQuestions";
 import { validateQuestions } from "../sheets/validateQuestions";
 import { createAttemptId, createSetFingerprint } from "../sheets/fingerprint";
+import { buildValidationIssuesMarkdown } from "../sheets/validationExport";
 import type { ValidationIssue } from "../sheets/types";
+import { downloadTextFile } from "../quiz/export";
 import type { Question } from "../types/question";
 import { createInitialProgress } from "../types/progress";
 import type { StudyAttempt } from "../types/studyAttempt";
@@ -36,6 +38,7 @@ export default function SheetValidationPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [starting, setStarting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(() => {
     if (!spreadsheetId) return;
@@ -138,6 +141,16 @@ export default function SheetValidationPage() {
   const errorIssues = issues.filter((i) => i.severity === "error");
   const warningIssues = issues.filter((i) => i.severity === "warning");
 
+  const copyIssuesList = async () => {
+    await navigator.clipboard.writeText(buildValidationIssuesMarkdown(errorIssues.length > 0 ? errorIssues : issues));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const downloadIssuesList = () => {
+    downloadTextFile("sheet-validation-issues.md", buildValidationIssuesMarkdown(errorIssues.length > 0 ? errorIssues : issues), "text/markdown");
+  };
+
   if (errorIssues.length > 0) {
     return (
       <div className="mx-auto max-w-2xl px-10 py-7">
@@ -168,6 +181,20 @@ export default function SheetValidationPage() {
             className="rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white dark:bg-accent-dark"
           >
             다시 검증
+          </button>
+          <button
+            type="button"
+            onClick={() => void copyIssuesList()}
+            className="rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
+          >
+            {copied ? "복사됨" : "오류 목록 복사"}
+          </button>
+          <button
+            type="button"
+            onClick={downloadIssuesList}
+            className="rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
+          >
+            Markdown 다운로드
           </button>
           <a
             href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`}
