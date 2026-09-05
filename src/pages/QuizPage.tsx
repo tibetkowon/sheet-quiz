@@ -72,6 +72,7 @@ function QuizPageContent() {
   } = useQuiz();
   const navigate = useNavigate();
   const [showExplanation, setShowExplanation] = useState(false);
+  const [navigatorOpen, setNavigatorOpen] = useState(true);
 
   const goSubmit = async () => {
     await saveAttempt(attempt);
@@ -174,32 +175,43 @@ function QuizPageContent() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <QuestionNavigatorGrid items={navigatorItems} onJump={goToIndex} />
-          <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 dark:border-border-dark dark:bg-surface-dark">
-            <button
-              type="button"
-              onClick={goNextUnseen}
-              disabled={progressSummary.unseen === 0}
-              className="rounded border border-border px-3 py-2 text-left text-xs disabled:opacity-40 dark:border-border-dark"
-            >
-              다음 미응답 문제로 이동
-            </button>
-            <button
-              type="button"
-              onClick={goNextHeld}
-              disabled={progressSummary.held === 0}
-              className="rounded border border-border px-3 py-2 text-left text-xs disabled:opacity-40 dark:border-border-dark"
-            >
-              다음 보류 문제로 이동
-            </button>
-            <button
-              type="button"
-              onClick={goNextFlagged}
-              disabled={progressSummary.flagged === 0}
-              className="rounded border border-border px-3 py-2 text-left text-xs disabled:opacity-40 dark:border-border-dark"
-            >
-              다음 다시 볼 문제로 이동
-            </button>
+          <button
+            type="button"
+            onClick={() => setNavigatorOpen((prev) => !prev)}
+            aria-expanded={navigatorOpen}
+            aria-controls="question-navigator-panel"
+            className="rounded border border-border px-3 py-2 text-left text-xs lg:hidden dark:border-border-dark"
+          >
+            {navigatorOpen ? "문제 네비게이터 접기" : "문제 네비게이터 펼치기"}
+          </button>
+          <div id="question-navigator-panel" className={`flex-col gap-3 lg:flex ${navigatorOpen ? "flex" : "hidden"}`}>
+            <QuestionNavigatorGrid items={navigatorItems} onJump={goToIndex} />
+            <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 dark:border-border-dark dark:bg-surface-dark">
+              <button
+                type="button"
+                onClick={goNextUnseen}
+                disabled={progressSummary.unseen === 0}
+                className="rounded border border-border px-3 py-2 text-left text-xs disabled:opacity-40 dark:border-border-dark"
+              >
+                다음 미응답 문제로 이동
+              </button>
+              <button
+                type="button"
+                onClick={goNextHeld}
+                disabled={progressSummary.held === 0}
+                className="rounded border border-border px-3 py-2 text-left text-xs disabled:opacity-40 dark:border-border-dark"
+              >
+                다음 보류 문제로 이동
+              </button>
+              <button
+                type="button"
+                onClick={goNextFlagged}
+                disabled={progressSummary.flagged === 0}
+                className="rounded border border-border px-3 py-2 text-left text-xs disabled:opacity-40 dark:border-border-dark"
+              >
+                다음 다시 볼 문제로 이동
+              </button>
+            </div>
           </div>
         </div>
       </div>

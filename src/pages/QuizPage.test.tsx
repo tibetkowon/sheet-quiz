@@ -110,6 +110,22 @@ describe("QuizPage", () => {
     await waitFor(() => expect(screen.getByText("문제 2")).toBeInTheDocument());
   });
 
+  it("shows a collapse toggle for the question navigator that starts expanded", async () => {
+    await saveAttempt(makeAttempt([makeQuestion("q1", 1), makeQuestion("q2", 2), makeQuestion("q3", 3)]));
+
+    renderQuiz("attempt-1");
+    await waitFor(() => screen.getByText("문제 1"));
+
+    const toggle = await screen.findByRole("button", { name: "문제 네비게이터 접기" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    await userEvent.click(toggle);
+    expect(await screen.findByRole("button", { name: "문제 네비게이터 펼치기" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+  });
+
   it("shows a not-found message when the attempt id doesn't exist", async () => {
     renderQuiz("missing-attempt");
 

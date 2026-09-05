@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ProgressBar } from "./ProgressBar";
 
@@ -19,5 +19,13 @@ describe("ProgressBar", () => {
     const { container } = render(<ProgressBar percent={NaN} />);
     const fill = container.querySelector(".bg-accent") as HTMLElement;
     expect(fill.style.width).toBe("0%");
+  });
+
+  it("exposes progressbar ARIA attributes for screen readers", () => {
+    render(<ProgressBar percent={40} />);
+    const bar = screen.getByRole("progressbar");
+    expect(bar).toHaveAttribute("aria-valuenow", "40");
+    expect(bar).toHaveAttribute("aria-valuemin", "0");
+    expect(bar).toHaveAttribute("aria-valuemax", "100");
   });
 });
