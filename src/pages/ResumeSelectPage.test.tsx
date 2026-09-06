@@ -6,6 +6,8 @@ import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import type { StudyAttempt } from "../types/studyAttempt";
 import type { Question } from "../types/question";
 import ResumeSelectPage from "./ResumeSelectPage";
+import { getDb } from "../storage/db";
+import { selectSingleAnswer, submitAttempt } from "../quiz/attemptActions";
 
 function makeAttempt(): StudyAttempt {
   return {
@@ -86,7 +88,8 @@ function renderResume(id: string) {
 
 describe("ResumeSelectPage", () => {
   beforeEach(async () => {
-    indexedDB.deleteDatabase("sheet-quiz");
+    const db = await getDb();
+    await db.clear("attempts");
   });
 
   it("shows progress so far and navigates to the quiz on 이어서 풀기", async () => {
@@ -111,6 +114,44 @@ describe("ResumeSelectPage", () => {
     const reset = await getAttempt("attempt-1");
     expect(reset?.progress.every((p) => p.status === "UNSEEN")).toBe(true);
     expect(reset?.lastViewedIndex).toBe(0);
+  });
+
+  it("제출된 Sheet를 재시작한 뒤 자동저장과 최초 제출이 정상 동작합니다", async () => {
+    const original = makeAttempt();
+    const result = {
+      scorePercent: 50,
+      correctCount: 1,
+      incorrectCount: 0,
+      unansweredCount: 1,
+      categoryStats: [],
+      difficultyStats: [],
+    };
+    const submitted = submitAttempt(original, result);
+    await saveAttempt(original);
+    await saveAttempt(submitted);
+    expect(await getAttempt(original.id)).toEqual(submitted);
+    renderResume(original.id);
+
+    await userEvent.click(await screen.findByRole("button", { name: "처음부터 다시 풀기" }));
+
+    await screen.findByText("퀴즈 화면");
+    const reset = await getAttempt(original.id);
+    expect(reset).toBeDefined();
+    expect(reset?.result).toBeUndefined();
+    expect(reset?.submittedAt).toBeUndefined();
+    expect(reset?.lastViewedIndex).toBe(0);
+    expect(reset?.questionSnapshot).toEqual(original.questionSnapshot);
+    expect(reset?.progress.every((p) =>
+      p.status === "UNSEEN" && p.selectedAnswers.length === 0 && !p.reviewMarked,
+    )).toBe(true);
+
+    const answered = selectSingleAnswer(reset!, "q1", "B");
+    await saveAttempt(answered);
+    expect(await getAttempt(original.id)).toEqual(answered);
+    const resubmitted = submitAttempt(answered, result);
+    await saveAttempt(resubmitted);
+    await saveAttempt(answered);
+    expect(await getAttempt(original.id)).toEqual(resubmitted);
   });
 
   it("shows a not-found message when the attempt id doesn't exist", async () => {

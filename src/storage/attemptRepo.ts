@@ -1,11 +1,20 @@
 import { getDb } from "./db";
 import type { StudyAttempt } from "../types/studyAttempt";
 
-export async function saveAttempt(attempt: StudyAttempt): Promise<void> {
+export async function saveAttempt(
+  attempt: StudyAttempt,
+  options: { allowSubmittedOverwrite?: boolean } = {},
+): Promise<void> {
   const db = await getDb();
   const tx = db.transaction("attempts", "readwrite");
   const existing = await tx.store.get(attempt.id);
-  if (!existing || (existing.result == null && existing.submittedAt == null)) {
+  if (
+    options.allowSubmittedOverwrite ||
+    attempt.result != null ||
+    attempt.submittedAt != null ||
+    !existing ||
+    (existing.result == null && existing.submittedAt == null)
+  ) {
     await tx.store.put(attempt);
   }
   await tx.done;

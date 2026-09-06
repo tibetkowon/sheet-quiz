@@ -96,7 +96,7 @@ describe("attemptRepo", () => {
   it("does not throw when deleting an id that does not exist", async () => {
     await expect(deleteAttempt("missing")).resolves.toBeUndefined();
   });
-  it.each(["result", "submittedAt"] as const)("이미 %s가 있는 기록은 자동저장과 재제출로 덮어쓰지 않습니다", async (field) => {
+  it.each(["result", "submittedAt"] as const)("이미 %s가 있는 기록은 지연된 자동저장으로 덮어쓰지 않습니다", async (field) => {
     const submitted = makeAttempt({
       [field]: field === "result"
         ? { scorePercent: 100, correctCount: 1, incorrectCount: 0, unansweredCount: 0, categoryStats: [], difficultyStats: [] }
@@ -105,8 +105,27 @@ describe("attemptRepo", () => {
     await saveAttempt(submitted);
     await Promise.all([
       saveAttempt(makeAttempt({ lastViewedIndex: 99 })),
-      saveAttempt(makeAttempt({ submittedAt: "2026-09-07T00:00:00.000Z" })),
+      saveAttempt(makeAttempt({ lastViewedIndex: 4 })),
     ]);
+    expect(await getAttempt(submitted.id)).toEqual(submitted);
+  });
+
+  it.each(["result", "submittedAt"] as const)("이미 제출된 기록 위에 %s가 있는 새 제출을 저장합니다", async (field) => {
+    const existing = makeAttempt({
+      submittedAt: "2026-09-06T00:00:00.000Z",
+      result: { scorePercent: 0, correctCount: 0, incorrectCount: 1, unansweredCount: 0, categoryStats: [], difficultyStats: [] },
+    });
+    await saveAttempt(existing);
+    const submitted = makeAttempt({
+      lastViewedIndex: 1,
+      progress: [{ questionId: "q1", selectedAnswers: ["A"], status: "ANSWERED", reviewMarked: false, updatedAt: "2026-09-07T00:00:00.000Z" }],
+      [field]: field === "result"
+        ? { scorePercent: 100, correctCount: 1, incorrectCount: 0, unansweredCount: 0, categoryStats: [], difficultyStats: [] }
+        : "2026-09-07T00:00:00.000Z",
+    });
+    await saveAttempt(submitted);
+    expect(await getAttempt(submitted.id)).toEqual(submitted);
+    await saveAttempt(makeAttempt({ lastViewedIndex: 99 }));
     expect(await getAttempt(submitted.id)).toEqual(submitted);
   });
 

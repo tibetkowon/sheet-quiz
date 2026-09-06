@@ -4,6 +4,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { saveAttempt } from "../storage/attemptRepo";
+import { getDb } from "../storage/db";
 import { computeStudyResult } from "../quiz/grading";
 import type { StudyAttempt } from "../types/studyAttempt";
 import type { Question } from "../types/question";
@@ -79,7 +80,8 @@ function renderResults(id: string) {
 
 describe("ResultsPage", () => {
   beforeEach(async () => {
-    indexedDB.deleteDatabase("sheet-quiz");
+    const db = await getDb();
+    await db.clear("attempts");
   });
 
   it("shows the score, correct/total, and flagged counts", async () => {

@@ -63,6 +63,8 @@ export function moveToIndex(attempt: StudyAttempt, index: number): StudyAttempt 
 export function restartAttempt(attempt: StudyAttempt): StudyAttempt {
   return {
     ...attempt,
+    result: undefined,
+    submittedAt: undefined,
     progress: attempt.progress.map((p) => ({
       questionId: p.questionId,
       selectedAnswers: [],

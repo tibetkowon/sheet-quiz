@@ -47,7 +47,7 @@ export default function ResumeSelectPage() {
   const restart = async () => {
     if (!attemptId) return;
     setRestarting(true);
-    await saveAttempt(restartAttempt(attempt));
+    await saveAttempt(restartAttempt(attempt), { allowSubmittedOverwrite: true });
     navigate(`/quiz/${attemptId}`);
   };
 

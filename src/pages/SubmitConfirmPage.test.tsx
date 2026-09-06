@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
+import { getDb } from "../storage/db";
 import type { StudyAttempt } from "../types/studyAttempt";
 import type { Question } from "../types/question";
 import SubmitConfirmPage from "./SubmitConfirmPage";
@@ -66,7 +67,8 @@ function renderConfirm(id: string) {
 
 describe("SubmitConfirmPage", () => {
   beforeEach(async () => {
-    indexedDB.deleteDatabase("sheet-quiz");
+    const db = await getDb();
+    await db.clear("attempts");
   });
 
   it("shows the current progress counts", async () => {
