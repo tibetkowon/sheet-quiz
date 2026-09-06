@@ -165,23 +165,27 @@ critical 또는 major 문제가 있으면 Codex가 수정한다.
 3. Quiz-taking UI, single/multiple answers, question status, IndexedDB autosave, resume — **완료**
 4. Final submission, grading, results, per-option explanations, wrong-answer management — **완료**
 5. Markdown/JSON export, settings/data deletion, error handling, mobile/accessibility — **완료**
-6. Test hardening, independent review, README/docs, production build verification — **시작 전, 사용자 승인 대기**
+6. Test hardening, independent review, README/docs, production build verification — **완료**
 
 ## 현재 상태
 
-2026-09-06 기준:
+2026-09-07 기준:
 
-- Phase 1–5 구현 완료
-- Phase 1–5 리뷰 완료
+- Phase 1–6 구현 완료
+- Phase 1–6 리뷰 완료 (Phase 6는 저장소 전체 대상 독립 리뷰 — 9건의 major
+  발견, 전부 수정. 5건의 minor는 기록만 하고 의도적으로 미수정 — 상세는
+  `docs/superpowers/plans/2026-09-06-phase6-test-hardening-review-docs-build.md`
+  참고)
 - 관련 변경사항 commit 완료
-- unit test 196개 통과
+- unit test 269개 통과
 - `tsc --noEmit` 통과
 - ESLint 통과
   - 기존 Fast Refresh warning 3개만 존재
-- `pnpm build` 통과
+- `pnpm build` 통과, `pnpm preview`로 프로덕션 번들 수동 구동 검증 완료
+  (favicon.ico 404는 minor로 기록, 미수정)
 - Playwright E2E 전체 통과
-- local `main`은 `origin/main`보다 79 commits 앞서 있음
-- 아직 remote push 하지 않음
+- `README.md` 작성 완료(설치/개발/배포 절차)
+- local `main`은 `origin/main`보다 앞서 있음 — 아직 remote push 하지 않음
 
 세부 구현 이력은 각 Phase plan을 확인한다.
 
@@ -212,3 +216,29 @@ dependency array를 실제로 exhaustive하게 수정한다.
 ```ts
 const db = await getDb();
 await db.clear("<storeName>");
+```
+
+### `codex-auto` 실행 특이사항 (2026-09-06/07 Phase 6 Task 2에서 확인)
+
+- **호출 사이에 커밋되지 않은 변경은 유지되지 않는다.** `codex-auto` 실행은
+  매번 clean한 git 상태를 기준으로 동작하는 것으로 보인다. 한 번의 호출이
+  patch를 만들었지만 최종 검증에 실패해 커밋하지 않고 넘어가면, 다음 호출은
+  그 결과를 이어받지 못하고 사실상 처음부터 다시 시도한다. 따라서 여러 단계로
+  나눠 위임할 때는 **PASS를 받을 때마다 바로 커밋**해서 진행 상황을
+  보존해야 한다.
+- **patch가 파일 수/변경량이 많을수록 "corrupt patch" 오류로 적용 실패할
+  확률이 높아진다.** 특정 hunk의 헤더(`@@ -a,b +c,d @@`)만 있고 본문 줄이
+  없는 형태로 생성되는 결함이 반복 관찰됐다. 큰 리뷰·수정 작업은 처음부터
+  작은 파일 그룹 단위로 쪼개 위임하는 편이 성공률이 높다.
+- **최종 요약(compact 결과)이 실제 diff와 다를 수 있다.** 예: "QuizContext에
+  handler를 추가했다"고 보고했지만 실제로는 해당 파일이 전혀 수정되지 않은
+  사례가 있었다. `codex-auto`가 `PASS`를 반환해도, 커밋 전에 `git diff
+  --stat`으로 보고된 파일 목록과 실제 변경 파일 목록이 일치하는지 한 번은
+  확인한다(전체 diff를 정독하라는 뜻은 아니다 — 파일 목록/개수 수준의
+  대조로 충분하다).
+- **Codex 사용량(quota)은 계정 단위로 공유된다.** 같은 계정으로 실행 중인
+  다른 프로젝트나 다른 Claude Code 세션(예: 별도 tmux/remote-control
+  세션)이 동시에 `codex-auto`를 쓰면 quota를 나눠 쓰게 되어 실행이 중간에
+  끊기거나 즉시 usage-limit 오류가 날 수 있다. 이런 세션이 이 저장소를
+  동시에 건드리고 있다면(예: 같은 커밋 메시지 패턴이 낯설게 보이면) 먼저
+  `git log`로 자신이 만들지 않은 커밋이 없는지 확인한다.
