@@ -39,20 +39,28 @@ export function AuthProvider({
   const [email, setEmail] = useState<string | null>(null);
   const [error, setError] = useState<GoogleAuthError | null>(null);
   const tokenRef = useRef<TokenResponse | null>(null);
+  const generationRef = useRef(0);
 
   const connect = useCallback(async (): Promise<boolean> => {
+    const generation = ++generationRef.current;
+    tokenRef.current = null;
+    setGoogleUserId(null);
+    setEmail(null);
     setStatus("connecting");
     setError(null);
     try {
       const client = createGoogleIdentityClient(clientId);
       const token = await client.requestAccessToken();
-      tokenRef.current = token;
+      if (generation !== generationRef.current) return false;
       const info = await fetchGoogleUserInfo(token.accessToken);
+      if (generation !== generationRef.current) return false;
+      tokenRef.current = token;
       setGoogleUserId(info.googleUserId);
       setEmail(info.email);
       setStatus("connected");
       return true;
     } catch (err) {
+      if (generation !== generationRef.current) return false;
       tokenRef.current = null;
       setError(
         err instanceof GoogleAuthError
@@ -65,6 +73,8 @@ export function AuthProvider({
   }, [clientId]);
 
   const disconnect = useCallback(() => {
+    generationRef.current += 1;
+    setError(null);
     tokenRef.current = null;
     setGoogleUserId(null);
     setEmail(null);
@@ -72,6 +82,7 @@ export function AuthProvider({
   }, []);
 
   const markExpired = useCallback(() => {
+    generationRef.current += 1;
     tokenRef.current = null;
     setStatus("expired");
   }, []);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useLatestRequest } from "../app/useLatestRequest";
 import { deleteAttempt, listAttemptsByUser } from "../storage/attemptRepo";
 import { summarizeProgress } from "../quiz/navigation";
 import type { StudyAttempt } from "../types/studyAttempt";
@@ -10,14 +11,19 @@ export default function HistoryPage() {
   const navigate = useNavigate();
   const [attempts, setAttempts] = useState<StudyAttempt[] | null>(null);
 
+  const beginRequest = useLatestRequest(googleUserId);
+
   const load = useCallback(() => {
+    const isLatest = beginRequest();
     if (!googleUserId) return;
     listAttemptsByUser(googleUserId).then((found) => {
+      if (!isLatest()) return;
       setAttempts(found.slice().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
     });
-  }, [googleUserId]);
+  }, [googleUserId, beginRequest]);
 
   useEffect(() => {
+    setAttempts(null);
     load();
   }, [load]);
 
@@ -40,8 +46,9 @@ export default function HistoryPage() {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("이 풀이 기록을 삭제할까요? 되돌릴 수 없습니다.")) return;
+    const isLatest = beginRequest();
     await deleteAttempt(id);
-    load();
+    if (isLatest()) load();
   };
 
   return (

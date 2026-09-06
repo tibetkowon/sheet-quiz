@@ -6,6 +6,7 @@ import { computeStudyResult, gradeAttempt } from "../quiz/grading";
 import { buildResultJson, buildResultMarkdown, downloadTextFile } from "../quiz/export";
 import { ProgressBar } from "../components/ProgressBar";
 import type { StudyAttempt } from "../types/studyAttempt";
+import { clampAttemptIndex } from "../quiz/clampAttemptIndex";
 
 type ResultFilter = "all" | "correct" | "incorrect" | "unanswered" | "flagged";
 
@@ -29,7 +30,7 @@ export default function ResultsPage() {
         setState("not-found");
         return;
       }
-      setAttempt(found);
+      setAttempt(clampAttemptIndex(found));
       setState("ready");
     });
   }, [attemptId]);

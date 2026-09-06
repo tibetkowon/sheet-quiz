@@ -172,4 +172,21 @@ describe("QuizPage", () => {
     const saved = await getAttempt("attempt-1");
     expect(saved?.progress.find((p) => p.questionId === "q1")?.selectedAnswers).toEqual(["A"]);
   });
+  it.each([[-10, 1], [99, 2], [NaN, 1], [1.5, 2]])(
+    "저장된 인덱스 %s를 유효 범위로 보정해 문제 %s를 표시합니다",
+    async (index, questionNumber) => {
+      const attempt = makeAttempt([makeQuestion("q1", 1), makeQuestion("q2", 2)]);
+      await saveAttempt({ ...attempt, lastViewedIndex: index });
+      const view = renderQuiz(attempt.id);
+      await screen.findByText(`문제 ${questionNumber}`);
+      await userEvent.click(screen.getByText("보기 B"));
+      view.unmount();
+      await waitFor(async () => {
+        const saved = await getAttempt(attempt.id);
+        expect(saved?.lastViewedIndex).toBe(questionNumber - 1);
+        expect(saved?.progress[questionNumber - 1].selectedAnswers).toEqual(["B"]);
+      });
+    },
+  );
+
 });

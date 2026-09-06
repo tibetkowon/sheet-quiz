@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useLatestRequest } from "../app/useLatestRequest";
 import { DriveApiError } from "../drive/driveApiError";
 import { DriveFile, DriveFolder, listChildFolders, listSheetFiles } from "../drive/driveClient";
 import { getTopFolder, TopFolderSelection } from "../storage/topFolderRepo";
@@ -28,20 +29,30 @@ export default function DriveBrowsePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const beginTopFolderRequest = useLatestRequest(googleUserId);
+
   useEffect(() => {
+    const isLatest = beginTopFolderRequest();
+    setTopFolder(undefined);
     if (!googleUserId) return;
     void getTopFolder(googleUserId)
-      .then((saved) => setTopFolder(saved ?? null))
+      .then((saved) => {
+        if (isLatest()) setTopFolder(saved ?? null);
+      })
       .catch(() => {
+        if (!isLatest()) return;
         setTopFolder(null);
         setError("저장된 최상위 폴더를 불러오지 못했습니다.");
       });
-  }, [googleUserId]);
+  }, [googleUserId, beginTopFolderRequest]);
 
   const currentFolderId = folderId ?? topFolder?.folderId ?? null;
   const trail = (location.state as LocationState | null)?.trail ?? [];
 
+  const beginRequest = useLatestRequest(JSON.stringify([currentFolderId, googleUserId, status]));
+
   const load = useCallback(async () => {
+    const isLatest = beginRequest();
     if (!currentFolderId) return;
     const accessToken = getAccessToken();
     if (!accessToken) {
@@ -58,15 +69,17 @@ export default function DriveBrowsePage() {
         listChildFolders(accessToken, currentFolderId),
         listSheetFiles(accessToken, currentFolderId),
       ]);
+      if (!isLatest()) return;
       setFolders(folderResult);
       setFiles(fileResult);
     } catch (err) {
+      if (!isLatest()) return;
       if (err instanceof DriveApiError && err.status === 401) markExpired();
       setError(err instanceof DriveApiError ? err.message : "폴더 내용을 불러오지 못했습니다.");
     } finally {
-      setLoading(false);
+      if (isLatest()) setLoading(false);
     }
-  }, [currentFolderId, getAccessToken, markExpired]);
+  }, [currentFolderId, getAccessToken, markExpired, beginRequest]);
 
   useEffect(() => {
     void load();

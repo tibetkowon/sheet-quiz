@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useLatestRequest } from "../app/useLatestRequest";
 import { DriveApiError } from "../drive/driveApiError";
 import { DriveFolder, listChildFolders, listRootFolders } from "../drive/driveClient";
 import { saveTopFolder } from "../storage/topFolderRepo";
@@ -13,7 +14,7 @@ interface FolderLevel {
 }
 
 export default function TopFolderSelectPage() {
-  const { getAccessToken, googleUserId, markExpired } = useAuth();
+  const { getAccessToken, googleUserId, markExpired, status } = useAuth();
   const navigate = useNavigate();
   const [path, setPath] = useState<FolderLevel[]>([{ id: "root", name: "내 드라이브" }]);
   const [folders, setFolders] = useState<DriveFolder[]>([]);
@@ -23,7 +24,12 @@ export default function TopFolderSelectPage() {
 
   const currentFolder = path[path.length - 1];
 
+  const requestScope = JSON.stringify([currentFolder.id, googleUserId, status]);
+  const beginRequest = useLatestRequest(requestScope);
+  const beginSelection = useLatestRequest(requestScope);
+
   const load = useCallback(async () => {
+    const isLatest = beginRequest();
     const accessToken = getAccessToken();
     if (!accessToken) {
       setLoading(false);
@@ -37,16 +43,18 @@ export default function TopFolderSelectPage() {
         currentFolder.id === "root"
           ? await listRootFolders(accessToken)
           : await listChildFolders(accessToken, currentFolder.id);
+      if (!isLatest()) return;
       setFolders(result);
     } catch (err) {
+      if (!isLatest()) return;
       if (err instanceof DriveApiError && err.status === 401) {
         markExpired();
       }
       setError(err instanceof DriveApiError ? err.message : "Drive 폴더 목록을 불러오지 못했습니다.");
     } finally {
-      setLoading(false);
+      if (isLatest()) setLoading(false);
     }
-  }, [currentFolder.id, getAccessToken, markExpired]);
+  }, [currentFolder.id, getAccessToken, markExpired, beginRequest]);
 
   useEffect(() => {
     void load();
@@ -59,6 +67,7 @@ export default function TopFolderSelectPage() {
 
   const selectAsTopFolder = async () => {
     if (!googleUserId) return;
+    const isLatest = beginSelection();
     try {
       await saveTopFolder({
         googleUserId,
@@ -66,8 +75,9 @@ export default function TopFolderSelectPage() {
         folderName: currentFolder.name,
         updatedAt: new Date().toISOString(),
       });
-      navigate("/folders");
+      if (isLatest()) navigate("/folders");
     } catch {
+      if (!isLatest()) return;
       setError("최상위 폴더 저장에 실패했습니다. 다시 시도해주세요.");
     }
   };

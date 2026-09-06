@@ -4,6 +4,7 @@ import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import { restartAttempt } from "../quiz/attemptActions";
 import { summarizeProgress } from "../quiz/navigation";
 import type { StudyAttempt } from "../types/studyAttempt";
+import { clampAttemptIndex } from "../quiz/clampAttemptIndex";
 
 export default function ResumeSelectPage() {
   const { attemptId } = useParams<{ attemptId: string }>();
@@ -19,7 +20,7 @@ export default function ResumeSelectPage() {
         setState("not-found");
         return;
       }
-      setAttempt(found);
+      setAttempt(clampAttemptIndex(found));
       setState("ready");
     });
   }, [attemptId]);

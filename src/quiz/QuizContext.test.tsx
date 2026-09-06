@@ -143,4 +143,51 @@ describe("QuizContext", () => {
     expect(screen.getByTestId("autosave-status")).toHaveTextContent("saved");
     vi.useRealTimers();
   });
+  it.each(["hidden", "beforeunload", "unmount"])("%s에서 디바운스 대기 중 최신 답변을 저장합니다", async (event) => {
+    vi.useFakeTimers();
+    const save = vi.spyOn(attemptRepo, "saveAttempt").mockResolvedValue();
+    const view = render(<QuizProvider initialAttempt={makeAttempt([makeQuestion("q1", 1)])}><Probe /></QuizProvider>);
+    try {
+      await act(async () => { screen.getByText("select-A").click(); });
+      await act(async () => { screen.getByText("select-B").click(); });
+      expect(save).not.toHaveBeenCalled();
+      await act(async () => {
+        if (event === "hidden") {
+          vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+          document.dispatchEvent(new Event("visibilitychange"));
+        } else if (event === "beforeunload") {
+          window.dispatchEvent(new Event("beforeunload"));
+        } else {
+          view.unmount();
+        }
+      });
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(save.mock.calls[0][0].progress[0].selectedAnswers).toEqual(["B"]);
+      await act(async () => { await vi.advanceTimersByTimeAsync(700); });
+      expect(save).toHaveBeenCalledTimes(1);
+    } finally {
+      view.unmount();
+      vi.useRealTimers();
+    }
+  });
+
+  it("이전 저장 완료는 최신 답변의 저장 대기 상태를 바꾸지 않습니다", async () => {
+    vi.useFakeTimers();
+    let finish!: () => void;
+    vi.spyOn(attemptRepo, "saveAttempt").mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve; }))
+      .mockResolvedValue();
+    const view = render(<QuizProvider initialAttempt={makeAttempt([makeQuestion("q1", 1)])}><Probe /></QuizProvider>);
+    try {
+      await act(async () => { await vi.advanceTimersByTimeAsync(600); });
+      await act(async () => { screen.getByText("select-B").click(); });
+      await act(async () => { finish(); });
+      expect(screen.getByTestId("autosave-status")).toHaveTextContent("saving");
+      await act(async () => { await vi.advanceTimersByTimeAsync(600); });
+      expect(screen.getByTestId("autosave-status")).toHaveTextContent("saved");
+    } finally {
+      view.unmount();
+      vi.useRealTimers();
+    }
+  });
+
 });

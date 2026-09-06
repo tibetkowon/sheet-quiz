@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useLatestRequest } from "../app/useLatestRequest";
 import { getSheetValues, SheetsApiError } from "../sheets/sheetsClient";
 import { parseSheetRows } from "../sheets/parseQuestions";
 import { validateQuestions } from "../sheets/validateQuestions";
@@ -24,7 +25,7 @@ interface LocationState {
 }
 
 export default function SheetValidationPage() {
-  const { getAccessToken, markExpired, googleUserId } = useAuth();
+  const { getAccessToken, markExpired, googleUserId, status: authStatus } = useAuth();
   const { spreadsheetId } = useParams<{ spreadsheetId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -40,7 +41,11 @@ export default function SheetValidationPage() {
   const [starting, setStarting] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const beginRequest = useLatestRequest(JSON.stringify([location.key, googleUserId, authStatus]));
+
   const load = useCallback(() => {
+    const isLatest = beginRequest();
+    setStarting(false);
     if (!spreadsheetId) return;
     if (!tabTitle) {
       setStatus("error");
@@ -57,6 +62,7 @@ export default function SheetValidationPage() {
     setLoadError(null);
     getSheetValues(accessToken, spreadsheetId, tabTitle)
       .then((rawRows) => {
+        if (!isLatest()) return;
         const { headerIndex, rows } = parseSheetRows(rawRows);
         const result = validateQuestions(headerIndex, rows, {
           sheetName: tabTitle,
@@ -68,11 +74,12 @@ export default function SheetValidationPage() {
         setStatus("done");
       })
       .catch((err) => {
+        if (!isLatest()) return;
         if (err instanceof SheetsApiError && err.status === 401) markExpired();
         setStatus("error");
         setLoadError(err instanceof SheetsApiError ? err.message : "Sheet 데이터를 불러오지 못했습니다.");
       });
-  }, [spreadsheetId, tabTitle, tabId, getAccessToken, markExpired]);
+  }, [spreadsheetId, tabTitle, tabId, getAccessToken, markExpired, beginRequest]);
 
   useEffect(() => {
     load();
@@ -80,11 +87,13 @@ export default function SheetValidationPage() {
 
   const startQuiz = useCallback(async () => {
     if (!spreadsheetId || !googleUserId) return;
+    const isLatest = beginRequest();
     setStarting(true);
     try {
       const fingerprint = createSetFingerprint(questions);
       const attemptId = createAttemptId(googleUserId, spreadsheetId, tabId, fingerprint);
       const existing = await getAttempt(attemptId);
+      if (!isLatest()) return;
       if (existing) {
         const hasProgress = existing.progress.some((p) => p.status !== "UNSEEN");
         navigate(hasProgress ? `/quiz/${attemptId}/resume` : `/quiz/${attemptId}`);
@@ -109,11 +118,13 @@ export default function SheetValidationPage() {
         questionSnapshot: questions,
       };
       await saveAttempt(attempt);
+      if (!isLatest()) return;
       navigate(`/quiz/${attemptId}`);
     } finally {
-      setStarting(false);
+      if (isLatest()) setStarting(false);
     }
   }, [
+    beginRequest,
     spreadsheetId,
     googleUserId,
     questions,

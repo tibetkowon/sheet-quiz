@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useLatestRequest } from "../app/useLatestRequest";
 import { listSheetTabs, pickQuestionTab, SheetsApiError, SheetTab } from "../sheets/sheetsClient";
 import { ErrorBanner } from "../components/ErrorBanner";
 
@@ -12,7 +13,7 @@ interface LocationState {
 }
 
 export default function SheetTabSelectPage() {
-  const { getAccessToken, markExpired } = useAuth();
+  const { getAccessToken, markExpired, googleUserId, status } = useAuth();
   const { spreadsheetId } = useParams<{ spreadsheetId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -25,7 +26,12 @@ export default function SheetTabSelectPage() {
   const [tabs, setTabs] = useState<SheetTab[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const beginRequest = useLatestRequest(JSON.stringify([location.key, googleUserId, status]));
+
   useEffect(() => {
+    const isLatest = beginRequest();
+    setTabs(null);
+    setError(null);
     if (!spreadsheetId) return;
     const accessToken = getAccessToken();
     if (!accessToken) {
@@ -34,6 +40,7 @@ export default function SheetTabSelectPage() {
     }
     listSheetTabs(accessToken, spreadsheetId)
       .then((result) => {
+        if (!isLatest()) return;
         setTabs(result);
         const { autoSelected } = pickQuestionTab(result);
         if (autoSelected) {
@@ -51,10 +58,12 @@ export default function SheetTabSelectPage() {
         }
       })
       .catch((err) => {
+        if (!isLatest()) return;
         if (err instanceof SheetsApiError && err.status === 401) markExpired();
         setError(err instanceof SheetsApiError ? err.message : "Sheet 탭 목록을 불러오지 못했습니다.");
       });
   }, [
+    beginRequest,
     spreadsheetId,
     getAccessToken,
     markExpired,

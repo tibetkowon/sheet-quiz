@@ -96,4 +96,25 @@ describe("attemptRepo", () => {
   it("does not throw when deleting an id that does not exist", async () => {
     await expect(deleteAttempt("missing")).resolves.toBeUndefined();
   });
+  it.each(["result", "submittedAt"] as const)("이미 %s가 있는 기록은 자동저장과 재제출로 덮어쓰지 않습니다", async (field) => {
+    const submitted = makeAttempt({
+      [field]: field === "result"
+        ? { scorePercent: 100, correctCount: 1, incorrectCount: 0, unansweredCount: 0, categoryStats: [], difficultyStats: [] }
+        : "2026-09-06T00:00:00.000Z",
+    });
+    await saveAttempt(submitted);
+    await Promise.all([
+      saveAttempt(makeAttempt({ lastViewedIndex: 99 })),
+      saveAttempt(makeAttempt({ submittedAt: "2026-09-07T00:00:00.000Z" })),
+    ]);
+    expect(await getAttempt(submitted.id)).toEqual(submitted);
+  });
+
+  it("제출 트랜잭션 뒤에 시작된 지연 자동저장은 제출 완료를 보존합니다", async () => {
+    await saveAttempt(makeAttempt());
+    const submitted = makeAttempt({ submittedAt: "2026-09-06T00:00:00.000Z" });
+    await Promise.all([saveAttempt(submitted), saveAttempt(makeAttempt({ lastViewedIndex: 4 }))]);
+    expect(await getAttempt(submitted.id)).toEqual(submitted);
+  });
+
 });

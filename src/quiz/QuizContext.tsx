@@ -1,5 +1,5 @@
 // src/quiz/QuizContext.tsx
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { StudyAttempt } from "../types/studyAttempt";
 import type { Question } from "../types/question";
 import { createInitialProgress, QuestionProgress } from "../types/progress";
@@ -56,6 +56,22 @@ export function QuizProvider({
 }) {
   const [attempt, setAttempt] = useState(initialAttempt);
   const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>("idle");
+  const latestRef = useRef(attempt);
+  const pendingRef = useRef<StudyAttempt | null>(null);
+  const mountedRef = useRef(true);
+
+  const flush = useCallback(() => {
+    const pending = pendingRef.current;
+    if (!pending) return;
+    pendingRef.current = null;
+    void saveAttempt(pending).then(() => {
+      if (mountedRef.current && latestRef.current === pending) setAutosaveStatus("saved");
+    }).catch(() => {
+      if (latestRef.current !== pending) return;
+      pendingRef.current = pending;
+      if (mountedRef.current) setAutosaveStatus("error");
+    });
+  }, []);
 
   const questions = attempt.questionSnapshot ?? [];
   const currentIndex = attempt.lastViewedIndex;
@@ -72,15 +88,28 @@ export function QuizProvider({
     });
   }, [currentIndex]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    latestRef.current = attempt;
+    pendingRef.current = attempt;
     setAutosaveStatus("saving");
-    const timer = setTimeout(() => {
-      saveAttempt(attempt)
-        .then(() => setAutosaveStatus("saved"))
-        .catch(() => setAutosaveStatus("error"));
-    }, AUTOSAVE_DEBOUNCE_MS);
+    const timer = setTimeout(flush, AUTOSAVE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [attempt]);
+  }, [attempt, flush]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      mountedRef.current = false;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("beforeunload", flush);
+      flush();
+    };
+  }, [flush]);
 
   const value: QuizContextValue = {
     attempt,

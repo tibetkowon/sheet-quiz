@@ -5,6 +5,7 @@ import { submitAttempt } from "../quiz/attemptActions";
 import { computeStudyResult } from "../quiz/grading";
 import { summarizeProgress } from "../quiz/navigation";
 import type { StudyAttempt } from "../types/studyAttempt";
+import { clampAttemptIndex } from "../quiz/clampAttemptIndex";
 
 export default function SubmitConfirmPage() {
   const { attemptId } = useParams<{ attemptId: string }>();
@@ -20,7 +21,7 @@ export default function SubmitConfirmPage() {
         setState("not-found");
         return;
       }
-      setAttempt(found);
+      setAttempt(clampAttemptIndex(found));
       setState("ready");
     });
   }, [attemptId]);

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import type { StudyAttempt } from "../types/studyAttempt";
+import { clampAttemptIndex } from "../quiz/clampAttemptIndex";
 import { QuizProvider, useQuiz } from "../quiz/QuizContext";
 import { AutosaveIndicator } from "../components/AutosaveIndicator";
 import { ProgressBar } from "../components/ProgressBar";
@@ -21,7 +22,7 @@ export default function QuizPage() {
         setState("not-found");
         return;
       }
-      setAttempt(found);
+      setAttempt(clampAttemptIndex(found));
       setState("ready");
     });
   }, [attemptId]);
