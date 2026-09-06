@@ -24,6 +24,32 @@ function run(rows: string[][]) {
 }
 
 describe("validateQuestions", () => {
+  it.each(["toString", "constructor", "__proto__", "hasOwnProperty", "valueOf"])(
+    "상속된 속성 %s를 문제 유형으로 허용하지 않습니다",
+    (type) => {
+      const result = run([
+        ["1", "분류", "MEDIUM", type, "문제", "A", "B", "", "", "A", "해설"],
+      ]);
+      expect(result.questions).toEqual([]);
+      expect(result.issues).toEqual([
+        expect.objectContaining({ field: "question_type", severity: "error", rowNumber: 2 }),
+      ]);
+    },
+  );
+
+  it.each(["toString", "constructor", "__proto__", "hasOwnProperty", "valueOf"])(
+    "상속된 속성 %s는 난이도 경고와 기본값을 적용합니다",
+    (difficulty) => {
+      const result = run([
+        ["1", "분류", difficulty, "SINGLE", "문제", "A", "B", "", "", "A", "해설"],
+      ]);
+      expect(result.questions).toHaveLength(1);
+      expect(result.questions[0]).toMatchObject({ difficulty: "MEDIUM", type: "SINGLE" });
+      expect(result.issues).toEqual([
+        expect.objectContaining({ field: "difficulty", severity: "warning", rowNumber: 2 }),
+      ]);
+    },
+  );
 
   it.each(["NaN", "Infinity", "번호"])("숫자가 아닌 문제 번호 %s를 거부합니다", (number) => {
     const result = run([[number, "분류", "MEDIUM", "SINGLE", "문제", "A", "B", "", "", "A", "해설"]]);

@@ -77,6 +77,20 @@ describe("QuizPage", () => {
     expect(screen.getByText("보기 A")).toBeInTheDocument();
   });
 
+  it("모바일 하단 버튼 줄바꿈과 본문 하단 여백을 유지합니다", async () => {
+    await saveAttempt(makeAttempt([makeQuestion("q1", 1)]));
+    const { container } = renderQuiz("attempt-1");
+    const submit = await screen.findByRole("button", { name: "제출하기" });
+    const navigation = submit.parentElement;
+
+    expect(navigation).toHaveClass("fixed", "inset-x-0", "bottom-0", "flex", "flex-wrap");
+    expect(navigation?.querySelectorAll("button")).toHaveLength(5);
+    // jsdom은 레이아웃을 계산하지 않으므로 반응형 레이아웃 클래스를 확인합니다.
+    expect(container.querySelector(".grid")).toHaveClass("pb-64", "sm:pb-28");
+    expect(container.querySelector(".grid")).not.toHaveClass("pb-28");
+    expect(screen.getByRole("button", { name: "다시 볼 문제로 표시" })).toBeEnabled();
+  });
+
   it("selects an option and advances with 다음", async () => {
     await saveAttempt(makeAttempt([makeQuestion("q1", 1), makeQuestion("q2", 2)]));
 

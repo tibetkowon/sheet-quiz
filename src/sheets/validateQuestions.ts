@@ -198,7 +198,10 @@ export function validateQuestions(
       }
     }
 
-    const questionType = TYPE_MAP[v.question_type ?? ""];
+    const rawType = v.question_type ?? "";
+    const questionType = Object.prototype.hasOwnProperty.call(TYPE_MAP, rawType)
+      ? TYPE_MAP[rawType]
+      : undefined;
     if (!questionType) {
       rowIssues.push(
         issue(
@@ -254,7 +257,10 @@ export function validateQuestions(
       }
     }
 
-    let difficulty = DIFFICULTY_MAP[v.difficulty ?? ""];
+    const rawDifficulty = v.difficulty ?? "";
+    let difficulty = Object.prototype.hasOwnProperty.call(DIFFICULTY_MAP, rawDifficulty)
+      ? DIFFICULTY_MAP[rawDifficulty]
+      : undefined;
     if (!difficulty) {
       difficulty = "MEDIUM";
       rowIssues.push(

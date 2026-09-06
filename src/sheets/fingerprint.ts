@@ -19,6 +19,7 @@ export function createQuestionId(
 interface FingerprintQuestion {
   questionNumber: number;
   text: string;
+  scenario?: string;
   options: Array<{ key: string; text: string }>;
   correctAnswers: string[];
 }
@@ -31,6 +32,7 @@ export function createSetFingerprint(questions: FingerprintQuestion[]): string {
       [
         q.questionNumber,
         q.text,
+        ...(q.scenario ? [q.scenario] : []),
         q.options.map((o) => `${o.key}:${o.text}`).join("|"),
         q.correctAnswers.slice().sort().join(","),
       ].join(""),

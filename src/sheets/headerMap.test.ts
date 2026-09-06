@@ -2,6 +2,15 @@ import { describe, expect, it } from "vitest";
 import { buildHeaderIndex, REQUIRED_HEADER_KEYS } from "./headerMap";
 
 describe("buildHeaderIndex", () => {
+  it.each(["toString", "constructor", "__proto__", "hasOwnProperty", "valueOf"])(
+    "상속된 속성 %s를 헤더 별칭으로 허용하지 않습니다",
+    (header) => {
+      expect(buildHeaderIndex(["번호", ` ${header} `, "문제"])).toEqual({
+        question_no: 0,
+        question: 2,
+      });
+    },
+  );
 
   it("같은 필드의 별칭이 중복되면 첫 번째 열을 사용합니다", () => {
     expect(buildHeaderIndex(["문제", "question", "영역", "분류", "category"])).toEqual({

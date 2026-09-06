@@ -65,6 +65,30 @@ describe("createSetFingerprint", () => {
     },
   ];
 
+  it("상황이 없는 세트는 기존 fingerprint를 유지합니다", () => {
+    expect(createSetFingerprint(base)).toBe("7e01acde");
+    expect(createSetFingerprint(base.map((q) => ({ ...q, scenario: "" })))).toBe("7e01acde");
+    expect(createSetFingerprint(base.map((q) => ({ ...q, scenario: undefined })))).toBe(
+      "7e01acde",
+    );
+  });
+
+  it("상황 추가와 변경을 반영하고 제거하면 기존 fingerprint로 돌아갑니다", () => {
+    const original = createSetFingerprint(base);
+    const withScenario = [{ ...base[0], scenario: "첫 번째 상황" }, base[1]];
+    const fingerprint = createSetFingerprint(withScenario);
+    expect(fingerprint).not.toBe(original);
+    expect(createSetFingerprint([{ ...base[0], scenario: "다른 상황" }, base[1]])).not.toBe(
+      fingerprint,
+    );
+    expect(createSetFingerprint([base[0], { ...base[1], scenario: "첫 번째 상황" }])).not.toBe(
+      fingerprint,
+    );
+    expect(createSetFingerprint([...withScenario].reverse())).toBe(fingerprint);
+    expect(createSetFingerprint([{ ...withScenario[0], scenario: "" }, base[1]])).toBe(original);
+    expect(withScenario[0]).toHaveProperty("scenario", "첫 번째 상황");
+  });
+
   it("is stable regardless of question array order", () => {
     const forward = createSetFingerprint(base);
     const reversed = createSetFingerprint([...base].reverse());

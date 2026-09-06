@@ -73,7 +73,9 @@ export const REQUIRED_HEADER_KEYS = [
 export function buildHeaderIndex(headerRow: string[]): Record<string, number> {
   const index: Record<string, number> = {};
   headerRow.forEach((raw, i) => {
-    const key = HEADER_ALIASES[raw.trim()];
+    const alias = raw.trim();
+    if (!Object.prototype.hasOwnProperty.call(HEADER_ALIASES, alias)) return;
+    const key = HEADER_ALIASES[alias];
     if (key && !(key in index)) {
       index[key] = i;
     }

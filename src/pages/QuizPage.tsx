@@ -100,7 +100,7 @@ function QuizPageContent() {
         <AutosaveIndicator status={autosaveStatus} />
       </div>
 
-      <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-7 px-8 py-7 pb-28 lg:grid-cols-[1fr_300px]">
+      <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-7 px-8 py-7 pb-64 sm:pb-28 lg:grid-cols-[1fr_300px]">
         <div className="min-w-0">
           <div className="mb-4 flex items-center gap-2">
             <span className="font-mono text-[13px] text-text-secondary dark:text-text-dark-secondary">
@@ -217,7 +217,7 @@ function QuizPageContent() {
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 flex justify-center gap-2.5 border-t border-border bg-surface px-8 py-3.5 dark:border-border-dark dark:bg-surface-dark">
+      <div className="fixed inset-x-0 bottom-0 flex flex-wrap justify-center gap-2.5 border-t border-border bg-surface px-8 py-3.5 dark:border-border-dark dark:bg-surface-dark">
         <button
           type="button"
           onClick={goPrev}
