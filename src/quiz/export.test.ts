@@ -63,6 +63,23 @@ function makeAttempt(overrides: Partial<StudyAttempt> = {}): StudyAttempt {
 }
 
 describe("buildResultMarkdown", () => {
+
+  it("진행 기록과 제출 시각이 없으면 미응답과 미제출로 내보냅니다", () => {
+    const md = buildResultMarkdown(makeAttempt({ progress: [], submittedAt: undefined }), questions);
+    expect(md).toContain("점수: 0% (0/2)");
+    expect(md).toContain("오답: 0 · 미응답: 2");
+    expect(md).toContain("제출 시각: 미제출");
+    expect(md).toContain("1. 가상서버 문제 (미응답)");
+    expect(md).toContain("- ✔ A. EC2");
+    expect(md).toContain("- - B. S3");
+  });
+
+  it("오답 선택과 실제 정답의 표시를 구분합니다", () => {
+    const md = buildResultMarkdown(makeAttempt(), questions);
+    expect(md).toContain("- ✘ A. EBS");
+    expect(md).toContain("- ✔ B. S3");
+  });
+
   it("includes the score summary line", () => {
     const md = buildResultMarkdown(makeAttempt(), questions);
     expect(md).toContain("점수: 50% (1/2)");
@@ -82,6 +99,35 @@ describe("buildResultMarkdown", () => {
 });
 
 describe("buildResultJson", () => {
+
+  it("특수문자와 줄바꿈을 손실 없이 JSON으로 왕복합니다", () => {
+    const text = '따옴표 "문제"\\경로\n다음 줄\t<&> 😀';
+    const parsed = JSON.parse(buildResultJson(makeAttempt({ progress: [], submittedAt: undefined }), [
+      { ...questions[0], text, explanation: text, category: undefined },
+    ]));
+    expect(parsed.submittedAt).toBeNull();
+    expect(parsed.questions).toEqual([{
+      questionNumber: 1,
+      text,
+      category: null,
+      difficulty: "EASY",
+      selectedAnswers: [],
+      correctAnswers: ["A"],
+      isCorrect: false,
+      explanation: text,
+    }]);
+    expect(parsed.result.unansweredCount).toBe(1);
+  });
+
+  it("저장된 집계가 오래되어도 현재 답변으로 결과를 계산합니다", () => {
+    const attempt = makeAttempt({
+      result: { scorePercent: 100, correctCount: 2, incorrectCount: 0, unansweredCount: 0, categoryStats: [], difficultyStats: [] },
+    });
+    const parsed = JSON.parse(buildResultJson(attempt, questions));
+    expect(parsed.result.scorePercent).toBe(50);
+    expect(attempt.result?.scorePercent).toBe(100);
+  });
+
   it("produces valid JSON with score and per-question grading", () => {
     const json = buildResultJson(makeAttempt(), questions);
     const parsed = JSON.parse(json);

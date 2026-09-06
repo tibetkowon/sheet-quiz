@@ -24,6 +24,27 @@ function makeAttempt(overrides: Partial<StudyAttempt> = {}): StudyAttempt {
 }
 
 describe("attemptRepo", () => {
+
+  it("반환된 중첩 데이터를 수정해도 저장된 기록은 바뀌지 않습니다", async () => {
+    const attempt = makeAttempt({
+      progress: [{ questionId: "q1", selectedAnswers: ["A"], status: "ANSWERED", reviewMarked: false, updatedAt: "" }],
+    });
+    await saveAttempt(attempt);
+    const loaded = await getAttempt(attempt.id);
+    expect(loaded).toEqual(attempt);
+    loaded!.progress[0].selectedAnswers.push("B");
+    expect(await getAttempt(attempt.id)).toEqual(attempt);
+  });
+
+  it("한 기록을 삭제해도 다른 사용자의 기록과 인덱스는 유지합니다", async () => {
+    const other = makeAttempt({ id: "other", googleUserId: "user-2" });
+    await saveAttempt(makeAttempt());
+    await saveAttempt(other);
+    await deleteAttempt("attempt-1");
+    expect(await listAttemptsByUser("user-1")).toEqual([]);
+    expect(await listAttemptsByUser("user-2")).toEqual([other]);
+  });
+
   beforeEach(async () => {
     const db = await getDb();
     await db.clear("attempts");

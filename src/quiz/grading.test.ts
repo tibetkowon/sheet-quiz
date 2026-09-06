@@ -35,6 +35,27 @@ function makeProgress(overrides: Partial<QuestionProgress> = {}): QuestionProgre
 }
 
 describe("gradeQuestion", () => {
+
+  it("복수 정답을 비교해도 입력 배열 순서를 바꾸지 않습니다", () => {
+    const question = makeQuestion({ type: "MULTIPLE", requiredAnswerCount: 2, correctAnswers: ["B", "A"] });
+    const progress = makeProgress({ selectedAnswers: ["A", "B"] });
+    Object.freeze(question.correctAnswers);
+    Object.freeze(progress.selectedAnswers);
+    expect(gradeQuestion(question, progress).isCorrect).toBe(true);
+    expect(question.correctAnswers).toEqual(["B", "A"]);
+    expect(progress.selectedAnswers).toEqual(["A", "B"]);
+  });
+
+  it("개수가 같아도 중복 선택으로 빠진 정답을 대체할 수 없습니다", () => {
+    const question = makeQuestion({ type: "MULTIPLE", requiredAnswerCount: 2, correctAnswers: ["A", "B"] });
+    expect(gradeQuestion(question, makeProgress({ selectedAnswers: ["A", "A"] })).isCorrect).toBe(false);
+  });
+
+  it.each(["UNSEEN", "ANSWERED", "SKIPPED"] as const)("상태 %s와 무관하게 실제 선택으로 채점합니다", (status) => {
+    expect(gradeQuestion(makeQuestion(), makeProgress({ status, selectedAnswers: ["A"] })).isCorrect).toBe(true);
+    expect(gradeQuestion(makeQuestion(), makeProgress({ status })).isAnswered).toBe(false);
+  });
+
   it("marks a single-answer question correct on exact match", () => {
     const grade = gradeQuestion(makeQuestion(), makeProgress({ selectedAnswers: ["A"] }));
     expect(grade).toEqual({
@@ -72,6 +93,22 @@ describe("gradeQuestion", () => {
 });
 
 describe("gradeAttempt", () => {
+
+  it("진행 배열 순서와 무관하게 ID로 연결하고 다른 문제의 기록을 제외합니다", () => {
+    const grades = gradeAttempt(
+      [makeQuestion({ id: "q1" }), makeQuestion({ id: "q2" })],
+      [
+        makeProgress({ questionId: "q2", selectedAnswers: ["B"] }),
+        makeProgress({ questionId: "deleted", selectedAnswers: ["A"] }),
+        makeProgress({ questionId: "q1", selectedAnswers: ["A"] }),
+      ],
+    );
+    expect(grades.map(({ questionId, isCorrect }) => ({ questionId, isCorrect }))).toEqual([
+      { questionId: "q1", isCorrect: true },
+      { questionId: "q2", isCorrect: false },
+    ]);
+  });
+
   it("grades every question even when a progress entry is missing", () => {
     const questions = [makeQuestion({ id: "q1" }), makeQuestion({ id: "q2" })];
     const grades = gradeAttempt(questions, [makeProgress({ questionId: "q1", selectedAnswers: ["A"] })]);

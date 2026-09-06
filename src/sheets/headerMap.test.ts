@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { buildHeaderIndex, REQUIRED_HEADER_KEYS } from "./headerMap";
 
 describe("buildHeaderIndex", () => {
+
+  it("같은 필드의 별칭이 중복되면 첫 번째 열을 사용합니다", () => {
+    expect(buildHeaderIndex(["문제", "question", "영역", "분류", "category"])).toEqual({
+      question: 0, category: 2,
+    });
+  });
+
   it("maps Korean headers to normalized keys", () => {
     const index = buildHeaderIndex([
       "번호",

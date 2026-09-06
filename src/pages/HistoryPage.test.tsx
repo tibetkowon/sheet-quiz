@@ -50,6 +50,38 @@ function renderPage() {
 }
 
 describe("HistoryPage", () => {
+
+  it("최신 기록부터 표시하면서 저장소가 반환한 배열은 변경하지 않습니다", async () => {
+    const attempts = [
+      makeAttempt({ id: "old", sheetTabName: "이전", updatedAt: "2026-09-01T00:00:00.000Z" }),
+      makeAttempt({ id: "new", sheetTabName: "최근", updatedAt: "2026-09-06T00:00:00.000Z" }),
+    ];
+    vi.spyOn(attemptRepo, "listAttemptsByUser").mockResolvedValue(attempts);
+    renderPage();
+    await screen.findByRole("button", { name: "AWS 최근 이어서 풀기" });
+    const rows = screen.getAllByRole("listitem");
+    expect(rows[0]).toHaveTextContent("AWS · 최근");
+    expect(rows[1]).toHaveTextContent("AWS · 이전");
+    expect(attempts.map((attempt) => attempt.id)).toEqual(["old", "new"]);
+  });
+
+  it("이어서 풀기 버튼으로 퀴즈 화면에 이동합니다", async () => {
+    vi.spyOn(attemptRepo, "listAttemptsByUser").mockResolvedValue([makeAttempt()]);
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "AWS 1회차 이어서 풀기" }));
+    expect(await screen.findByText("퀴즈 화면")).toBeInTheDocument();
+  });
+
+  it("제출 기록의 결과 보기 버튼으로 결과 화면에 이동합니다", async () => {
+    vi.spyOn(attemptRepo, "listAttemptsByUser").mockResolvedValue([makeAttempt({
+      submittedAt: "2026-09-06T00:00:00.000Z",
+      result: { scorePercent: 0, correctCount: 0, incorrectCount: 0, unansweredCount: 1, categoryStats: [], difficultyStats: [] },
+    })]);
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "AWS 1회차 결과 보기" }));
+    expect(await screen.findByText("결과 화면")).toBeInTheDocument();
+  });
+
   afterEach(() => vi.restoreAllMocks());
 
   beforeEach(() => {

@@ -1,9 +1,25 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { clearTopFolder, getTopFolder, saveTopFolder } from "./topFolderRepo";
+import { getDb } from "./db";
 
 describe("topFolderRepo", () => {
+
+  it("같은 사용자의 폴더를 덮어쓰고 다른 사용자 선택은 보존합니다", async () => {
+    const selection = { googleUserId: "user-1", folderId: "old", folderName: "기존", updatedAt: "" };
+    const other = { ...selection, googleUserId: "user-2" };
+    await saveTopFolder(selection);
+    await saveTopFolder(other);
+    const updated = { ...selection, folderId: "new", folderName: "새 폴더" };
+    await saveTopFolder(updated);
+    expect(await getTopFolder("user-1")).toEqual(updated);
+    await clearTopFolder("user-1");
+    expect(await getTopFolder("user-1")).toBeUndefined();
+    expect(await getTopFolder("user-2")).toEqual(other);
+  });
+
   beforeEach(async () => {
-    indexedDB.deleteDatabase("sheet-quiz");
+    const db = await getDb();
+    await db.clear("topFolder");
   });
 
   it("returns undefined when no top folder is saved", async () => {

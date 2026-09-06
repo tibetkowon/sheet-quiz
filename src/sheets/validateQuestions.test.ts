@@ -24,6 +24,53 @@ function run(rows: string[][]) {
 }
 
 describe("validateQuestions", () => {
+
+  it.each(["NaN", "Infinity", "번호"])("숫자가 아닌 문제 번호 %s를 거부합니다", (number) => {
+    const result = run([[number, "분류", "MEDIUM", "SINGLE", "문제", "A", "B", "", "", "A", "해설"]]);
+    expect(result.questions).toEqual([]);
+    expect(result.issues).toEqual([
+      expect.objectContaining({ field: "question_no", severity: "error", rowNumber: 2 }),
+    ]);
+  });
+
+  it("인식할 수 없는 난이도는 경고와 함께 기본값을 적용합니다", () => {
+    const result = run([["1", "분류", "UNKNOWN", "SINGLE", "문제", "A", "B", "", "", "a", "해설"]]);
+    expect(result.questions[0]).toMatchObject({ difficulty: "MEDIUM", correctAnswers: ["A"] });
+    expect(result.issues).toEqual([
+      expect.objectContaining({ field: "difficulty", severity: "warning" }),
+    ]);
+  });
+
+  it("선택지가 전혀 없는 행의 오류도 수집합니다", () => {
+    const result = run([["1", "분류", "MEDIUM", "SINGLE", "문제", "", "", "", "", "", "해설"]]);
+    expect(result.questions).toEqual([]);
+    expect(result.issues.map((issue) => issue.field)).toEqual(["options", "correct_answers"]);
+  });
+
+  it("잘못된 정답 개수를 거부하면서 다음 유효 행은 유지합니다", () => {
+    const { headerIndex, rows } = parseSheetRows([
+      [...VALID_HEADER, "정답 개수"],
+      ["1", "분류", "MEDIUM", "SINGLE", "문제 1", "A", "B", "", "", "A", "해설", "Infinity"],
+      ["2", "분류", "MEDIUM", "SINGLE", "문제 2", "A", "B", "", "", "A", "해설", "1"],
+    ]);
+    const result = validateQuestions(headerIndex, rows, CONTEXT);
+    expect(result.questions.map((question) => question.questionNumber)).toEqual([2]);
+    expect(result.issues).toEqual([
+      expect.objectContaining({ field: "required_answer_count", severity: "error", rowNumber: 2 }),
+    ]);
+  });
+
+  it("제외된 행은 자동 번호나 중복 번호 검사에 영향을 주지 않습니다", () => {
+    const { headerIndex, rows } = parseSheetRows([
+      [...VALID_HEADER, "상태"],
+      ["1", "", "", "", "", "", "", "", "", "", "", "INACTIVE"],
+      ["", "분류", "MEDIUM", "SINGLE", "문제", "A", "B", "", "", "A", "해설", "ACTIVE"],
+    ]);
+    const result = validateQuestions(headerIndex, rows, CONTEXT);
+    expect(result.issues).toEqual([]);
+    expect(result.questions[0]).toMatchObject({ questionNumber: 1, sourceRow: 3 });
+  });
+
   it("returns a header-missing error and no questions when a required header is absent", () => {
     const { headerIndex, rows } = parseSheetRows([["번호", "문제"], ["1", "본문"]]);
     const result = validateQuestions(headerIndex, rows, CONTEXT);

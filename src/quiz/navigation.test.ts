@@ -42,6 +42,13 @@ function makeProgress(questionId: string, overrides: Partial<QuestionProgress> =
 const questions = [makeQuestion("q1", 1), makeQuestion("q2", 2), makeQuestion("q3", 3)];
 
 describe("buildNavigatorItems", () => {
+
+  it("진행 기록이 없으면 미열람으로 표시하고 범위 밖 현재 위치를 선택하지 않습니다", () => {
+    const items = buildNavigatorItems(questions, new Map(), questions.length);
+    expect(items.map((item) => item.status)).toEqual(["UNSEEN", "UNSEEN", "UNSEEN"]);
+    expect(items.every((item) => !item.reviewMarked && !item.isCurrent)).toBe(true);
+  });
+
   it("marks the current index and carries each question's status/flag", () => {
     const progress = buildProgressByQuestionId([
       makeProgress("q1", { status: "ANSWERED" }),
@@ -72,6 +79,22 @@ describe("summarizeProgress", () => {
 });
 
 describe("findNextIndexByStatus", () => {
+
+  it("빈 문제 세트에서는 이동할 위치가 없습니다", () => {
+    expect(findNextIndexByStatus([], new Map(), 0, "UNSEEN")).toBeNull();
+    expect(findNextFlaggedIndex([], new Map(), 0)).toBeNull();
+    expect(summarizeProgress([])).toEqual({ total: 0, answered: 0, held: 0, unseen: 0, flagged: 0 });
+  });
+
+  it("현재 문제만 대상 상태이면 한 바퀴 돌아 현재 위치를 반환합니다", () => {
+    const progress = buildProgressByQuestionId([
+      makeProgress("q1", { status: "SKIPPED" }),
+      makeProgress("q2", { status: "ANSWERED" }),
+      makeProgress("q3", { status: "ANSWERED" }),
+    ]);
+    expect(findNextIndexByStatus(questions, progress, 0, "SKIPPED")).toBe(0);
+  });
+
   it("finds the next question with a given status, wrapping around", () => {
     const progress = buildProgressByQuestionId([
       makeProgress("q1", { status: "ANSWERED" }),

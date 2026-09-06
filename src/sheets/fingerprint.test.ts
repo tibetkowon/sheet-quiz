@@ -28,6 +28,22 @@ describe("createQuestionId", () => {
 });
 
 describe("createSetFingerprint", () => {
+
+  it("정답 순서와 해설 변경은 무시하고 입력 배열은 변경하지 않습니다", () => {
+    const question = {
+      questionNumber: 1,
+      text: "복수 정답",
+      options: [{ key: "A", text: "보기 A" }, { key: "B", text: "보기 B" }],
+      correctAnswers: ["B", "A"],
+      explanation: "원래 해설",
+    };
+    Object.freeze(question.correctAnswers);
+    const fingerprint = createSetFingerprint([question]);
+    const changed = { ...question, correctAnswers: ["A", "B"], explanation: "수정된 해설" };
+    expect(createSetFingerprint([changed])).toBe(fingerprint);
+    expect(question.correctAnswers).toEqual(["B", "A"]);
+  });
+
   const base = [
     {
       questionNumber: 1,
