@@ -87,7 +87,7 @@ describe("SettingsPage", () => {
     await screen.findByText("시작 화면");
   });
 
-  it("still clears the top folder and returns to start even if one attempt fails to delete", async () => {
+  it("일부 삭제 실패 시 설정을 유지하고 재시도 성공 후 폴더를 지우고 시작 화면으로 이동합니다", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     vi.spyOn(attemptRepo, "deleteAttempt").mockImplementation((id) =>
       id === "a1" ? Promise.reject(new Error("boom")) : Promise.resolve(undefined),
@@ -96,12 +96,69 @@ describe("SettingsPage", () => {
     await screen.findByText("user@example.com");
     fireEvent.click(screen.getByRole("button", { name: "모든 데이터 삭제" }));
 
+    expect(await screen.findByRole("alert")).toHaveTextContent("일부 풀이 기록을 삭제하지 못했습니다.");
+    expect(attemptRepo.deleteAttempt).toHaveBeenCalledWith("a1");
+    expect(attemptRepo.deleteAttempt).toHaveBeenCalledWith("a2");
+    expect(topFolderRepo.clearTopFolder).not.toHaveBeenCalled();
+    expect(screen.getByText("user@example.com")).toBeInTheDocument();
+    expect(screen.queryByText("시작 화면")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "모든 데이터 삭제" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "폴더 다시 선택" })).toBeEnabled();
+
+    vi.mocked(attemptRepo.deleteAttempt).mockResolvedValue(undefined);
+    vi.mocked(attemptRepo.listAttemptsByUser).mockResolvedValue([makeAttempt("a1")]);
+    fireEvent.click(screen.getByRole("button", { name: "모든 데이터 삭제" }));
     await waitFor(() => {
       expect(attemptRepo.deleteAttempt).toHaveBeenCalledWith("a1");
       expect(attemptRepo.deleteAttempt).toHaveBeenCalledWith("a2");
       expect(topFolderRepo.clearTopFolder).toHaveBeenCalledWith("user-1");
     });
     await screen.findByText("시작 화면");
+    expect(attemptRepo.deleteAttempt).toHaveBeenCalledTimes(3);
+  });
+
+  it("폴더 초기화 실패를 안내하고 연결을 유지한 채 재시도합니다", async () => {
+    vi.mocked(topFolderRepo.clearTopFolder).mockRejectedValueOnce(new Error("boom"));
+    renderPage();
+    await screen.findByText("user@example.com");
+    fireEvent.click(screen.getByRole("button", { name: "폴더 다시 선택" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("폴더 설정을 초기화하지 못했습니다.");
+    expect(screen.getByText("user@example.com")).toBeInTheDocument();
+    expect(screen.queryByText("최상위 폴더 선택 화면")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "폴더 다시 선택" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "모든 데이터 삭제" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "폴더 다시 선택" }));
+
+    await screen.findByText("최상위 폴더 선택 화면");
+    expect(topFolderRepo.clearTopFolder).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["조회", "폴더 삭제"])("전체 삭제 중 %s 실패를 안내하고 재시도합니다", async (step) => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    if (step === "조회") {
+      vi.mocked(attemptRepo.listAttemptsByUser).mockRejectedValueOnce(new Error("boom"));
+    } else {
+      vi.mocked(topFolderRepo.clearTopFolder).mockRejectedValueOnce(new Error("boom"));
+    }
+    renderPage();
+    await screen.findByText("user@example.com");
+    fireEvent.click(screen.getByRole("button", { name: "모든 데이터 삭제" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("전체 데이터 삭제를 완료하지 못했습니다.");
+    expect(screen.getByText("user@example.com")).toBeInTheDocument();
+    expect(screen.queryByText("시작 화면")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "모든 데이터 삭제" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "폴더 다시 선택" })).toBeEnabled();
+    if (step === "조회") {
+      expect(attemptRepo.deleteAttempt).not.toHaveBeenCalled();
+      expect(topFolderRepo.clearTopFolder).not.toHaveBeenCalled();
+    }
+    fireEvent.click(screen.getByRole("button", { name: "모든 데이터 삭제" }));
+
+    await screen.findByText("시작 화면");
+    expect(attemptRepo.listAttemptsByUser).toHaveBeenCalledTimes(2);
+    expect(topFolderRepo.clearTopFolder).toHaveBeenLastCalledWith("user-1");
   });
 
   it("does not delete anything when the user cancels the confirmation", async () => {

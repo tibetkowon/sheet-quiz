@@ -131,6 +131,60 @@ describe("HistoryPage", () => {
     await screen.findByText("아직 저장된 풀이 기록이 없습니다.");
   });
 
+  it("조회 실패를 안내하고 재시도하면 기록을 표시합니다", async () => {
+    const list = vi.spyOn(attemptRepo, "listAttemptsByUser")
+      .mockRejectedValueOnce(new Error("boom"))
+      .mockResolvedValueOnce([makeAttempt()]);
+    renderPage();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("풀이 기록을 불러오지 못했습니다.");
+    expect(screen.queryByText("불러오는 중…")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "다시 시도" }));
+
+    await screen.findByText(/AWS · 1회차/);
+    expect(list).toHaveBeenCalledTimes(2);
+    expect(list).toHaveBeenLastCalledWith("user-1");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("삭제 실패 시 목록을 유지하고 삭제를 재시도할 수 있습니다", async () => {
+    const list = vi.spyOn(attemptRepo, "listAttemptsByUser")
+      .mockResolvedValueOnce([makeAttempt()])
+      .mockResolvedValueOnce([]);
+    vi.mocked(attemptRepo.deleteAttempt).mockRejectedValueOnce(new Error("boom"));
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "AWS 1회차 삭제" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("풀이 기록을 삭제하지 못했습니다.");
+    expect(screen.getByText(/AWS · 1회차/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "AWS 1회차 삭제" })).toBeEnabled();
+    expect(list).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "AWS 1회차 삭제" }));
+
+    await screen.findByText("아직 저장된 풀이 기록이 없습니다.");
+    expect(attemptRepo.deleteAttempt).toHaveBeenCalledTimes(2);
+    expect(attemptRepo.deleteAttempt).toHaveBeenLastCalledWith("attempt-1");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("삭제 후 목록 갱신 실패를 안내하고 조회를 재시도합니다", async () => {
+    vi.spyOn(attemptRepo, "listAttemptsByUser")
+      .mockResolvedValueOnce([makeAttempt()])
+      .mockRejectedValueOnce(new Error("boom"))
+      .mockResolvedValueOnce([]);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "AWS 1회차 삭제" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("풀이 기록을 불러오지 못했습니다.");
+    fireEvent.click(screen.getByRole("button", { name: "다시 시도" }));
+
+    await screen.findByText("아직 저장된 풀이 기록이 없습니다.");
+    expect(attemptRepo.deleteAttempt).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("does not delete when the user cancels the confirmation", async () => {
     vi.spyOn(attemptRepo, "listAttemptsByUser").mockResolvedValue([makeAttempt()]);
     vi.spyOn(window, "confirm").mockReturnValue(false);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { ErrorBanner } from "../components/ErrorBanner";
 import { clearTopFolder } from "../storage/topFolderRepo";
 import { deleteAttempt, listAttemptsByUser } from "../storage/attemptRepo";
 
@@ -8,13 +9,17 @@ export default function SettingsPage() {
   const { googleUserId, email, disconnect } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const resetTopFolder = async () => {
     if (!googleUserId) return;
     setBusy(true);
+    setError(null);
     try {
       await clearTopFolder(googleUserId);
       navigate("/folders/select");
+    } catch {
+      setError("폴더 설정을 초기화하지 못했습니다. 다시 시도해주세요.");
     } finally {
       setBusy(false);
     }
@@ -24,12 +29,22 @@ export default function SettingsPage() {
     if (!googleUserId) return;
     if (!window.confirm("저장된 모든 풀이 기록과 폴더 설정을 삭제할까요? 되돌릴 수 없습니다.")) return;
     setBusy(true);
-    const attempts = await listAttemptsByUser(googleUserId);
-    await Promise.allSettled(attempts.map((attempt) => deleteAttempt(attempt.id)));
-    await clearTopFolder(googleUserId).catch(() => undefined);
-    setBusy(false);
-    disconnect();
-    navigate("/");
+    setError(null);
+    try {
+      const attempts = await listAttemptsByUser(googleUserId);
+      const results = await Promise.allSettled(attempts.map((attempt) => deleteAttempt(attempt.id)));
+      if (results.some((result) => result.status === "rejected")) {
+        setError("일부 풀이 기록을 삭제하지 못했습니다. 다시 시도해주세요.");
+        return;
+      }
+      await clearTopFolder(googleUserId);
+      disconnect();
+      navigate("/");
+    } catch {
+      setError("전체 데이터 삭제를 완료하지 못했습니다. 다시 시도해주세요.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!googleUserId) {
@@ -46,6 +61,8 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-md px-10 py-7">
       <h1 className="mb-2 font-display text-xl font-semibold">설정</h1>
       <p className="mb-6 text-sm text-text-secondary dark:text-text-dark-secondary">{email}</p>
+
+      {error && <ErrorBanner message={error} />}
 
       <div className="mb-4 rounded-lg border border-border bg-surface p-5 dark:border-border-dark dark:bg-surface-dark">
         <div className="mb-1 text-sm font-semibold">최상위 폴더 재설정</div>
