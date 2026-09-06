@@ -99,9 +99,8 @@ src/storage/*Repo.ts, src/pages/*, src/components/*)에서 현재 테스트
 196개보다 증가. 버그를 고쳤다면 요약에 파일과 증상을 포함하라.
 ```
 
-- [ ] **Step 2:** `codex-auto` 결과가 `PASS`이면 다음 태스크로 진행한다.
-  `NEEDS_DECISION`/`FAIL`이면 Claude가 직접 diff와 실패 원인을 조사하고
-  사용자에게 보고한다.
+- [x] **Step 2:** `codex-auto` 결과가 `PASS`. 15개 파일에 걸쳐 커버되지 않은
+  분기/에지 케이스 테스트를 추가(구현 변경 없음). `b73bc58`로 커밋 완료.
 
 ---
 
@@ -150,6 +149,18 @@ minor는 기록만 하고 수정하지 마라.
   `NEEDS_DECISION`이면 미해결 의사결정을 사용자에게 그대로 전달하고 지시를
   받는다. `FAIL`이면 Claude가 직접 조사한다.
 
+**진행 상태 (2026-09-06):** 3차례 시도 — ① 결과 없이 중단, ② 유효한 리뷰
+결과(9건의 실질적 버그 — 자동저장 경쟁 상태, 제출 기록 덮어쓰기, stale
+요청 경쟁, OAuth 재연결 경쟁, 비동기 실패 무한로딩, fingerprint에 상황 누락,
+프로토타입 오염 속성 허용, 모바일 버튼 줄바꿈, 저장된 인덱스 범위 초과 —
+및 5건의 minor를 찾아냄)를 만들었으나 `src/sheets/fingerprint.ts`,
+`src/pages/SubmitConfirmPage.tsx` 두 파일에서 patch apply 실패로 전체 패치가
+반영되지 못함, ③ Codex 사용량 한도(quota) 초과로 실행 자체가 실패. **다음
+세션에서 quota 회복 후 재시도 필요 — 미해결.** 발견된 이슈 목록은
+`~/.claude/codex-runs/sheet-quiz/20260906-184253-57204/implement-result.txt`에
+보존되어 있으므로, 재시도 시 처음부터 다시 찾게 하는 대신 이 목록을 프롬프트에
+포함해 patch만 다시 생성시키는 편이 효율적이다.
+
 ---
 
 ### Task 3: README.md 작성 (Claude 직접 작성 — 문서이므로 위임하지 않음)
@@ -179,15 +190,9 @@ minor는 기록만 하고 수정하지 마라.
 7. 알려진 제약 — GitHub Pages 서브경로/오프라인 등은 별도 코드 대응 없이
    문서 안내 수준이라는 점 (spec §11/§13 범위 합의 반영).
 
-- [ ] **Step 1:** 위 항목대로 `README.md`를 작성한다.
-- [ ] **Step 2:** `pnpm lint`(마크다운은 대상 아니지만 회귀 확인용으로 빠르게
-  `pnpm typecheck`까지) 실행해 다른 파일에 영향이 없는지 확인한다.
-- [ ] **Step 3:** 커밋한다.
-
-```bash
-git add README.md
-git commit -m "docs: write project README with setup and deployment guide"
-```
+- [x] **Step 1:** 위 항목대로 `README.md`를 작성했다.
+- [x] **Step 2:** `pnpm typecheck` 통과 확인.
+- [x] **Step 3:** `fe8b63e`로 커밋 완료.
 
 ---
 
@@ -211,30 +216,30 @@ pnpm build
 Expected: `tsc -b`와 `vite build` 모두 에러 없이 종료, `dist/`에
 `index.html`과 해시된 JS/CSS 자산이 생성됨.
 
-- [ ] **Step 2:** 프로덕션 번들을 정적 서버로 구동.
+- [x] **Step 2:** 프로덕션 번들을 정적 서버로 구동.
 
 ```bash
 pnpm preview --port 4173
 ```
 
-- [ ] **Step 3:** 브라우저로 `http://localhost:4173` 접속해(Playwright MCP나
-  수동 확인) 다음을 점검한다.
-  - 콘솔에 에러/경고 없이 시작 화면이 렌더링되는가.
-  - 개발자 도구 Network 탭에서 모든 JS/CSS/폰트 자산이 200으로 로드되는가
-    (상대/절대 경로 문제로 404가 나지 않는지).
-  - `import.meta.env.VITE_GOOGLE_CLIENT_ID` 값이 번들에 올바르게 인라인되어
-    Google 로그인 버튼 클릭 시 GIS 초기화가 시도되는가(실제 로그인은 발급된
-    OAuth 클라이언트가 있어야 하므로, 초기화 시도/에러 메시지 유무만 확인).
-  - `dist/assets/*.js`에 `.env.local`의 값 외에 다른 비밀값(예: 존재하지
-    않지만 실수로 하드코딩된 API 키)이 없는지 `grep`으로 훑어본다.
-- [ ] **Step 4:** 문제를 발견하면 원인을 파악해 명확한 요구사항과 완료
-  조건으로 정리한 뒤, 코드 수정이 필요하면 `codex-auto`에 위임한다(예:
-  "vite.config.ts에 base 경로 미설정으로 서브경로 배포 시 자산 404" 같은
-  케이스). 문제가 없으면 결과만 기록한다.
-- [ ] **Step 5:** `pnpm preview` 프로세스를 종료하고, 발견 사항과 조치 결과를
-  요약해 사용자에게 보고한다(수정이 있었다면 이미 Task 4의 하위 위임에서
-  커밋되었을 것이므로 별도 커밋 불필요; 발견 사항이 없었다면 커밋할 코드
-  변경도 없음).
+- [x] **Step 3:** 브라우저로 `http://localhost:4173` 접속해(Playwright MCP)
+  다음을 점검했다.
+  - 시작 화면이 정상 렌더링됨(헤더, 기록/설정 nav, 다크모드 토글, "Google
+    Drive 연결" 버튼 모두 접근성 스냅샷에 정상 노출).
+  - 모든 정적 자산(`index-*.js`, `index-*.css`, 외부 폰트 CSS/woff2)이 200
+    으로 로드됨. 경로 문제로 인한 404 없음.
+  - `dist/assets/*.js`를 `AIza…`/`sk-…`/PEM 헤더 패턴으로 grep — 하드코딩된
+    비밀값 없음(`.env.local`이 없는 상태로 빌드해 `VITE_GOOGLE_CLIENT_ID`는
+    빈 문자열로 인라인됨 — 실제 클라이언트 ID를 넣고 재검증이 필요하면 배포
+    전에 한 번 더 확인할 것).
+  - 콘솔 에러 1건 발견: `favicon.ico` 요청이 404. 기능에는 영향 없는 minor.
+- [x] **Step 4:** `favicon.ico` 404는 minor로 기록만 하고 수정하지 않음
+  (index.html에 `<link rel="icon">`이 없어 브라우저 기본 요청이 실패하는
+  것으로, 별도 asset 추가가 필요 — 코드 변경이므로 Codex 몫. Codex 사용량
+  한도로 이번 세션에서는 위임하지 않음. 그 외 base 경로/환경변수 인라이닝
+  문제는 발견되지 않음).
+- [x] **Step 5:** `pnpm preview` 프로세스와 Playwright 브라우저를 종료함.
+  코드 변경이 없었으므로 커밋 없음.
 
 ---
 
