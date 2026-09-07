@@ -182,7 +182,7 @@ critical 또는 major 문제가 있으면 Codex가 수정한다.
 - ESLint 통과
   - 기존 Fast Refresh warning 3개만 존재
 - `pnpm build` 통과, `pnpm preview`로 프로덕션 번들 수동 구동 검증 완료
-  (favicon.ico 404는 minor로 기록, 미수정)
+  (favicon 404는 이후 `public/favicon.svg` 추가로 수정 완료)
 - Playwright E2E 전체 통과
 - `README.md` 작성 완료(설치/개발/배포 절차)
 - local `main`은 `origin/main`보다 앞서 있음 — 아직 remote push 하지 않음

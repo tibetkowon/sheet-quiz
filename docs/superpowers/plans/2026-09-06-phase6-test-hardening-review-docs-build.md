@@ -247,7 +247,7 @@ pnpm preview --port 4173
 - [x] Task 1, 2가 각각 `codex-auto`로부터 `PASS`를 받음.
 - [x] `README.md`가 설치/개발/배포 절차를 포함해 커밋됨.
 - [x] 프로덕션 빌드(`dist/`)가 `vite preview`로 정상 구동되는 것을 직접 확인함
-      (favicon 404는 minor로 기록, 미수정).
+      (favicon 404는 `public/favicon.svg` 추가로 이후 수정 완료 — `cb5ac83`).
 - [ ] 로드맵의 "현재 상태" 섹션과 6단계 항목을 완료로 갱신 — `CLAUDE.md`에서
       별도로 진행.
 
