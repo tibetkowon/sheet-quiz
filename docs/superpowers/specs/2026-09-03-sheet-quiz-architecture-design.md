@@ -163,6 +163,48 @@ interface StudyAttempt {
 필터링 등 — 오류를 하나씩 중단하지 않고 전체 수집) → `quiz/fingerprint.ts`
 (문제 세트 fingerprint 및 문제 ID 생성, 채점에 영향 없는 변경은 무시).
 
+### 8.1 시트 헤더 양식 (`headerMap.ts` 기준)
+
+1행 = 헤더, 열 순서는 무관. 한글/영어 헤더 모두 인식된다.
+
+| 한글 헤더 | 영어 헤더 | 필수 여부 |
+|---|---|---|
+| 번호 | `question_no` | 필수 |
+| 분류 | `category` | 필수 |
+| 난이도 | `difficulty` | 필수 |
+| 유형 | `question_type` | 필수 |
+| 상황 | `scenario` | 선택 |
+| 문제 | `question` | 필수 |
+| 보기 A / B / C / D | `option_a` ~ `option_d` | 필수(A~D) |
+| 보기 E / F | `option_e` / `option_f` | 선택 |
+| 정답 | `correct_answers` | 필수 |
+| 정답 개수 | `required_answer_count` | 선택(검증용) |
+| 해설 | `explanation` | 필수(비어 있으면 경고만, 차단은 아님) |
+| 보기 A~F 해설 | `option_a_explanation` 등 | 선택 |
+| 핵심 키워드 | `key_points` | 선택 |
+| 관련 주제 | `related_topics` | 선택 |
+| 참고 URL | `source_url` | 선택 |
+| 상태 | `status` | 선택 |
+| 세트 ID | `set_id` | 선택(현재 미사용) |
+| 출제일 | `published_at` | 선택(현재 미사용) |
+
+값 형식 규칙(`validateQuestions.ts` 기준):
+
+- **난이도**: `EASY`/`쉬움`, `MEDIUM`/`보통`, `HARD`/`어려움`. 인식 불가 값은 `MEDIUM`으로 대체하고 경고.
+- **유형**: `SINGLE`/`단일`/`단일 정답`/`객관식 단일`, `MULTIPLE`/`복수`/`복수 정답`/`객관식 복수`. SINGLE은 정답 정확히 1개, MULTIPLE은 2개 이상이어야 함.
+- **정답**: 쉼표로 구분한 선택지 문자(예: `A` 또는 `A,C`). 존재하지 않는 선택지 지정, 중복 지정은 오류.
+- **선택지**: `A`부터 중간에 빈칸 없이 연속으로 채워야 하며 최소 2개 필요. `E`/`F`는 선택.
+- **정답 개수**(`required_answer_count`)를 채우면 실제 정답 수와 일치해야 함(불일치 시 오류).
+- **상태**: 비워두면 출제 대상에 포함. 값이 있는데 `PUBLISHED`/`출제`/`ACTIVE`/`사용`이 아니면(`DRAFT`/`초안`/`INACTIVE`/`미사용` 등) 해당 행은 제외.
+- **번호**(`question_no`): 비우면 행 순서대로 자동 부여. 값을 쓰면 시트 내 중복 불가.
+- **핵심 키워드 / 관련 주제**: 쉼표로 구분한 여러 값.
+
+예시 데이터 행:
+
+| 번호 | 분류 | 난이도 | 유형 | 문제 | 보기 A | 보기 B | 보기 C | 보기 D | 정답 | 해설 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 네트워크 | MEDIUM | SINGLE | TCP와 UDP의 차이로 옳은 것은? | TCP는 비연결형이다 | UDP는 연결형이다 | TCP는 순서를 보장한다 | UDP는 순서를 보장한다 | C | TCP는 연결지향 프로토콜로 순서와 신뢰성을 보장한다. |
+
 ## 9. IndexedDB 스키마 (`idb` 사용)
 
 - `topFolder`: Google 사용자별 선택된 최상위 폴더(싱글턴 per user)
