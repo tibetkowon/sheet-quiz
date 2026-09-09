@@ -14,6 +14,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="font-display text-[17px] font-semibold">풀이장</span>
         </Link>
         <nav className="flex items-center gap-4 text-[13px] font-semibold text-text-secondary dark:text-text-dark-secondary">
+          <Link to="/folders" className="hover:text-text dark:hover:text-text-dark">
+            자격증
+          </Link>
           <Link to="/history" className="hover:text-text dark:hover:text-text-dark">
             기록
           </Link>

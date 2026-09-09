@@ -166,7 +166,7 @@ export default function DriveBrowsePage() {
               >
                 <span className="text-sm font-medium">📁 {folder.name}</span>
                 <span className="font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
-                  {folder.modifiedTime}
+                  {new Date(folder.modifiedTime).toLocaleDateString("ko-KR")}
                 </span>
               </button>
             </li>
@@ -180,7 +180,7 @@ export default function DriveBrowsePage() {
               >
                 <span className="text-sm font-medium">{file.name}</span>
                 <span className="font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
-                  {file.modifiedTime}
+                  {new Date(file.modifiedTime).toLocaleDateString("ko-KR")}
                 </span>
               </button>
             </li>
