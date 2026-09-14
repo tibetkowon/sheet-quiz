@@ -6,6 +6,7 @@ import { computeStudyResult } from "../quiz/grading";
 import { summarizeProgress } from "../quiz/navigation";
 import type { StudyAttempt } from "../types/studyAttempt";
 import { clampAttemptIndex } from "../quiz/clampAttemptIndex";
+import { PageContainer } from "../components/PageContainer";
 
 export default function SubmitConfirmPage() {
   const { attemptId } = useParams<{ attemptId: string }>();
@@ -27,19 +28,23 @@ export default function SubmitConfirmPage() {
   }, [attemptId]);
 
   if (state === "loading") {
-    return <p className="px-10 py-7 text-sm">불러오는 중…</p>;
+    return (
+      <PageContainer maxWidth="28rem">
+        <p className="text-sm">불러오는 중…</p>
+      </PageContainer>
+    );
   }
 
   if (state === "not-found" || !attempt) {
     return (
-      <div className="px-10 py-7">
+      <PageContainer maxWidth="28rem" className="[overflow-wrap:anywhere]">
         <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
           풀이 기록을 찾을 수 없습니다. Sheet 파일을 다시 선택해주세요.
         </p>
-        <Link to="/folders" className="text-sm font-semibold text-accent dark:text-accent-dark">
+        <Link to="/folders" className="inline-flex min-h-11 items-center py-2.5 text-sm font-semibold text-accent dark:text-accent-dark">
           Drive 폴더로 이동
         </Link>
-      </div>
+      </PageContainer>
     );
   }
 
@@ -61,7 +66,7 @@ export default function SubmitConfirmPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md px-10 py-7">
+    <PageContainer maxWidth="28rem" className="[overflow-wrap:anywhere]">
       <h1 className="mb-2 font-display text-xl font-semibold">제출하기 전에 확인하세요</h1>
       <p className="mb-5 text-[13.5px] text-text-secondary dark:text-text-dark-secondary">
         제출 후에도 결과 화면에서 문제별 해설을 다시 볼 수 있습니다.
@@ -98,7 +103,7 @@ export default function SubmitConfirmPage() {
         <button
           type="button"
           onClick={() => navigate(`/quiz/${attemptId}`)}
-          className="flex-1 rounded border border-border px-4 py-3 text-sm dark:border-border-dark"
+          className="min-h-11 min-w-0 flex-1 rounded border border-border px-4 py-3 text-sm dark:border-border-dark"
         >
           계속 풀기
         </button>
@@ -106,11 +111,11 @@ export default function SubmitConfirmPage() {
           type="button"
           onClick={() => void submit()}
           disabled={submitting}
-          className="flex-1 rounded bg-accent px-4 py-3 text-sm font-semibold text-white disabled:opacity-60 dark:bg-accent-dark"
+          className="min-h-11 min-w-0 flex-1 rounded bg-accent px-4 py-3 text-sm font-semibold text-white disabled:opacity-60 dark:bg-accent-dark"
         >
           {submitting ? "제출 중…" : "제출하기"}
         </button>
       </div>
-    </div>
+    </PageContainer>
   );
 }

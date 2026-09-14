@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { PageContainer } from "../components/PageContainer";
 import { AUTH_ERROR_MESSAGES } from "../auth/googleAuthError";
 
 export default function StartPage() {
@@ -13,8 +14,8 @@ export default function StartPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-10">
-      <div className="w-full max-w-[460px] text-center">
+    <PageContainer maxWidth="524px" className="flex min-h-screen flex-col items-center justify-center [overflow-wrap:anywhere]">
+      <div className="w-full min-w-0 max-w-[460px] text-center">
         <h1 className="mb-3 font-display text-3xl font-bold tracking-tight">풀이장</h1>
         <p className="mb-8 text-[15px] leading-7 text-text-secondary dark:text-text-dark-secondary">
           Google Drive에 저장된 시트 문제은행을 연결해 자격증 문제를 한 문제씩
@@ -28,7 +29,7 @@ export default function StartPage() {
           type="button"
           onClick={() => void handleConnect()}
           disabled={status === "connecting"}
-          className="w-full rounded bg-accent px-4 py-3.5 text-[15px] font-semibold text-white disabled:opacity-60 dark:bg-accent-dark"
+          className="min-h-11 w-full rounded bg-accent px-4 py-3.5 text-[15px] font-semibold text-white disabled:opacity-60 dark:bg-accent-dark"
         >
           {status === "connecting" ? "연결하는 중…" : "Google Drive 연결"}
         </button>
@@ -36,6 +37,6 @@ export default function StartPage() {
           읽기 권한만 요청합니다. 계정 정보는 브라우저에만 저장됩니다.
         </p>
       </div>
-    </div>
+    </PageContainer>
   );
 }

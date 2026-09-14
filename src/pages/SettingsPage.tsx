@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { PageContainer } from "../components/PageContainer";
 import { clearTopFolder } from "../storage/topFolderRepo";
 import { deleteAttempt, listAttemptsByUser } from "../storage/attemptRepo";
 
@@ -49,16 +50,16 @@ export default function SettingsPage() {
 
   if (!googleUserId) {
     return (
-      <div className="px-10 py-7">
+      <PageContainer maxWidth="28rem" className="[overflow-wrap:anywhere]">
         <p className="text-sm text-text-secondary dark:text-text-dark-secondary">
           Google 계정을 연결하면 설정을 볼 수 있습니다.
         </p>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="mx-auto max-w-md px-10 py-7">
+    <PageContainer maxWidth="28rem" className="[overflow-wrap:anywhere]">
       <h1 className="mb-2 font-display text-xl font-semibold">설정</h1>
       <p className="mb-6 text-sm text-text-secondary dark:text-text-dark-secondary">{email}</p>
 
@@ -73,7 +74,7 @@ export default function SettingsPage() {
           type="button"
           onClick={() => void resetTopFolder()}
           disabled={busy}
-          className="rounded border border-border px-3.5 py-2 text-xs disabled:opacity-60 dark:border-border-dark"
+          className="min-h-11 rounded border border-border px-3.5 py-2.5 text-xs disabled:opacity-60 dark:border-border-dark"
         >
           폴더 다시 선택
         </button>
@@ -88,11 +89,11 @@ export default function SettingsPage() {
           type="button"
           onClick={() => void deleteAllData()}
           disabled={busy}
-          className="rounded border border-danger px-3.5 py-2 text-xs text-danger disabled:opacity-60"
+          className="min-h-11 rounded border border-danger px-3.5 py-2.5 text-xs text-danger disabled:opacity-60"
         >
           모든 데이터 삭제
         </button>
       </div>
-    </div>
+    </PageContainer>
   );
 }

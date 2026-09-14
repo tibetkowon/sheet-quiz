@@ -14,6 +14,7 @@ import { createInitialProgress } from "../types/progress";
 import type { StudyAttempt } from "../types/studyAttempt";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { PageContainer } from "../components/PageContainer";
 
 interface LocationState {
   fileName?: string;
@@ -138,14 +139,18 @@ export default function SheetValidationPage() {
   ]);
 
   if (status === "loading") {
-    return <p className="px-10 py-7 text-sm">불러오는 중…</p>;
+    return (
+      <PageContainer maxWidth="42rem">
+        <p className="text-sm">불러오는 중…</p>
+      </PageContainer>
+    );
   }
 
   if (status === "error") {
     return (
-      <div className="px-10 py-7">
+      <PageContainer maxWidth="42rem" className="[overflow-wrap:anywhere]">
         <ErrorBanner message={loadError ?? "Sheet 데이터를 불러오지 못했습니다."} onRetry={load} />
-      </div>
+      </PageContainer>
     );
   }
 
@@ -164,7 +169,7 @@ export default function SheetValidationPage() {
 
   if (errorIssues.length > 0) {
     return (
-      <div className="mx-auto max-w-2xl px-10 py-7">
+      <PageContainer maxWidth="42rem" className="[overflow-wrap:anywhere]">
         <h1 className="mb-2 font-display text-xl font-semibold">
           시트에서 고칠 부분이 {errorIssues.length}곳 있어요
         </h1>
@@ -185,25 +190,25 @@ export default function SheetValidationPage() {
             </li>
           ))}
         </ul>
-        <div className="flex gap-2.5">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
           <button
             type="button"
             onClick={load}
-            className="rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white dark:bg-accent-dark"
+            className="min-h-11 rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white dark:bg-accent-dark"
           >
             다시 검증
           </button>
           <button
             type="button"
             onClick={() => void copyIssuesList()}
-            className="rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
+            className="min-h-11 rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
           >
             {copied ? "복사됨" : "오류 목록 복사"}
           </button>
           <button
             type="button"
             onClick={downloadIssuesList}
-            className="rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
+            className="min-h-11 rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
           >
             Markdown 다운로드
           </button>
@@ -211,17 +216,17 @@ export default function SheetValidationPage() {
             href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`}
             target="_blank"
             rel="noreferrer"
-            className="rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
+            className="inline-flex min-h-11 items-center justify-center rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
           >
             Google Sheet 원본 열기
           </a>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-10 py-7">
+    <PageContainer maxWidth="42rem" className="[overflow-wrap:anywhere]">
       <h1 className="mb-2 font-display text-xl font-semibold">{fileName || "문제 세트"} 검증 완료</h1>
       <p className="mb-5 text-sm text-text-secondary dark:text-text-dark-secondary">
         {tabTitle} 탭 · 문제 {questions.length}개
@@ -248,11 +253,11 @@ export default function SheetValidationPage() {
           type="button"
           onClick={() => void startQuiz()}
           disabled={starting}
-          className="rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 dark:bg-accent-dark"
+          className="min-h-11 rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 dark:bg-accent-dark"
         >
           {starting ? "준비 중…" : "풀이 시작"}
         </button>
       )}
-    </div>
+    </PageContainer>
   );
 }
