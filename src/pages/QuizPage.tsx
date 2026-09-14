@@ -90,7 +90,7 @@ function QuizPageContent() {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-6 border-b border-border px-8 py-3.5 dark:border-border-dark">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3.5 sm:gap-6 sm:px-8 dark:border-border-dark">
         <div className="min-w-0 flex-1">
           <ProgressBar percent={answeredPercent} />
         </div>
@@ -100,9 +100,9 @@ function QuizPageContent() {
         <AutosaveIndicator status={autosaveStatus} />
       </div>
 
-      <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-7 px-8 py-7 pb-64 sm:pb-28 lg:grid-cols-[1fr_300px]">
-        <div className="min-w-0">
-          <div className="mb-4 flex items-center gap-2">
+      <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-7 px-4 py-7 pb-64 sm:px-8 sm:pb-40 lg:grid-cols-[1fr_300px] lg:pb-28">
+        <div className="min-w-0 [overflow-wrap:anywhere]">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
             <span className="font-mono text-[13px] text-text-secondary dark:text-text-dark-secondary">
               문제 {currentQuestion.questionNumber} / {questions.length}
             </span>
@@ -133,7 +133,7 @@ function QuizPageContent() {
             </p>
           )}
 
-          <fieldset className="flex flex-col gap-2.5 border-0 p-0">
+          <fieldset className="flex min-w-0 flex-col gap-2.5 border-0 p-0">
             <legend className="sr-only">보기 선택</legend>
             {currentQuestion.options.map((option) => {
               const checked = currentProgress.selectedAnswers.includes(option.key);
@@ -151,9 +151,9 @@ function QuizPageContent() {
                     name={`question-${currentQuestion.id}`}
                     checked={checked}
                     onChange={() => selectAnswer(option.key)}
-                    className="mt-0.5"
+                    className="mt-0.5 shrink-0"
                   />
-                  <span className="text-[14.5px] leading-[1.55]">{option.text}</span>
+                  <span className="min-w-0 text-[14.5px] leading-[1.55]">{option.text}</span>
                 </label>
               );
             })}
@@ -217,26 +217,26 @@ function QuizPageContent() {
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 flex flex-wrap justify-center gap-2.5 border-t border-border bg-surface px-8 py-3.5 dark:border-border-dark dark:bg-surface-dark">
+      <div className="fixed inset-x-0 bottom-0 grid grid-cols-2 gap-2 border-t border-border bg-surface px-4 py-3.5 sm:flex sm:flex-wrap sm:justify-center sm:gap-2.5 sm:px-8 dark:border-border-dark dark:bg-surface-dark">
         <button
           type="button"
           onClick={goPrev}
           disabled={isFirst}
-          className="rounded border border-border px-4.5 py-2.5 text-sm disabled:opacity-40 dark:border-border-dark"
+          className="min-h-11 min-w-0 rounded border border-border px-3 py-3 text-sm sm:px-4.5 disabled:opacity-40 dark:border-border-dark"
         >
           이전
         </button>
         <button
           type="button"
           onClick={setHeld}
-          className="rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
+          className="min-h-11 min-w-0 rounded border border-border px-3 py-3 text-sm sm:px-4.5 dark:border-border-dark"
         >
           나중에 풀기
         </button>
         <button
           type="button"
           onClick={toggleReviewMarked}
-          className={`rounded border px-4.5 py-2.5 text-sm ${
+          className={`min-h-11 min-w-0 rounded border px-3 py-3 text-sm sm:px-4.5 ${
             currentProgress.reviewMarked
               ? "border-status-review bg-status-review text-white dark:border-status-review-dark dark:bg-status-review-dark"
               : "border-border dark:border-border-dark"
@@ -248,14 +248,14 @@ function QuizPageContent() {
           type="button"
           onClick={goNext}
           disabled={isLast}
-          className="rounded border border-border px-4.5 py-2.5 text-sm disabled:opacity-40 dark:border-border-dark"
+          className="min-h-11 min-w-0 rounded border border-border px-3 py-3 text-sm sm:px-4.5 disabled:opacity-40 dark:border-border-dark"
         >
           다음
         </button>
         <button
           type="button"
           onClick={() => void goSubmit()}
-          className="rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white dark:bg-accent-dark"
+          className="col-span-2 min-h-11 min-w-0 rounded bg-accent px-3 py-3 text-sm font-semibold text-white sm:px-4.5 dark:bg-accent-dark"
         >
           제출하기
         </button>

@@ -77,16 +77,35 @@ describe("QuizPage", () => {
     expect(screen.getByText("보기 A")).toBeInTheDocument();
   });
 
-  it("모바일 하단 버튼 줄바꿈과 본문 하단 여백을 유지합니다", async () => {
+  it("모바일 하단 버튼의 2열 배치와 터치 크기, 반응형 본문 여백을 유지합니다", async () => {
     await saveAttempt(makeAttempt([makeQuestion("q1", 1)]));
     const { container } = renderQuiz("attempt-1");
     const submit = await screen.findByRole("button", { name: "제출하기" });
     const navigation = submit.parentElement;
 
-    expect(navigation).toHaveClass("fixed", "inset-x-0", "bottom-0", "flex", "flex-wrap");
-    expect(navigation?.querySelectorAll("button")).toHaveLength(5);
     // jsdom은 레이아웃을 계산하지 않으므로 반응형 레이아웃 클래스를 확인합니다.
-    expect(container.querySelector(".grid")).toHaveClass("pb-64", "sm:pb-28");
+    expect(navigation).toHaveClass(
+      "fixed",
+      "inset-x-0",
+      "bottom-0",
+      "grid",
+      "grid-cols-2",
+      "gap-2",
+      "sm:flex",
+      "sm:flex-wrap",
+      "sm:justify-center",
+    );
+    const buttons = navigation?.querySelectorAll("button");
+    expect(buttons).toHaveLength(5);
+    buttons?.forEach((button) => expect(button).toHaveClass("min-h-11"));
+    expect(submit).toHaveClass("col-span-2");
+    expect(container.querySelector(".grid")).toHaveClass(
+      "px-4",
+      "sm:px-8",
+      "pb-64",
+      "sm:pb-40",
+      "lg:pb-28",
+    );
     expect(container.querySelector(".grid")).not.toHaveClass("pb-28");
     expect(screen.getByRole("button", { name: "다시 볼 문제로 표시" })).toBeEnabled();
   });

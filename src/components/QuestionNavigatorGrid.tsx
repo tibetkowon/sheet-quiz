@@ -44,7 +44,7 @@ export function QuestionNavigatorGrid({
   onJump: (index: number) => void;
 }) {
   return (
-    <div className="sticky top-5 self-start rounded-lg border border-border bg-surface p-4.5 dark:border-border-dark dark:bg-surface-dark">
+    <div className="sticky top-5 w-full min-w-0 self-start rounded-lg border border-border bg-surface p-4.5 dark:border-border-dark dark:bg-surface-dark">
       <div className="mb-3 text-xs font-semibold text-text-secondary dark:text-text-dark-secondary">
         문제 네비게이터
       </div>
@@ -58,7 +58,7 @@ export function QuestionNavigatorGrid({
               onClick={() => onJump(item.index)}
               aria-current={item.isCurrent ? "true" : undefined}
               aria-label={`문제 ${item.questionNumber}, ${display.label}`}
-              className={`relative aspect-square rounded-lg font-mono text-[13px] font-semibold ${display.border} ${display.text} ${
+              className={`relative aspect-square min-h-11 min-w-11 rounded-lg font-mono text-[13px] font-semibold ${display.border} ${display.text} ${
                 item.isCurrent ? "ring-2 ring-accent ring-offset-1 dark:ring-accent-dark" : ""
               }`}
             >
