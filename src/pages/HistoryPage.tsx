@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { PageContainer } from "../components/PageContainer";
 import { useLatestRequest } from "../app/useLatestRequest";
 import { deleteAttempt, listAttemptsByUser } from "../storage/attemptRepo";
 import { summarizeProgress } from "../quiz/navigation";
@@ -40,27 +41,31 @@ export default function HistoryPage() {
 
   if (!googleUserId) {
     return (
-      <div className="px-10 py-7">
+      <PageContainer maxWidth="42rem">
         <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
           Google 계정을 연결하면 저장된 풀이 기록을 볼 수 있습니다.
         </p>
         <Link to="/" className="text-sm font-semibold text-accent dark:text-accent-dark">
           시작 화면으로 이동
         </Link>
-      </div>
+      </PageContainer>
     );
   }
 
   if (attempts === null && loadError) {
     return (
-      <div className="mx-auto max-w-2xl px-10 py-7">
+      <PageContainer maxWidth="42rem">
         <ErrorBanner message={loadError} onRetry={load} />
-      </div>
+      </PageContainer>
     );
   }
 
   if (attempts === null) {
-    return <p className="px-10 py-7 text-sm">불러오는 중…</p>;
+    return (
+      <PageContainer maxWidth="42rem">
+        <p className="text-sm">불러오는 중…</p>
+      </PageContainer>
+    );
   }
 
   const handleDelete = async (id: string) => {
@@ -77,7 +82,7 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-10 py-7">
+    <PageContainer maxWidth="42rem">
       <h1 className="mb-5 font-display text-xl font-semibold">저장된 풀이 기록</h1>
       {loadError && <ErrorBanner message={loadError} onRetry={load} />}
       {deleteError && <ErrorBanner message={deleteError} />}
@@ -93,10 +98,13 @@ export default function HistoryPage() {
             return (
               <li
                 key={attempt.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface p-4 dark:border-border-dark dark:bg-surface-dark"
+                className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between dark:border-border-dark dark:bg-surface-dark"
               >
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold">
+                  <div
+                    className="min-w-0 truncate text-sm font-semibold"
+                    title={`${attempt.certificationFolderName} · ${attempt.sheetTabName}`}
+                  >
                     {attempt.certificationFolderName} · {attempt.sheetTabName}
                   </div>
                   <div className="text-xs text-text-secondary dark:text-text-dark-secondary">
@@ -130,6 +138,6 @@ export default function HistoryPage() {
           })}
         </ul>
       )}
-    </div>
+    </PageContainer>
   );
 }

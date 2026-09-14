@@ -4,6 +4,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useLatestRequest } from "../app/useLatestRequest";
 import { listSheetTabs, pickQuestionTab, SheetsApiError, SheetTab } from "../sheets/sheetsClient";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { PageContainer } from "../components/PageContainer";
 
 interface LocationState {
   fileName?: string;
@@ -89,30 +90,34 @@ export default function SheetTabSelectPage() {
 
   if (error) {
     return (
-      <div className="px-10 py-7">
+      <PageContainer maxWidth="42rem">
         <ErrorBanner message={error} />
-      </div>
+      </PageContainer>
     );
   }
 
   if (!tabs) {
-    return <p className="px-10 py-7 text-sm">불러오는 중…</p>;
+    return (
+      <PageContainer maxWidth="42rem">
+        <p className="text-sm">불러오는 중…</p>
+      </PageContainer>
+    );
   }
 
   const { candidates } = pickQuestionTab(tabs);
 
   if (tabs.length === 0) {
     return (
-      <div className="px-10 py-7">
+      <PageContainer maxWidth="42rem">
         <p className="text-sm text-text-secondary dark:text-text-dark-secondary">
           이 Sheet 파일에 탭이 없습니다. 다른 파일을 선택해주세요.
         </p>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-10 py-7">
+    <PageContainer maxWidth="42rem">
       <h1 className="mb-4 font-display text-xl font-semibold">문제 탭을 선택해주세요</h1>
       <ul className="flex flex-col gap-2">
         {candidates.map((tab) => (
@@ -120,13 +125,14 @@ export default function SheetTabSelectPage() {
             <button
               type="button"
               onClick={() => selectTab(tab)}
-              className="w-full rounded-lg border border-border px-4 py-3 text-left text-sm dark:border-border-dark"
+              title={tab.title}
+              className="min-w-0 w-full truncate rounded-lg border border-border px-4 py-3 text-left text-sm dark:border-border-dark"
             >
               {tab.title}
             </button>
           </li>
         ))}
       </ul>
-    </div>
+    </PageContainer>
   );
 }

@@ -7,6 +7,7 @@ import { DriveFile, DriveFolder, listChildFolders, listSheetFiles } from "../dri
 import { getTopFolder, TopFolderSelection } from "../storage/topFolderRepo";
 import { Breadcrumb, BreadcrumbItem } from "../components/Breadcrumb";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { PageContainer } from "../components/PageContainer";
 
 interface FolderLevel {
   id: string;
@@ -103,28 +104,32 @@ export default function DriveBrowsePage() {
 
   if (status !== "connected") {
     return (
-      <div className="px-10 py-7">
+      <PageContainer maxWidth="48rem">
         <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
           Google 연결이 필요합니다. 시작 화면에서 다시 연결해주세요.
         </p>
-      </div>
+      </PageContainer>
     );
   }
 
   if (topFolder === undefined) {
-    return <p className="px-10 py-7 text-sm">불러오는 중…</p>;
+    return (
+      <PageContainer maxWidth="48rem">
+        <p className="text-sm">불러오는 중…</p>
+      </PageContainer>
+    );
   }
 
   if (topFolder === null) {
     return (
-      <div className="px-10 py-7">
+      <PageContainer maxWidth="48rem">
         <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
           먼저 문제은행 최상위 폴더를 선택해주세요.
         </p>
         <Link to="/folders/select" className="text-sm font-semibold text-accent dark:text-accent-dark">
           최상위 폴더 선택하러 가기
         </Link>
-      </div>
+      </PageContainer>
     );
   }
 
@@ -146,7 +151,7 @@ export default function DriveBrowsePage() {
   ];
 
   return (
-    <div className="mx-auto max-w-3xl px-10 py-7">
+    <PageContainer maxWidth="48rem">
       <Breadcrumb items={breadcrumbItems} />
       {error && <ErrorBanner message={error} onRetry={() => void load()} />}
       {loading ? (
@@ -162,10 +167,13 @@ export default function DriveBrowsePage() {
               <button
                 type="button"
                 onClick={() => openFolder(folder)}
-                className="flex w-full items-center justify-between px-4.5 py-3.5 text-left"
+                className="flex min-w-0 w-full items-center justify-between gap-3 px-4.5 py-3.5 text-left"
               >
-                <span className="text-sm font-medium">📁 {folder.name}</span>
-                <span className="font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
+                <span className="flex-shrink-0">📁</span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium" title={folder.name}>
+                  {folder.name}
+                </span>
+                <span className="flex-shrink-0 font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
                   {new Date(folder.modifiedTime).toLocaleDateString("ko-KR")}
                 </span>
               </button>
@@ -176,10 +184,12 @@ export default function DriveBrowsePage() {
               <button
                 type="button"
                 onClick={() => openFile(file)}
-                className="flex w-full items-center justify-between px-4.5 py-3.5 text-left"
+                className="flex min-w-0 w-full items-center justify-between gap-3 px-4.5 py-3.5 text-left"
               >
-                <span className="text-sm font-medium">{file.name}</span>
-                <span className="font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
+                <span className="min-w-0 truncate text-sm font-medium" title={file.name}>
+                  {file.name}
+                </span>
+                <span className="flex-shrink-0 font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
                   {new Date(file.modifiedTime).toLocaleDateString("ko-KR")}
                 </span>
               </button>
@@ -187,6 +197,6 @@ export default function DriveBrowsePage() {
           ))}
         </ul>
       )}
-    </div>
+    </PageContainer>
   );
 }

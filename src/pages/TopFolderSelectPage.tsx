@@ -7,6 +7,7 @@ import { DriveFolder, listChildFolders, listRootFolders } from "../drive/driveCl
 import { saveTopFolder } from "../storage/topFolderRepo";
 import { Breadcrumb, BreadcrumbItem } from "../components/Breadcrumb";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { PageContainer } from "../components/PageContainer";
 
 interface FolderLevel {
   id: string;
@@ -92,27 +93,27 @@ export default function TopFolderSelectPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl px-10 py-7">
+    <PageContainer maxWidth="48rem">
       <Breadcrumb items={breadcrumbItems} />
 
-      <div className="mb-5 flex items-center justify-between gap-3">
+      <div className="mb-5 flex min-w-0 flex-wrap items-center justify-between gap-3">
         <input
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="폴더 또는 파일 검색"
-          className="flex-1 rounded border border-border bg-sunken px-3.5 py-2.5 text-sm dark:border-border-dark dark:bg-sunken-dark"
+          className="min-w-0 flex-1 rounded border border-border bg-sunken px-3.5 py-2.5 text-sm dark:border-border-dark dark:bg-sunken-dark"
         />
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded border border-border px-3.5 py-2.5 text-sm dark:border-border-dark"
+          className="flex-shrink-0 rounded border border-border px-3.5 py-2.5 text-sm dark:border-border-dark"
         >
           새로고침
         </button>
         <button
           type="button"
           onClick={() => void selectAsTopFolder()}
-          className="rounded bg-accent px-3.5 py-2.5 text-sm font-semibold text-white dark:bg-accent-dark"
+          className="w-full flex-shrink-0 rounded bg-accent px-3.5 py-2.5 text-sm font-semibold text-white sm:w-auto dark:bg-accent-dark"
         >
           이 폴더를 문제은행 최상위 폴더로 선택
         </button>
@@ -133,10 +134,12 @@ export default function TopFolderSelectPage() {
               <button
                 type="button"
                 onClick={() => openFolder(folder)}
-                className="flex w-full items-center justify-between px-4.5 py-3.5 text-left"
+                className="flex min-w-0 w-full items-center justify-between gap-3 px-4.5 py-3.5 text-left"
               >
-                <span className="text-sm font-medium">{folder.name}</span>
-                <span className="font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
+                <span className="min-w-0 truncate text-sm font-medium" title={folder.name}>
+                  {folder.name}
+                </span>
+                <span className="flex-shrink-0 font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
                   {folder.modifiedTime}
                 </span>
               </button>
@@ -144,6 +147,6 @@ export default function TopFolderSelectPage() {
           ))}
         </ul>
       )}
-    </div>
+    </PageContainer>
   );
 }
