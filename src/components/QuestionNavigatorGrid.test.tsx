@@ -11,6 +11,12 @@ const items: NavigatorItem[] = [
 ];
 
 describe("QuestionNavigatorGrid", () => {
+  it("큰 화면에서만 sticky를 적용합니다", () => {
+    const { container } = render(<QuestionNavigatorGrid items={items} onJump={() => {}} />);
+    expect(container.firstElementChild).toHaveClass("lg:sticky", "lg:top-5");
+    expect(container.firstElementChild).not.toHaveClass("sticky");
+    expect(container.firstElementChild).not.toHaveClass("top-5");
+  });
 
   it("다시 볼 표시를 해제하면 원래 상태와 현재 위치를 갱신합니다", () => {
     const { rerender } = render(<QuestionNavigatorGrid items={items} onJump={() => {}} />);

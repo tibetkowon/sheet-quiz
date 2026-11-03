@@ -228,6 +228,14 @@ function QuizPageContent() {
         </button>
         <button
           type="button"
+          onClick={goNext}
+          disabled={isLast}
+          className="min-h-11 min-w-0 rounded border border-border px-3 py-3 text-sm sm:px-4.5 disabled:opacity-40 dark:border-border-dark"
+        >
+          다음
+        </button>
+        <button
+          type="button"
           onClick={setHeld}
           className="min-h-11 min-w-0 rounded border border-border px-3 py-3 text-sm sm:px-4.5 dark:border-border-dark"
         >
@@ -243,14 +251,6 @@ function QuizPageContent() {
           }`}
         >
           다시 볼 문제로 표시
-        </button>
-        <button
-          type="button"
-          onClick={goNext}
-          disabled={isLast}
-          className="min-h-11 min-w-0 rounded border border-border px-3 py-3 text-sm sm:px-4.5 disabled:opacity-40 dark:border-border-dark"
-        >
-          다음
         </button>
         <button
           type="button"

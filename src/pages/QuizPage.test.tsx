@@ -96,7 +96,13 @@ describe("QuizPage", () => {
       "sm:justify-center",
     );
     const buttons = navigation?.querySelectorAll("button");
-    expect(buttons).toHaveLength(5);
+    expect(Array.from(buttons ?? [], (button) => button.textContent)).toEqual([
+      "이전",
+      "다음",
+      "나중에 풀기",
+      "다시 볼 문제로 표시",
+      "제출하기",
+    ]);
     buttons?.forEach((button) => expect(button).toHaveClass("min-h-11"));
     expect(submit).toHaveClass("col-span-2");
     expect(container.querySelector(".grid")).toHaveClass(
