@@ -25,92 +25,6 @@ Architecture spec이 아키텍처에 대한 최종 기준이다.
 
 각 Phase는 구현 전에 plan을 작성한다.
 
-## 개발 워크플로: Claude Code + Codex
-
-Claude Code는 감독자 역할만 한다.
-
-Codex가 담당하는 것:
-
-- 애플리케이션 코드 구현
-- 버그 수정
-- 리팩터링
-- 테스트 코드 작성
-- 코드 리뷰
-- 리뷰 결과에 따른 수정
-
-일반적인 개발 작업에서 Claude Code가 애플리케이션 소스 코드를 직접 작성하거나 수정하지 않는다.
-
-Claude Code가 직접 수정할 수 있는 것:
-
-- spec
-- plan
-- 문서
-- `CLAUDE.md`
-
-구현, 버그 수정, 리팩터링, 테스트 작성 등의 작업은 전역 `codex-auto` workflow를 사용한다.
-
-작업 절차:
-
-1. Claude가 요구사항과 완료 조건을 명확한 작업으로 정리한다.
-2. Claude가 전역 `codex-auto`에 작업을 위임한다.
-3. Codex는 read-only 환경에서 저장소를 분석하고 코드 변경 patch를 생성한다.
-4. `codex-auto.sh`가 Codex 바깥의 호스트 환경에서 patch를 실제 저장소에 적용한다.
-5. `codex-auto.sh`가 프로젝트 검증 명령을 실행한다.
-6. Codex가 변경사항을 독립적으로 리뷰한다.
-7. critical/major 문제가 있거나 검증이 실패하면 Codex가 수정 patch를 생성한다.
-8. patch 적용 → 검증 → 리뷰를 제한된 횟수만큼 반복한다.
-9. Claude에게는 최종 요약 결과만 반환한다.
-
-`codex-auto`가 `PASS`를 반환하면 Claude는:
-
-- 전체 diff를 다시 읽지 않는다.
-- 동일한 테스트를 다시 실행하지 않는다.
-- `/codex:review`를 추가 실행하지 않는다.
-- `/codex:rescue`를 추가 실행하지 않는다.
-- raw Codex 결과를 요청하지 않는다.
-
-다음 상태일 때만 Claude가 직접 조사한다.
-
-- `NEEDS_DECISION`
-- `FAIL`
-
-다음 legacy workflow를 자동으로 사용하지 않는다.
-
-- `/codex:rescue`
-- `/codex:review`
-- `codex:codex-rescue`
-- `codex:status` polling
-
-## Codex sandbox 정책
-
-Codex sandbox 내부에서 다음 작업이 성공한다고 가정하지 않는다.
-
-- 소스 파일 직접 쓰기
-- `git` write 작업
-- `pnpm`
-- `npm`
-- build
-- test
-- 외부 네트워크
-- 로컬 포트 bind
-
-특히 macOS 외장 볼륨(`/Volumes/...`)과 sandbox 정책에 따라 파일 시스템 및 toolchain 접근 제한이 발생할 수 있다.
-
-따라서 이 프로젝트에서는 Codex를 기본적으로 read-only 코드 분석 및 patch 생성 엔진으로 사용한다.
-
-다음 작업은 호스트의 `codex-auto.sh`가 수행한다.
-
-- patch 적용
-- git 상태 확인
-- diff 생성
-- 테스트
-- typecheck
-- lint
-- build
-- e2e
-
-Codex에게 sandbox에서 실패한 동일 명령을 반복해서 실행시키지 않는다.
-
 ## 검증 명령
 
 아래 블록은 `codex-auto.sh`가 직접 읽는 설정이다.
@@ -128,35 +42,6 @@ pnpm e2e
 위 검증이 모두 성공해야 작업을 `PASS`로 처리한다.
 
 Claude는 `codex-auto`가 이미 위 검증을 성공적으로 수행했다면 동일한 명령을 다시 실행하지 않는다.
-
-## Phase 완료 리뷰
-
-Phase의 모든 작업이 끝나면 변경사항 전체에 대해 독립적인 Codex 리뷰를 수행한다.
-
-리뷰에서 중점적으로 확인할 것:
-
-- correctness
-- regression
-- architecture 위반
-- security
-- data integrity
-- edge case
-- 필요한 테스트 누락
-- accessibility regression
-
-critical 또는 major 문제가 있으면 Codex가 수정한다.
-
-상세 review 결과 전체를 Claude main context로 반환하지 않는다.
-
-최종적으로 다음 정보만 반환한다.
-
-- PASS / NEEDS_DECISION / FAIL
-- critical 개수
-- major 개수
-- minor 개수
-- 검증 결과
-- 짧은 요약
-- 미해결 의사결정
 
 ## Roadmap
 
@@ -217,28 +102,3 @@ dependency array를 실제로 exhaustive하게 수정한다.
 const db = await getDb();
 await db.clear("<storeName>");
 ```
-
-### `codex-auto` 실행 특이사항 (2026-09-06/07 Phase 6 Task 2에서 확인)
-
-- **호출 사이에 커밋되지 않은 변경은 유지되지 않는다.** `codex-auto` 실행은
-  매번 clean한 git 상태를 기준으로 동작하는 것으로 보인다. 한 번의 호출이
-  patch를 만들었지만 최종 검증에 실패해 커밋하지 않고 넘어가면, 다음 호출은
-  그 결과를 이어받지 못하고 사실상 처음부터 다시 시도한다. 따라서 여러 단계로
-  나눠 위임할 때는 **PASS를 받을 때마다 바로 커밋**해서 진행 상황을
-  보존해야 한다.
-- **patch가 파일 수/변경량이 많을수록 "corrupt patch" 오류로 적용 실패할
-  확률이 높아진다.** 특정 hunk의 헤더(`@@ -a,b +c,d @@`)만 있고 본문 줄이
-  없는 형태로 생성되는 결함이 반복 관찰됐다. 큰 리뷰·수정 작업은 처음부터
-  작은 파일 그룹 단위로 쪼개 위임하는 편이 성공률이 높다.
-- **최종 요약(compact 결과)이 실제 diff와 다를 수 있다.** 예: "QuizContext에
-  handler를 추가했다"고 보고했지만 실제로는 해당 파일이 전혀 수정되지 않은
-  사례가 있었다. `codex-auto`가 `PASS`를 반환해도, 커밋 전에 `git diff
-  --stat`으로 보고된 파일 목록과 실제 변경 파일 목록이 일치하는지 한 번은
-  확인한다(전체 diff를 정독하라는 뜻은 아니다 — 파일 목록/개수 수준의
-  대조로 충분하다).
-- **Codex 사용량(quota)은 계정 단위로 공유된다.** 같은 계정으로 실행 중인
-  다른 프로젝트나 다른 Claude Code 세션(예: 별도 tmux/remote-control
-  세션)이 동시에 `codex-auto`를 쓰면 quota를 나눠 쓰게 되어 실행이 중간에
-  끊기거나 즉시 usage-limit 오류가 날 수 있다. 이런 세션이 이 저장소를
-  동시에 건드리고 있다면(예: 같은 커밋 메시지 패턴이 낯설게 보이면) 먼저
-  `git log`로 자신이 만들지 않은 커밋이 없는지 확인한다.
