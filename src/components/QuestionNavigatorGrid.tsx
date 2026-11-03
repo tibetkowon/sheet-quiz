@@ -44,7 +44,7 @@ export function QuestionNavigatorGrid({
   onJump: (index: number) => void;
 }) {
   return (
-    <div className="sticky top-5 w-full min-w-0 self-start rounded-lg border border-border bg-surface p-4.5 dark:border-border-dark dark:bg-surface-dark">
+    <div className="lg:sticky lg:top-5 w-full min-w-0 self-start rounded-lg border border-border bg-surface p-4.5 dark:border-border-dark dark:bg-surface-dark">
       <div className="mb-3 text-xs font-semibold text-text-secondary dark:text-text-dark-secondary">
         문제 네비게이터
       </div>
