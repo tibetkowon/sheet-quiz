@@ -27,21 +27,17 @@ Architecture spec이 아키텍처에 대한 최종 기준이다.
 
 ## 검증 명령
 
-아래 블록은 `codex-auto.sh`가 직접 읽는 설정이다.
-
 명령을 추가하거나 변경해야 할 경우 이 블록을 수정한다.
 
-<!-- CODEX_AUTO_VERIFY_BEGIN -->
+```sh
 pnpm test
 pnpm typecheck
 pnpm lint
 pnpm build
 pnpm e2e
-<!-- CODEX_AUTO_VERIFY_END -->
+```
 
 위 검증이 모두 성공해야 작업을 `PASS`로 처리한다.
-
-Claude는 `codex-auto`가 이미 위 검증을 성공적으로 수행했다면 동일한 명령을 다시 실행하지 않는다.
 
 ## Roadmap
 
