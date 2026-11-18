@@ -20,17 +20,15 @@
     />
     <title>풀이장</title>
     <script>
-      // React 마운트 전에 저장된 테마를 적용해 다크 모드 첫 화면의 깜빡임을 막는다.
+      // React 마운트 전에 저장된 테마를 적용해 첫 화면 깜빡임을 막는다.
+      // 라이트도 명시해야 한다. 비워 두면 OS가 다크일 때 첫 화면이 어둡게 나왔다가 바뀐다.
       try {
-        if (localStorage.getItem("sheet-quiz-theme") === "dark") {
-          document.documentElement.setAttribute("data-theme", "dark");
-        }
+        document.documentElement.setAttribute(
+          "data-theme",
+          localStorage.getItem("sheet-quiz-theme") === "dark" ? "dark" : "light",
+        );
       } catch {}
     </script>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/fonts-archive/NanumSquareRound/NanumSquareRound.css"
-    />
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
