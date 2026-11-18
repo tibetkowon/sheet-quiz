@@ -131,4 +131,31 @@ describe("pickQuestionTab", () => {
     const tabs = [{ sheetId: 0, title: "1과목" }, { sheetId: 1, title: "2과목" }];
     expect(pickQuestionTab(tabs)).toEqual({ autoSelected: null, candidates: tabs });
   });
+
+  it.each(["문제은행", "Sheet1"])("키워드 탭을 제외하고 %s 탭을 자동 선택합니다", (title) => {
+    const questionTab = { sheetId: 0, title };
+    const keywordTab = { sheetId: 1, title: "키워드" };
+
+    expect(pickQuestionTab([questionTab, keywordTab])).toEqual({
+      autoSelected: questionTab,
+      candidates: [],
+    });
+  });
+
+  it("여러 문제 탭이 있으면 키워드 탭을 제외한 후보를 반환합니다", () => {
+    const questionTabs = [{ sheetId: 0, title: "A" }, { sheetId: 1, title: "B" }];
+    const keywordTab = { sheetId: 2, title: "키워드" };
+
+    expect(pickQuestionTab([...questionTabs, keywordTab])).toEqual({
+      autoSelected: null,
+      candidates: questionTabs,
+    });
+  });
+
+  it("키워드 탭만 있으면 자동 선택과 후보가 모두 없습니다", () => {
+    expect(pickQuestionTab([{ sheetId: 0, title: "키워드" }])).toEqual({
+      autoSelected: null,
+      candidates: [],
+    });
+  });
 });

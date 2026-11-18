@@ -39,36 +39,24 @@ pnpm e2e
 
 위 검증이 모두 성공해야 작업을 `PASS`로 처리한다.
 
-## Roadmap
+`git commit`은 `.claude/settings.json`의 hook이 `test`, `typecheck`, `lint`, `build` 통과를 요구한다.
+`e2e`는 느려서 hook에서 제외했으므로 `PASS` 처리 전에 직접 실행한다.
 
-1. Project init, GIS auth, Drive folder browsing — **완료**
-2. Subfolder traversal, Sheet listing, parsing, validation — **완료**
-3. Quiz-taking UI, single/multiple answers, question status, IndexedDB autosave, resume — **완료**
-4. Final submission, grading, results, per-option explanations, wrong-answer management — **완료**
-5. Markdown/JSON export, settings/data deletion, error handling, mobile/accessibility — **완료**
-6. Test hardening, independent review, README/docs, production build verification — **완료**
+## 작업 위임 방식
 
-## 현재 상태
+작업은 plan 항목 하나를 단위로 작게 나눈다.
+테스트까지 포함해 단독으로 검증되는 크기여야 한다.
 
-2026-09-07 기준:
+- 문서 읽기, 검증 명령 실행 같은 단순 반복 작업: haiku 서브에이전트
+- 실제 코딩: Orca Worker (`--agent codex`, 모델 `gpt-6.2-sol`, effort `medium`)
+- 코딩 완료 후 리뷰: sonnet 5.5 서브에이전트 (diff와 해당 plan 항목을 전달)
 
-- Phase 1–6 구현 완료
-- Phase 1–6 리뷰 완료 (Phase 6는 저장소 전체 대상 독립 리뷰 — 9건의 major
-  발견, 전부 수정. 5건의 minor는 기록만 하고 의도적으로 미수정 — 상세는
-  `docs/superpowers/plans/2026-09-06-phase6-test-hardening-review-docs-build.md`
-  참고)
-- 관련 변경사항 commit 완료
-- unit test 269개 통과
-- `tsc --noEmit` 통과
-- ESLint 통과
-  - 기존 Fast Refresh warning 3개만 존재
-- `pnpm build` 통과, `pnpm preview`로 프로덕션 번들 수동 구동 검증 완료
-  (favicon 404는 이후 `public/favicon.svg` 추가로 수정 완료)
-- Playwright E2E 전체 통과
-- `README.md` 작성 완료(설치/개발/배포 절차)
-- local `main`은 `origin/main`보다 앞서 있음 — 아직 remote push 하지 않음
+Orca Worker 규칙:
 
-세부 구현 이력은 각 Phase plan을 확인한다.
+- Task spec은 혼자서 읽어도 되게 쓴다. 대상, 변경 내용, 제약, 수정 가능한 파일, 완료 증거를 넣고 아래 특이사항도 포함한다.
+- 같은 파일을 동시에 고치는 Task는 `--worktree new-child`로 분리한다.
+- Worker를 띄운 뒤에는 턴을 끝내고 Orca가 깨울 때까지 기다린다. 폴링하지 않는다.
+- Architecture spec은 요약본이 아니라 원문 경로를 넘긴다.
 
 ## 알려진 프로젝트 특이사항
 

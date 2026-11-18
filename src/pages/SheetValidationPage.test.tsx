@@ -7,6 +7,7 @@ import * as userInfo from "../auth/userInfo";
 import * as sheetsClient from "../sheets/sheetsClient";
 import { AuthProvider } from "../auth/AuthContext";
 import { ConnectGate, renderWithConnectedAuth } from "../test/renderWithConnectedAuth";
+import { getDb } from "../storage/db";
 import SheetValidationPage from "./SheetValidationPage";
 
 const VALID_HEADER = [
@@ -35,6 +36,7 @@ function renderValidation() {
   return renderWithConnectedAuth(
     <Routes>
       <Route path="/sheets/:spreadsheetId/validate" element={<SheetValidationPage />} />
+      <Route path="/sheets/sheet-1/keywords" element={<div>키워드 화면</div>} />
     </Routes>,
     [
       {
@@ -48,8 +50,9 @@ function renderValidation() {
 describe("SheetValidationPage", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  beforeEach(() => {
-    indexedDB.deleteDatabase("sheet-quiz");
+  beforeEach(async () => {
+    const db = await getDb();
+    await db.clear("attempts");
   });
 
   it("shows the question count when validation has no errors", async () => {
@@ -77,6 +80,19 @@ describe("SheetValidationPage", () => {
     );
     expect(screen.getByText(/문제은행 · 2행/)).toBeInTheDocument();
     expect(screen.getByText("문제 본문이 비어 있습니다.")).toBeInTheDocument();
+  });
+
+  it("opens the keywords page even when validation blocks starting the quiz", async () => {
+    vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([
+      VALID_HEADER,
+      ["1", "분류", "MEDIUM", "SINGLE", "", "A", "B", "", "", "A", "해설"],
+    ]);
+
+    renderValidation();
+    await screen.findByRole("button", { name: "다시 검증" });
+    await userEvent.click(screen.getByRole("button", { name: "키워드 보기" }));
+
+    expect(await screen.findByText("키워드 화면")).toBeInTheDocument();
   });
 
   it("copies the error list to the clipboard and shows confirmation", async () => {

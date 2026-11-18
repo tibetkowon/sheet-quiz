@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mockGoogleApis } from "./support/googleApiMock";
 
-test("자격증 폴더 → Sheet 선택 → 탭 자동 선택 → 검증 통과", async ({ page }) => {
+test.beforeEach(async ({ page }) => {
   await mockGoogleApis(page);
   await page.goto("/");
 
@@ -18,7 +18,24 @@ test("자격증 폴더 → Sheet 선택 → 탭 자동 선택 → 검증 통과"
 
   await expect(page.getByText("실전 모의고사 1")).toBeVisible();
   await page.getByText("실전 모의고사 1").click();
+});
 
+test("자격증 폴더 → Sheet 선택 → 탭 자동 선택 → 검증 통과", async ({ page }) => {
   await expect(page.getByText("검증 완료")).toBeVisible();
   await expect(page.getByText(/문제 2개/)).toBeVisible();
+});
+
+test("시험 시작 전 영역별 키워드를 보고 돌아옵니다", async ({ page }) => {
+  await expect(page.getByRole("button", { name: "풀이 시작" })).toBeVisible();
+  await page.getByRole("button", { name: "키워드 보기" }).click();
+
+  await expect(page.getByRole("heading", { name: "키워드 정리" })).toBeVisible();
+  await page.getByText("컴퓨팅", { exact: true }).press("Enter");
+  await expect(page.getByText("EC2", { exact: true })).toBeVisible();
+  await expect(page.getByText("가상 서버")).toBeVisible();
+  await page.getByText("스토리지", { exact: true }).click();
+  await expect(page.getByText("S3", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "뒤로 가기" }).click();
+  await expect(page.getByRole("button", { name: "풀이 시작" })).toBeVisible();
 });
