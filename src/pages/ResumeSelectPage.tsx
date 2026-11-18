@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@astryxdesign/core/Button";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Link } from "@astryxdesign/core/Link";
-import { Spinner } from "@astryxdesign/core/Spinner";
 import { Text } from "@astryxdesign/core/Text";
 import { VStack } from "@astryxdesign/core/VStack";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
@@ -11,6 +10,7 @@ import { restartAttempt } from "../quiz/attemptActions";
 import { summarizeProgress } from "../quiz/navigation";
 import type { StudyAttempt } from "../types/studyAttempt";
 import { clampAttemptIndex } from "../quiz/clampAttemptIndex";
+import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
 
 export default function ResumeSelectPage() {
@@ -35,7 +35,7 @@ export default function ResumeSelectPage() {
   if (state === "loading") {
     return (
       <PageContainer maxWidth="28rem">
-        <Spinner label="불러오는 중…" />
+        <LoadingIndicator />
       </PageContainer>
     );
   }
@@ -79,7 +79,11 @@ export default function ResumeSelectPage() {
           </Text>
         </VStack>
         <div className="flex flex-wrap gap-2.5">
-          <Button label="이어서 풀기" variant="primary" onClick={() => navigate(`/quiz/${attemptId}`)} />
+          <Button
+            label="이어서 풀기"
+            variant="primary"
+            onClick={() => navigate(`/quiz/${attemptId}`)}
+          />
           <Button
             label={restarting ? "초기화 중…" : "처음부터 다시 풀기"}
             isDisabled={restarting}

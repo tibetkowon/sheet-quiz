@@ -56,7 +56,9 @@ export default function SheetValidationPage() {
     const accessToken = getAccessToken();
     if (!accessToken) {
       setStatus("error");
-      setLoadError("Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.");
+      setLoadError(
+        "Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.",
+      );
       return;
     }
     setStatus("loading");
@@ -78,7 +80,9 @@ export default function SheetValidationPage() {
         if (!isLatest()) return;
         if (err instanceof SheetsApiError && err.status === 401) markExpired();
         setStatus("error");
-        setLoadError(err instanceof SheetsApiError ? err.message : "Sheet 데이터를 불러오지 못했습니다.");
+        setLoadError(
+          err instanceof SheetsApiError ? err.message : "Sheet 데이터를 불러오지 못했습니다.",
+        );
       });
   }, [spreadsheetId, tabTitle, tabId, getAccessToken, markExpired, beginRequest]);
 
@@ -170,13 +174,19 @@ export default function SheetValidationPage() {
   const warningIssues = issues.filter((i) => i.severity === "warning");
 
   const copyIssuesList = async () => {
-    await navigator.clipboard.writeText(buildValidationIssuesMarkdown(errorIssues.length > 0 ? errorIssues : issues));
+    await navigator.clipboard.writeText(
+      buildValidationIssuesMarkdown(errorIssues.length > 0 ? errorIssues : issues),
+    );
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const downloadIssuesList = () => {
-    downloadTextFile("sheet-validation-issues.md", buildValidationIssuesMarkdown(errorIssues.length > 0 ? errorIssues : issues), "text/markdown");
+    downloadTextFile(
+      "sheet-validation-issues.md",
+      buildValidationIssuesMarkdown(errorIssues.length > 0 ? errorIssues : issues),
+      "text/markdown",
+    );
   };
 
   if (errorIssues.length > 0) {
@@ -240,7 +250,9 @@ export default function SheetValidationPage() {
 
   return (
     <PageContainer maxWidth="42rem" className="[overflow-wrap:anywhere]">
-      <h1 className="mb-2 font-display text-xl font-semibold">{fileName || "문제 세트"} 검증 완료</h1>
+      <h1 className="mb-2 font-display text-xl font-semibold">
+        {fileName || "문제 세트"} 검증 완료
+      </h1>
       <p className="mb-5 text-sm text-text-secondary dark:text-text-dark-secondary">
         {tabTitle} 탭 · 문제 {questions.length}개
         {warningIssues.length > 0 ? ` · 경고 ${warningIssues.length}건` : ""}

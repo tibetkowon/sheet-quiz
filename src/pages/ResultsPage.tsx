@@ -27,7 +27,12 @@ export default function ResultsPage() {
   useEffect(() => {
     if (!attemptId) return;
     getAttempt(attemptId).then((found) => {
-      if (!found || !found.questionSnapshot || found.questionSnapshot.length === 0 || !found.result) {
+      if (
+        !found ||
+        !found.questionSnapshot ||
+        found.questionSnapshot.length === 0 ||
+        !found.result
+      ) {
         setState("not-found");
         return;
       }
@@ -48,9 +53,13 @@ export default function ResultsPage() {
     return (
       <PageContainer maxWidth="48rem" className="[overflow-wrap:anywhere]">
         <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
-          제출된 결과를 찾을 수 없습니다. 아직 제출하지 않았다면 문제풀이 화면으로 돌아가 제출해주세요.
+          제출된 결과를 찾을 수 없습니다. 아직 제출하지 않았다면 문제풀이 화면으로 돌아가
+          제출해주세요.
         </p>
-        <Link to="/folders" className="inline-flex min-h-11 items-center py-2.5 text-sm font-semibold text-accent dark:text-accent-dark">
+        <Link
+          to="/folders"
+          className="inline-flex min-h-11 items-center py-2.5 text-sm font-semibold text-accent dark:text-accent-dark"
+        >
           Drive 폴더로 이동
         </Link>
       </PageContainer>
@@ -72,11 +81,19 @@ function ResultsPageContent({
 
   const result = computeStudyResult(questions, attempt.progress);
   const downloadMarkdown = () => {
-    downloadTextFile(`${attempt.sheetTabName}-result.md`, buildResultMarkdown(attempt, questions), "text/markdown");
+    downloadTextFile(
+      `${attempt.sheetTabName}-result.md`,
+      buildResultMarkdown(attempt, questions),
+      "text/markdown",
+    );
   };
 
   const downloadJson = () => {
-    downloadTextFile(`${attempt.sheetTabName}-result.json`, buildResultJson(attempt, questions), "application/json");
+    downloadTextFile(
+      `${attempt.sheetTabName}-result.json`,
+      buildResultJson(attempt, questions),
+      "application/json",
+    );
   };
 
   const progressByQuestionId = new Map(attempt.progress.map((p) => [p.questionId, p]));
@@ -99,17 +116,23 @@ function ResultsPageContent({
     <PageContainer maxWidth="48rem" className="[overflow-wrap:anywhere]">
       <div className="mb-7 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
         <div className="rounded-lg border border-border bg-surface p-5 shadow-card dark:border-border-dark dark:bg-surface-dark">
-          <div className="mb-1.5 text-xs text-text-secondary dark:text-text-dark-secondary">점수</div>
+          <div className="mb-1.5 text-xs text-text-secondary dark:text-text-dark-secondary">
+            점수
+          </div>
           <div className="font-display text-3xl font-bold">{result.scorePercent}%</div>
         </div>
         <div className="rounded-lg border border-border bg-surface p-5 shadow-card dark:border-border-dark dark:bg-surface-dark">
-          <div className="mb-1.5 text-xs text-text-secondary dark:text-text-dark-secondary">정답 / 전체</div>
+          <div className="mb-1.5 text-xs text-text-secondary dark:text-text-dark-secondary">
+            정답 / 전체
+          </div>
           <div className="font-mono text-2xl font-semibold">
             {result.correctCount}/{questions.length}
           </div>
         </div>
         <div className="rounded-lg border border-border bg-surface p-5 shadow-card dark:border-border-dark dark:bg-surface-dark">
-          <div className="mb-1.5 text-xs text-text-secondary dark:text-text-dark-secondary">다시 볼 문제</div>
+          <div className="mb-1.5 text-xs text-text-secondary dark:text-text-dark-secondary">
+            다시 볼 문제
+          </div>
           <div className="font-mono text-2xl font-semibold text-status-review dark:text-status-review-dark">
             {flaggedCount}
           </div>
@@ -130,7 +153,10 @@ function ResultsPageContent({
                     {stat.correct}/{stat.total}
                   </span>
                 </div>
-                <ProgressBar percent={stat.total > 0 ? (stat.correct / stat.total) * 100 : 0} label={`분류: ${stat.name}`} />
+                <ProgressBar
+                  percent={stat.total > 0 ? (stat.correct / stat.total) * 100 : 0}
+                  label={`분류: ${stat.name}`}
+                />
               </div>
             ))}
           </div>
@@ -148,7 +174,10 @@ function ResultsPageContent({
                     {stat.correct}/{stat.total}
                   </span>
                 </div>
-                <ProgressBar percent={stat.total > 0 ? (stat.correct / stat.total) * 100 : 0} label={`난이도: ${stat.name}`} />
+                <ProgressBar
+                  percent={stat.total > 0 ? (stat.correct / stat.total) * 100 : 0}
+                  label={`난이도: ${stat.name}`}
+                />
               </div>
             ))}
           </div>
@@ -205,7 +234,9 @@ function ResultsPageContent({
             <div
               key={question.id}
               className="overflow-hidden rounded-lg border border-border bg-surface dark:border-border-dark dark:bg-surface-dark"
-              style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%)" }}
+              style={{
+                clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%)",
+              }}
             >
               <button
                 type="button"
@@ -229,7 +260,10 @@ function ResultsPageContent({
                 <span className={`text-xs font-semibold ${resultColorClass}`}>{resultLabel}</span>
               </button>
               {isExpanded && (
-                <div id={`question-detail-${question.id}`} className="flex min-w-0 flex-col gap-2 px-4.5 pb-4 sm:pl-14">
+                <div
+                  id={`question-detail-${question.id}`}
+                  className="flex min-w-0 flex-col gap-2 px-4.5 pb-4 sm:pl-14"
+                >
                   {question.options.map((option) => {
                     const isCorrectOption = grade.correctAnswers.includes(option.key);
                     const isSelected = grade.selectedAnswers.includes(option.key);

@@ -33,6 +33,18 @@ describe("TopFolderSelectPage", () => {
     await waitFor(() => expect(screen.getByText("자격증 문제은행")).toBeInTheDocument());
   });
 
+  it("shows the modified date in ISO YYYY-MM-DD form instead of the raw timestamp", async () => {
+    mockAuthenticated();
+    vi.spyOn(driveClient, "listRootFolders").mockResolvedValue([
+      { id: "f1", name: "자격증 문제은행", modifiedTime: new Date(2026, 8, 1, 12, 0).toISOString() },
+    ]);
+
+    renderWithConnectedAuth(<TopFolderSelectPage />);
+
+    expect(await screen.findByText("2026-09-01")).toBeInTheDocument();
+    expect(screen.queryByText(/T12:00:00/)).not.toBeInTheDocument();
+  });
+
   it("saves the selected folder as the top folder and navigates to the certification folders page", async () => {
     mockAuthenticated();
     vi.spyOn(driveClient, "listRootFolders").mockResolvedValue([
@@ -72,7 +84,7 @@ describe("TopFolderSelectPage", () => {
 
     renderWithConnectedAuth(<TopFolderSelectPage />);
 
-    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Drive 폴더 목록을 불러오지 못했습니다."));
+    expect((await screen.findByText(/Drive 폴더 목록을 불러오지 못했습니다\./)).closest('[role="alert"]')).not.toBeNull();
   });
 
   it("filters folders by the search query", async () => {

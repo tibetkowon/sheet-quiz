@@ -41,7 +41,10 @@ export default function SubmitConfirmPage() {
         <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
           풀이 기록을 찾을 수 없습니다. Sheet 파일을 다시 선택해주세요.
         </p>
-        <Link to="/folders" className="inline-flex min-h-11 items-center py-2.5 text-sm font-semibold text-accent dark:text-accent-dark">
+        <Link
+          to="/folders"
+          className="inline-flex min-h-11 items-center py-2.5 text-sm font-semibold text-accent dark:text-accent-dark"
+        >
           Drive 폴더로 이동
         </Link>
       </PageContainer>
@@ -77,7 +80,9 @@ export default function SubmitConfirmPage() {
           <div className="font-mono text-xl font-semibold">{summary.total}</div>
         </div>
         <div className="rounded-lg border border-status-answered bg-surface p-4 dark:border-status-answered-dark dark:bg-surface-dark">
-          <div className="mb-1 text-xs text-status-answered dark:text-status-answered-dark">답변완료</div>
+          <div className="mb-1 text-xs text-status-answered dark:text-status-answered-dark">
+            답변완료
+          </div>
           <div className="font-mono text-xl font-semibold text-status-answered dark:text-status-answered-dark">
             {answeredCount}
           </div>
@@ -89,11 +94,15 @@ export default function SubmitConfirmPage() {
           </div>
         </div>
         <div className="rounded-lg border border-border bg-sunken p-4 dark:border-border-dark dark:bg-sunken-dark">
-          <div className="mb-1 text-xs text-text-secondary dark:text-text-dark-secondary">미응답</div>
+          <div className="mb-1 text-xs text-text-secondary dark:text-text-dark-secondary">
+            미응답
+          </div>
           <div className="font-mono text-xl font-semibold">{unansweredCount}</div>
         </div>
         <div className="col-span-2 rounded-lg border border-status-review bg-surface p-4 dark:border-status-review-dark dark:bg-surface-dark">
-          <div className="mb-1 text-xs text-status-review dark:text-status-review-dark">다시 볼 문제</div>
+          <div className="mb-1 text-xs text-status-review dark:text-status-review-dark">
+            다시 볼 문제
+          </div>
           <div className="font-mono text-xl font-semibold text-status-review dark:text-status-review-dark">
             {summary.flagged}
           </div>

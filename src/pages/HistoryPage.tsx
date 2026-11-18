@@ -4,11 +4,12 @@ import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Link } from "@astryxdesign/core/Link";
-import { Spinner } from "@astryxdesign/core/Spinner";
 import { Text } from "@astryxdesign/core/Text";
 import { VStack } from "@astryxdesign/core/VStack";
 import { useAuth } from "../auth/AuthContext";
+import { formatIsoDate } from "../app/formatDate";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
 import { useLatestRequest } from "../app/useLatestRequest";
 import { deleteAttempt, listAttemptsByUser } from "../storage/attemptRepo";
@@ -72,7 +73,7 @@ export default function HistoryPage() {
   if (attempts === null) {
     return (
       <PageContainer maxWidth="42rem">
-        <Spinner label="불러오는 중…" />
+        <LoadingIndicator />
       </PageContainer>
     );
   }
@@ -121,7 +122,7 @@ export default function HistoryPage() {
                             ? `제출완료 · ${attempt.result!.scorePercent}%`
                             : `진행 중 · ${summary.answered}/${summary.total}`}
                           {" · "}
-                          {new Date(attempt.updatedAt).toLocaleDateString("ko-KR")}
+                          {formatIsoDate(attempt.updatedAt)}
                         </Text>
                       </div>
                       <div className="flex flex-shrink-0 gap-2">
@@ -129,7 +130,9 @@ export default function HistoryPage() {
                           size="sm"
                           label={isSubmitted ? "결과 보기" : "이어서 풀기"}
                           aria-label={`${name} ${isSubmitted ? "결과 보기" : "이어서 풀기"}`}
-                          onClick={() => navigate(isSubmitted ? `/results/${attempt.id}` : `/quiz/${attempt.id}`)}
+                          onClick={() =>
+                            navigate(isSubmitted ? `/results/${attempt.id}` : `/quiz/${attempt.id}`)
+                          }
                         />
                         <Button
                           size="sm"

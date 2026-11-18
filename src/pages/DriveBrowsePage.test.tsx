@@ -55,6 +55,26 @@ describe("DriveBrowsePage", () => {
     expect(screen.getByText("AWS")).toBeInTheDocument();
   });
 
+  it("keeps the full name of a very long folder in a clickable row", async () => {
+    mockAuthenticated();
+    vi.spyOn(topFolderRepo, "getTopFolder").mockResolvedValue({
+      googleUserId: "user-1",
+      folderId: "top-1",
+      folderName: "AWS",
+      updatedAt: "2026-09-01T00:00:00.000Z",
+    });
+    const longName = "정보처리기사필기문제은행".repeat(8);
+    vi.spyOn(driveClient, "listChildFolders").mockResolvedValue([
+      { id: "sub-1", name: longName, modifiedTime: "2026-09-01T00:00:00.000Z" },
+    ]);
+    vi.spyOn(driveClient, "listSheetFiles").mockResolvedValue([]);
+
+    renderBrowse();
+
+    const row = await screen.findByRole("button", { name: new RegExp(longName) });
+    expect(row).toBeInTheDocument();
+  });
+
   it("navigates into a subfolder and loads its own children", async () => {
     mockAuthenticated();
     vi.spyOn(topFolderRepo, "getTopFolder").mockResolvedValue({

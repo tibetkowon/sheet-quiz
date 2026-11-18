@@ -185,7 +185,10 @@ function QuizPageContent() {
           >
             {navigatorOpen ? "문제 네비게이터 접기" : "문제 네비게이터 펼치기"}
           </button>
-          <div id="question-navigator-panel" className={`flex-col gap-3 lg:flex ${navigatorOpen ? "flex" : "hidden"}`}>
+          <div
+            id="question-navigator-panel"
+            className={`flex-col gap-3 lg:flex ${navigatorOpen ? "flex" : "hidden"}`}
+          >
             <QuestionNavigatorGrid items={navigatorItems} onJump={goToIndex} />
             <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 dark:border-border-dark dark:bg-surface-dark">
               <button

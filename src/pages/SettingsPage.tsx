@@ -33,12 +33,15 @@ export default function SettingsPage() {
 
   const deleteAllData = async () => {
     if (!googleUserId) return;
-    if (!window.confirm("저장된 모든 풀이 기록과 폴더 설정을 삭제할까요? 되돌릴 수 없습니다.")) return;
+    if (!window.confirm("저장된 모든 풀이 기록과 폴더 설정을 삭제할까요? 되돌릴 수 없습니다."))
+      return;
     setBusy(true);
     setError(null);
     try {
       const attempts = await listAttemptsByUser(googleUserId);
-      const results = await Promise.allSettled(attempts.map((attempt) => deleteAttempt(attempt.id)));
+      const results = await Promise.allSettled(
+        attempts.map((attempt) => deleteAttempt(attempt.id)),
+      );
       if (results.some((result) => result.status === "rejected")) {
         setError("일부 풀이 기록을 삭제하지 못했습니다. 다시 시도해주세요.");
         return;
@@ -81,7 +84,11 @@ export default function SettingsPage() {
                 문제은행으로 사용할 Drive 최상위 폴더를 다시 선택합니다.
               </Text>
             </VStack>
-            <Button label="폴더 다시 선택" isDisabled={busy} onClick={() => void resetTopFolder()} />
+            <Button
+              label="폴더 다시 선택"
+              isDisabled={busy}
+              onClick={() => void resetTopFolder()}
+            />
           </VStack>
         </Card>
 

@@ -18,14 +18,17 @@ export default function StartPage() {
   };
 
   return (
-    <PageContainer maxWidth="524px" className="flex min-h-screen flex-col items-center justify-center [overflow-wrap:anywhere]">
+    <PageContainer
+      maxWidth="524px"
+      className="flex min-h-screen flex-col items-center justify-center [overflow-wrap:anywhere]"
+    >
       <VStack gap={5} align="center" maxWidth={460}>
         <Heading level={1}>풀이장</Heading>
         <div className="text-center break-keep">
           <Text color="secondary" as="p">
-            Google Drive에 저장된 시트 문제은행을 연결해 자격증 문제를 한 문제씩
-            풀고, 채점과 해설을 확인하는 개인용 도구입니다. 서버 없이 브라우저에서만
-            동작하며, 시트 데이터는 어디로도 전송되지 않습니다.
+            Google Drive에 저장된 시트 문제은행을 연결해 자격증 문제를 한 문제씩 풀고, 채점과 해설을
+            확인하는 개인용 도구입니다. 서버 없이 브라우저에서만 동작하며, 시트 데이터는 어디로도
+            전송되지 않습니다.
           </Text>
         </div>
 
