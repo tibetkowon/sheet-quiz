@@ -71,7 +71,7 @@
 
 - [ ] **Step 3: `AstryxProviders`를 구현한다.** `useTheme()`의 `theme` 값을 `<Theme mode>`에 넘긴다. 테마 기본값은 `'system'`이지만 이 앱은 사용자가 고른 값을 따르므로 항상 명시한다.
 
-- [ ] **Step 4: `src/index.css`를 바꾼다.** 맨 위에 `@layer reset, theme, base, astryx-base, astryx-theme, components, utilities;`를 두고, 그 아래에 `@import '@astryxdesign/core/reset.css'; @import '@astryxdesign/core/astryx.css'; @import '@astryxdesign/theme-neutral/theme.css';`를 추가한다(순서가 바뀌면 캐스케이드가 뒤집힌다). `@tailwind base`는 제거하고 `tailwind.config.js`에 `corePlugins: { preflight: false }`를 넣는다. Tailwind 3의 preflight는 레이어 밖에 있어 Astryx reset/버튼 스타일을 덮어쓰기 때문이다. `@tailwind components; @tailwind utilities;`는 남긴다.
+- [ ] **Step 4: `src/index.css`를 바꾼다.** 맨 위에 `@layer reset, theme, base, astryx-base, astryx-theme, components, utilities;`를 두고, 그 아래에 `@import '@astryxdesign/core/reset.css'; @import '@astryxdesign/core/astryx.css'; @import '@astryxdesign/theme-neutral/theme.css';`를 추가한다(순서가 바뀌면 캐스케이드가 뒤집힌다). `tailwind.config.js`에 `corePlugins: { preflight: false }`를 넣는다. `@tailwind base`는 지우지 않는다(ring/shadow 유틸리티가 쓰는 `--tw-*` 기본값도 이 지시문이 내보내므로, 지우면 링이 그려지지 않는다). Tailwind 3의 preflight는 레이어 밖에 있어 Astryx reset/버튼 스타일을 덮어쓰기 때문이다. `@tailwind components; @tailwind utilities;`는 남긴다.
 
 - [ ] **Step 5: 한글 폰트.** neutral 테마의 기본 폰트(Figtree)는 한글이 없다. `pnpm exec astryx docs tokens`로 본문/제목 폰트 토큰 이름을 확인하고, `src/index.css`에서 그 토큰을 `Pretendard`(본문)·`Paperlogy`(제목, 기존 `@font-face` 재사용)로 덮어쓴다. 기존 `index.html`의 Pretendard 링크는 그대로 둔다.
 

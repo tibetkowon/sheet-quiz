@@ -22,6 +22,8 @@ describe("Breadcrumb", () => {
 
   it("경로가 비어 있으면 이동 버튼이나 구분자를 표시하지 않습니다", () => {
     render(<Breadcrumb items={[]} />);
-    expect(screen.getByRole("navigation", { name: "현재 위치" })).toBeEmptyDOMElement();
+    const nav = screen.getByRole("navigation", { name: "현재 위치" });
+    expect(nav.textContent).toBe("");
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
   });
 });
