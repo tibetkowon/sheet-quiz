@@ -1,12 +1,42 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Link } from "@astryxdesign/core/Link";
+import { Text } from "@astryxdesign/core/Text";
+import { VStack } from "@astryxdesign/core/VStack";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import { submitAttempt } from "../quiz/attemptActions";
 import { computeStudyResult } from "../quiz/grading";
 import { summarizeProgress } from "../quiz/navigation";
 import type { StudyAttempt } from "../types/studyAttempt";
 import { clampAttemptIndex } from "../quiz/clampAttemptIndex";
+import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
+
+type TileVariant = "default" | "green" | "yellow" | "muted" | "red";
+
+function StatTile({
+  label,
+  value,
+  variant,
+}: {
+  label: string;
+  value: number;
+  variant: TileVariant;
+}) {
+  return (
+    <Card variant={variant}>
+      <VStack gap={1} align="start">
+        <Text type="supporting">{label}</Text>
+        <Text size="2xl" weight="semibold">
+          {value}
+        </Text>
+      </VStack>
+    </Card>
+  );
+}
 
 export default function SubmitConfirmPage() {
   const { attemptId } = useParams<{ attemptId: string }>();
@@ -30,23 +60,22 @@ export default function SubmitConfirmPage() {
   if (state === "loading") {
     return (
       <PageContainer maxWidth="28rem">
-        <p className="text-sm">불러오는 중…</p>
+        <LoadingIndicator />
       </PageContainer>
     );
   }
 
   if (state === "not-found" || !attempt) {
     return (
-      <PageContainer maxWidth="28rem" className="[overflow-wrap:anywhere]">
-        <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
-          풀이 기록을 찾을 수 없습니다. Sheet 파일을 다시 선택해주세요.
-        </p>
-        <Link
-          to="/folders"
-          className="inline-flex min-h-11 items-center py-2.5 text-sm font-semibold text-accent dark:text-accent-dark"
-        >
-          Drive 폴더로 이동
-        </Link>
+      <PageContainer maxWidth="28rem" className="break-keep [overflow-wrap:anywhere]">
+        <VStack gap={3} align="start">
+          <Text color="secondary" as="p">
+            풀이 기록을 찾을 수 없습니다. Sheet 파일을 다시 선택해주세요.
+          </Text>
+          <Link href="/folders" isStandalone weight="semibold">
+            Drive 폴더로 이동
+          </Link>
+        </VStack>
       </PageContainer>
     );
   }
@@ -69,62 +98,44 @@ export default function SubmitConfirmPage() {
   };
 
   return (
-    <PageContainer maxWidth="28rem" className="[overflow-wrap:anywhere]">
-      <h1 className="mb-2 font-display text-xl font-semibold">제출하기 전에 확인하세요</h1>
-      <p className="mb-5 text-[13.5px] text-text-secondary dark:text-text-dark-secondary">
-        제출 후에도 결과 화면에서 문제별 해설을 다시 볼 수 있습니다.
-      </p>
-      <div className="mb-6 grid grid-cols-2 gap-2.5">
-        <div className="rounded-lg border border-border bg-surface p-4 dark:border-border-dark dark:bg-surface-dark">
-          <div className="mb-1 text-xs text-text-secondary dark:text-text-dark-secondary">전체</div>
-          <div className="font-mono text-xl font-semibold">{summary.total}</div>
-        </div>
-        <div className="rounded-lg border border-status-answered bg-surface p-4 dark:border-status-answered-dark dark:bg-surface-dark">
-          <div className="mb-1 text-xs text-status-answered dark:text-status-answered-dark">
-            답변완료
-          </div>
-          <div className="font-mono text-xl font-semibold text-status-answered dark:text-status-answered-dark">
-            {answeredCount}
-          </div>
-        </div>
-        <div className="rounded-lg border border-status-held bg-surface p-4 dark:border-status-held-dark dark:bg-surface-dark">
-          <div className="mb-1 text-xs text-status-held dark:text-status-held-dark">보류</div>
-          <div className="font-mono text-xl font-semibold text-status-held dark:text-status-held-dark">
-            {summary.held}
+    <PageContainer maxWidth="28rem" className="break-keep [overflow-wrap:anywhere]">
+      <VStack gap={5}>
+        <VStack gap={1}>
+          <Heading level={1}>제출하기 전에 확인하세요</Heading>
+          <Text color="secondary" as="p">
+            제출 후에도 결과 화면에서 문제별 해설을 다시 볼 수 있습니다.
+          </Text>
+        </VStack>
+        <div className="grid grid-cols-2 gap-2.5">
+          <StatTile label="전체" value={summary.total} variant="default" />
+          <StatTile label="답변완료" value={answeredCount} variant="green" />
+          <StatTile label="보류" value={summary.held} variant="yellow" />
+          <StatTile label="미응답" value={unansweredCount} variant="muted" />
+          <div className="col-span-2">
+            <StatTile label="다시 볼 문제" value={summary.flagged} variant="red" />
           </div>
         </div>
-        <div className="rounded-lg border border-border bg-sunken p-4 dark:border-border-dark dark:bg-sunken-dark">
-          <div className="mb-1 text-xs text-text-secondary dark:text-text-dark-secondary">
-            미응답
+        <div className="flex gap-2.5">
+          <div className="min-w-0 flex-1">
+            <Button
+              label="계속 풀기"
+              size="lg"
+              width="100%"
+              onClick={() => navigate(`/quiz/${attemptId}`)}
+            />
           </div>
-          <div className="font-mono text-xl font-semibold">{unansweredCount}</div>
+          <div className="min-w-0 flex-1">
+            <Button
+              label={submitting ? "제출 중…" : "제출하기"}
+              variant="primary"
+              size="lg"
+              width="100%"
+              isDisabled={submitting}
+              onClick={() => void submit()}
+            />
+          </div>
         </div>
-        <div className="col-span-2 rounded-lg border border-status-review bg-surface p-4 dark:border-status-review-dark dark:bg-surface-dark">
-          <div className="mb-1 text-xs text-status-review dark:text-status-review-dark">
-            다시 볼 문제
-          </div>
-          <div className="font-mono text-xl font-semibold text-status-review dark:text-status-review-dark">
-            {summary.flagged}
-          </div>
-        </div>
-      </div>
-      <div className="flex gap-2.5">
-        <button
-          type="button"
-          onClick={() => navigate(`/quiz/${attemptId}`)}
-          className="min-h-11 min-w-0 flex-1 rounded border border-border px-4 py-3 text-sm dark:border-border-dark"
-        >
-          계속 풀기
-        </button>
-        <button
-          type="button"
-          onClick={() => void submit()}
-          disabled={submitting}
-          className="min-h-11 min-w-0 flex-1 rounded bg-accent px-4 py-3 text-sm font-semibold text-white disabled:opacity-60 dark:bg-accent-dark"
-        >
-          {submitting ? "제출 중…" : "제출하기"}
-        </button>
-      </div>
+      </VStack>
     </PageContainer>
   );
 }

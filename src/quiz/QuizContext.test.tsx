@@ -61,7 +61,7 @@ function Probe() {
       <span data-testid="autosave-status">{quiz.autosaveStatus}</span>
       <button onClick={() => quiz.selectAnswer("A")}>select-A</button>
       <button onClick={() => quiz.selectAnswer("B")}>select-B</button>
-      <button onClick={quiz.setHeld}>hold</button>
+      <button onClick={quiz.toggleHeld}>hold</button>
       <button onClick={quiz.toggleReviewMarked}>flag</button>
       <button onClick={quiz.goNext}>next</button>
       <button onClick={quiz.goPrev}>prev</button>

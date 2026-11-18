@@ -1,5 +1,15 @@
 // src/quiz/QuizContext.tsx
-import { createContext, ReactNode, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { StudyAttempt } from "../types/studyAttempt";
 import type { Question } from "../types/question";
 import { createInitialProgress, QuestionProgress } from "../types/progress";
@@ -15,7 +25,7 @@ import {
 } from "./navigation";
 import {
   markFirstViewed,
-  markHeld,
+  toggleHeld as toggleHeldAction,
   moveToIndex,
   selectSingleAnswer,
   toggleMultipleAnswer,
@@ -34,7 +44,7 @@ interface QuizContextValue {
   progressSummary: ProgressSummary;
   autosaveStatus: AutosaveStatus;
   selectAnswer: (optionKey: string) => void;
-  setHeld: () => void;
+  toggleHeld: () => void;
   toggleReviewMarked: () => void;
   goToIndex: (index: number) => void;
   goPrev: () => void;
@@ -64,18 +74,23 @@ export function QuizProvider({
     const pending = pendingRef.current;
     if (!pending) return;
     pendingRef.current = null;
-    void saveAttempt(pending).then(() => {
-      if (mountedRef.current && latestRef.current === pending) setAutosaveStatus("saved");
-    }).catch(() => {
-      if (latestRef.current !== pending) return;
-      pendingRef.current = pending;
-      if (mountedRef.current) setAutosaveStatus("error");
-    });
+    void saveAttempt(pending)
+      .then(() => {
+        if (mountedRef.current && latestRef.current === pending) setAutosaveStatus("saved");
+      })
+      .catch(() => {
+        if (latestRef.current !== pending) return;
+        pendingRef.current = pending;
+        if (mountedRef.current) setAutosaveStatus("error");
+      });
   }, []);
 
   const questions = attempt.questionSnapshot ?? [];
   const currentIndex = attempt.lastViewedIndex;
-  const progressByQuestionId = useMemo(() => buildProgressByQuestionId(attempt.progress), [attempt.progress]);
+  const progressByQuestionId = useMemo(
+    () => buildProgressByQuestionId(attempt.progress),
+    [attempt.progress],
+  );
   const currentQuestion = questions[currentIndex];
   const currentProgress =
     progressByQuestionId.get(currentQuestion.id) ?? createInitialProgress(currentQuestion.id);
@@ -127,12 +142,15 @@ export function QuizProvider({
           : toggleMultipleAnswer(prev, currentQuestion.id, optionKey),
       );
     },
-    setHeld: () => setAttempt((prev) => markHeld(prev, currentQuestion.id)),
-    toggleReviewMarked: () => setAttempt((prev) => toggleReviewMarkedAction(prev, currentQuestion.id)),
+    toggleHeld: () => setAttempt((prev) => toggleHeldAction(prev, currentQuestion.id)),
+    toggleReviewMarked: () =>
+      setAttempt((prev) => toggleReviewMarkedAction(prev, currentQuestion.id)),
     goToIndex: (index) => setAttempt((prev) => moveToIndex(prev, index)),
     goPrev: () => setAttempt((prev) => moveToIndex(prev, Math.max(0, prev.lastViewedIndex - 1))),
     goNext: () =>
-      setAttempt((prev) => moveToIndex(prev, Math.min(questions.length - 1, prev.lastViewedIndex + 1))),
+      setAttempt((prev) =>
+        moveToIndex(prev, Math.min(questions.length - 1, prev.lastViewedIndex + 1)),
+      ),
     goNextUnseen: () => {
       const next = findNextIndexByStatus(questions, progressByQuestionId, currentIndex, "UNSEEN");
       if (next != null) setAttempt((prev) => moveToIndex(prev, next));

@@ -62,6 +62,17 @@ describe("AppShell", () => {
     expect(screen.getByRole("button", { name: "다크 모드" })).toBeVisible();
   });
 
+  it("lifts the color mode toggle above the quiz action bar only on the quiz screen", () => {
+    const quiz = renderShell("/quiz/attempt-1");
+    const quizToggle = screen.getByRole("button", { name: "다크 모드" }).parentElement;
+    expect(quizToggle).toHaveClass("bottom-40");
+    quiz.unmount();
+
+    renderShell("/history");
+    const otherToggle = screen.getByRole("button", { name: "다크 모드" }).parentElement;
+    expect(otherToggle).not.toHaveClass("bottom-40");
+  });
+
   it("renders the page content inside exactly one main landmark", () => {
     renderShell();
     const main = screen.getByRole("main");

@@ -2,7 +2,10 @@ import type { NavigatorItem } from "../quiz/navigation";
 
 type DisplayStatus = "unseen" | "answered" | "held" | "flagged";
 
-const STATUS_STYLES: Record<DisplayStatus, { border: string; text: string; glyph: string; label: string }> = {
+const STATUS_STYLES: Record<
+  DisplayStatus,
+  { border: string; text: string; glyph: string; label: string }
+> = {
   unseen: {
     border: "border-2 border-dashed border-[var(--color-border-emphasized)]",
     text: "text-[var(--color-text-secondary)]",
@@ -29,25 +32,35 @@ const STATUS_STYLES: Record<DisplayStatus, { border: string; text: string; glyph
   },
 };
 
-function resolveDisplayStatus(status: NavigatorItem["status"], reviewMarked: boolean): DisplayStatus {
+function resolveDisplayStatus(
+  status: NavigatorItem["status"],
+  reviewMarked: boolean,
+): DisplayStatus {
   if (reviewMarked) return "flagged";
   if (status === "SKIPPED") return "held";
   if (status === "ANSWERED") return "answered";
   return "unseen";
 }
 
+const LEGEND_STATUSES: DisplayStatus[] = ["unseen", "answered", "held", "flagged"];
+
 export function QuestionNavigatorGrid({
   items,
   onJump,
+  hasTitle = true,
 }: {
   items: NavigatorItem[];
   onJump: (index: number) => void;
+  // 서랍처럼 바깥에 이미 제목이 있으면 끈다.
+  hasTitle?: boolean;
 }) {
   return (
     <div className="lg:sticky lg:top-5 w-full min-w-0 self-start rounded-lg border border-[var(--color-border)] bg-[var(--color-background-surface)] p-4">
-      <div className="mb-3 text-xs font-semibold text-[var(--color-text-secondary)]">
-        문제 네비게이터
-      </div>
+      {hasTitle && (
+        <div className="mb-3 text-xs font-semibold text-[var(--color-text-secondary)]">
+          문제 목록
+        </div>
+      )}
       <div className="mb-4 grid grid-cols-5 gap-2">
         {items.map((item) => {
           const display = STATUS_STYLES[resolveDisplayStatus(item.status, item.reviewMarked)];
@@ -70,12 +83,28 @@ export function QuestionNavigatorGrid({
           );
         })}
       </div>
-      <div className="flex flex-col gap-1.5 border-t border-[var(--color-border)] pt-3 text-[11.5px] text-[var(--color-text-secondary)]">
-        <div>○ 점선 = 아직 안 봄</div>
-        <div>✓ 초록 = 답변 완료</div>
-        <div>‖ 노랑 = 보류</div>
-        <div>⚑ 빨강 = 다시 볼 문제</div>
-        <div>강조 링 = 현재 문제</div>
+      <div className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-3 text-xs text-[var(--color-text-secondary)]">
+        {LEGEND_STATUSES.map((status) => {
+          const display = STATUS_STYLES[status];
+          return (
+            <div key={status} className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] ${display.border} ${display.text}`}
+              >
+                {display.glyph}
+              </span>
+              {display.label}
+            </div>
+          );
+        })}
+        <div className="flex items-center gap-2">
+          <span
+            aria-hidden="true"
+            className="h-6 w-6 shrink-0 rounded-md border-2 border-[var(--color-border-emphasized)] ring-2 ring-[color:var(--color-text-accent)] ring-offset-1"
+          />
+          현재 문제
+        </div>
       </div>
     </div>
   );
