@@ -62,7 +62,8 @@ export function pickQuestionTab(tabs: SheetTab[]): {
   autoSelected: SheetTab | null;
   candidates: SheetTab[];
 } {
-  const byTitle = (title: string) => tabs.find((tab) => tab.title === title);
+  const questionTabs = tabs.filter((tab) => tab.title !== "키워드");
+  const byTitle = (title: string) => questionTabs.find((tab) => tab.title === title);
 
   const primary = byTitle("문제은행");
   if (primary) return { autoSelected: primary, candidates: [] };
@@ -70,7 +71,7 @@ export function pickQuestionTab(tabs: SheetTab[]): {
   const secondary = byTitle("Questions");
   if (secondary) return { autoSelected: secondary, candidates: [] };
 
-  if (tabs.length === 1) return { autoSelected: tabs[0], candidates: [] };
+  if (questionTabs.length === 1) return { autoSelected: questionTabs[0], candidates: [] };
 
-  return { autoSelected: null, candidates: tabs };
+  return { autoSelected: null, candidates: questionTabs };
 }

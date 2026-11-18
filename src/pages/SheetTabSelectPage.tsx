@@ -104,13 +104,13 @@ export default function SheetTabSelectPage() {
     );
   }
 
-  const { candidates } = pickQuestionTab(tabs);
+  const { autoSelected, candidates } = pickQuestionTab(tabs);
 
-  if (tabs.length === 0) {
+  if (!autoSelected && candidates.length === 0) {
     return (
       <PageContainer maxWidth="42rem">
         <p className="text-sm text-text-secondary dark:text-text-dark-secondary">
-          이 Sheet 파일에 탭이 없습니다. 다른 파일을 선택해주세요.
+          이 Sheet 파일에 문제 탭이 없습니다. 다른 파일을 선택해주세요.
         </p>
       </PageContainer>
     );
