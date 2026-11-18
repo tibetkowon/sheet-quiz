@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as authContext from "../auth/AuthContext";
@@ -45,11 +45,20 @@ describe("KeywordsPage", () => {
 
     renderKeywords();
 
-    const compute = (await screen.findByText("컴퓨팅")).closest("details")!;
-    const storage = screen.getByText("스토리지").closest("details")!;
-    expect(within(compute).getByText("EC2")).toBeInTheDocument();
-    expect(within(compute).getByText("가상 서버")).toBeInTheDocument();
-    expect(within(storage).getByText("S3")).toBeInTheDocument();
+    const compute = await screen.findByRole("button", { name: /컴퓨팅/ });
+    const storage = screen.getByRole("button", { name: /스토리지/ });
+    expect(compute).toHaveAttribute("aria-expanded", "false");
+    expect(storage).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(compute);
+    expect(compute).toHaveAttribute("aria-expanded", "true");
+    expect(storage).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("EC2")).toBeInTheDocument();
+    expect(screen.getByText("가상 서버")).toBeInTheDocument();
+
+    fireEvent.click(storage);
+    expect(storage).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("S3")).toBeInTheDocument();
     expect(getValues).toHaveBeenCalledWith("token", "sheet-1", "키워드");
   });
 
@@ -74,7 +83,7 @@ describe("KeywordsPage", () => {
 
     renderKeywords();
 
-    expect(screen.getByRole("alert")).toHaveTextContent("Google 연결이 필요합니다");
+    expect(screen.getByText(/Google 연결이 필요합니다/).closest('[role="alert"]')).not.toBeNull();
   });
 
   it("marks the connection expired on a 401 response", async () => {
@@ -84,7 +93,7 @@ describe("KeywordsPage", () => {
 
     renderKeywords();
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Google 연결이 만료되었습니다.");
+    expect((await screen.findByText(/Google 연결이 만료되었습니다\./)).closest('[role="alert"]')).not.toBeNull();
     expect(markExpired).toHaveBeenCalledOnce();
   });
 
@@ -93,6 +102,6 @@ describe("KeywordsPage", () => {
 
     renderKeywords();
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("'영역', '키워드' 헤더를 찾을 수 없습니다.");
+    expect((await screen.findByText(/'영역', '키워드' 헤더를 찾을 수 없습니다\./)).closest('[role="alert"]')).not.toBeNull();
   });
 });

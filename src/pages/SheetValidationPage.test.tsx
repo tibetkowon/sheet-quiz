@@ -67,6 +67,32 @@ describe("SheetValidationPage", () => {
     await waitFor(() => expect(screen.getByText(/문제 2개/)).toBeInTheDocument());
   });
 
+  it("keeps the file name out of the result heading", async () => {
+    vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([
+      VALID_HEADER,
+      ["1", "분류", "MEDIUM", "SINGLE", "문제 1", "A", "B", "", "", "A", "해설"],
+    ]);
+
+    renderValidation();
+
+    const heading = await screen.findByRole("heading", { level: 1 });
+    expect(heading).toHaveTextContent(/^검증 완료$/);
+    expect(screen.getByText("1주차 문제")).toBeInTheDocument();
+  });
+
+  it("shows the file name beside a failed validation without putting it in the heading", async () => {
+    vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([["번호", "문제"], ["1", "본문"]]);
+
+    renderValidation();
+
+    const heading = await screen.findByRole("heading", { level: 1 });
+    expect(heading).toHaveTextContent("시트에서 고칠 부분이 1곳 있어요");
+    expect(heading).not.toHaveTextContent("1주차 문제");
+    expect(screen.getByText("1주차 문제")).toBeInTheDocument();
+    expect(screen.getByText("필수 헤더가 없습니다.")).toBeInTheDocument();
+    expect(screen.queryByText(/category/)).not.toBeInTheDocument();
+  });
+
   it("lists blocking errors with sheet name, row number, and message", async () => {
     vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([
       VALID_HEADER,
@@ -133,7 +159,7 @@ describe("SheetValidationPage", () => {
 
     renderValidation();
 
-    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Sheet 데이터를 불러오지 못했습니다."));
+    expect((await screen.findByText(/Sheet 데이터를 불러오지 못했습니다\./)).closest('[role="alert"]')).not.toBeNull();
   });
 
   it("shows warnings without blocking when only warnings are present", async () => {

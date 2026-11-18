@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import { VStack } from "@astryxdesign/core/VStack";
 import { useAuth } from "../auth/AuthContext";
 import { useLatestRequest } from "../app/useLatestRequest";
 import { getSheetValues, SheetsApiError } from "../sheets/sheetsClient";
@@ -14,6 +20,7 @@ import { createInitialProgress } from "../types/progress";
 import type { StudyAttempt } from "../types/studyAttempt";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
 
 interface LocationState {
@@ -143,20 +150,16 @@ export default function SheetValidationPage() {
   ]);
 
   const keywordsButton = (
-    <button
-      type="button"
-      onClick={() => navigate(`/sheets/${spreadsheetId}/keywords`)}
-      className="min-h-11 rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
-    >
-      키워드 보기
-    </button>
+    <Button label="키워드 보기" onClick={() => navigate(`/sheets/${spreadsheetId}/keywords`)} />
   );
 
   if (status === "loading") {
     return (
       <PageContainer maxWidth="42rem">
-        <p className="mb-5 text-sm">불러오는 중…</p>
-        {keywordsButton}
+        <VStack gap={4} align="start">
+          <LoadingIndicator />
+          {keywordsButton}
+        </VStack>
       </PageContainer>
     );
   }
@@ -164,8 +167,13 @@ export default function SheetValidationPage() {
   if (status === "error") {
     return (
       <PageContainer maxWidth="42rem" className="[overflow-wrap:anywhere]">
-        <ErrorBanner message={loadError ?? "Sheet 데이터를 불러오지 못했습니다."} onRetry={load} />
-        {keywordsButton}
+        <VStack gap={4} align="start">
+          <ErrorBanner
+            message={loadError ?? "Sheet 데이터를 불러오지 못했습니다."}
+            onRetry={load}
+          />
+          {keywordsButton}
+        </VStack>
       </PageContainer>
     );
   }
@@ -191,101 +199,98 @@ export default function SheetValidationPage() {
 
   if (errorIssues.length > 0) {
     return (
-      <PageContainer maxWidth="42rem" className="[overflow-wrap:anywhere]">
-        <h1 className="mb-2 font-display text-xl font-semibold">
-          시트에서 고칠 부분이 {errorIssues.length}곳 있어요
-        </h1>
-        <p className="mb-5 text-sm text-text-secondary dark:text-text-dark-secondary">
-          아래 위치를 시트에서 수정한 뒤 다시 검증해 주세요.
-        </p>
-        <ul className="mb-6 flex flex-col gap-2.5">
-          {errorIssues.map((issue, i) => (
-            <li
-              key={i}
-              className="rounded-lg border border-l-3 border-border border-l-status-review bg-surface p-4 dark:border-border-dark dark:bg-surface-dark"
-            >
-              <div className="mb-1 font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
-                {issue.sheetName} · {issue.rowNumber}행
-                {issue.questionNumber != null ? ` · 문제 ${issue.questionNumber}번` : ""}
-              </div>
-              <div className="text-sm">{issue.message}</div>
-            </li>
-          ))}
-        </ul>
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
-          <button
-            type="button"
-            onClick={load}
-            className="min-h-11 rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white dark:bg-accent-dark"
-          >
-            다시 검증
-          </button>
-          <button
-            type="button"
-            onClick={() => void copyIssuesList()}
-            className="min-h-11 rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
-          >
-            {copied ? "복사됨" : "오류 목록 복사"}
-          </button>
-          <button
-            type="button"
-            onClick={downloadIssuesList}
-            className="min-h-11 rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
-          >
-            Markdown 다운로드
-          </button>
-          <a
-            href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex min-h-11 items-center justify-center rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
-          >
-            Google Sheet 원본 열기
-          </a>
-          {keywordsButton}
-        </div>
+      <PageContainer maxWidth="42rem" className="break-keep [overflow-wrap:anywhere]">
+        <VStack gap={5} align="start">
+          <VStack gap={1}>
+            <Heading level={1}>시트에서 고칠 부분이 {errorIssues.length}곳 있어요</Heading>
+            <Text weight="semibold" as="div" display="block">
+              {fileName || "문제 세트"}
+            </Text>
+            <Text color="secondary" as="p">
+              아래 위치를 시트에서 수정한 뒤 다시 검증해 주세요.
+            </Text>
+          </VStack>
+          <VStack as="ul" gap={3} width="100%">
+            {errorIssues.map((issue, i) => (
+              <li key={i} className="list-none">
+                <Card variant="red">
+                  <VStack gap={1} align="start">
+                    <Badge variant="error" label="오류" />
+                    <Text type="supporting" as="div">
+                      {issue.sheetName} · {issue.rowNumber}행
+                      {issue.questionNumber != null ? ` · 문제 ${issue.questionNumber}번` : ""}
+                    </Text>
+                    <Text as="div">{issue.message}</Text>
+                  </VStack>
+                </Card>
+              </li>
+            ))}
+          </VStack>
+          <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap">
+            <Button label="다시 검증" variant="primary" onClick={load} />
+            <Button
+              label={copied ? "복사됨" : "오류 목록 복사"}
+              onClick={() => void copyIssuesList()}
+            />
+            <Button label="Markdown 다운로드" onClick={downloadIssuesList} />
+            <Button
+              label="Google Sheet 원본 열기"
+              href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`}
+              target="_blank"
+              rel="noreferrer"
+            />
+            {keywordsButton}
+          </div>
+        </VStack>
       </PageContainer>
     );
   }
 
   return (
-    <PageContainer maxWidth="42rem" className="[overflow-wrap:anywhere]">
-      <h1 className="mb-2 font-display text-xl font-semibold">
-        {fileName || "문제 세트"} 검증 완료
-      </h1>
-      <p className="mb-5 text-sm text-text-secondary dark:text-text-dark-secondary">
-        {tabTitle} 탭 · 문제 {questions.length}개
-        {warningIssues.length > 0 ? ` · 경고 ${warningIssues.length}건` : ""}
-      </p>
-      {warningIssues.length > 0 && (
-        <ul className="mb-6 flex flex-col gap-2">
-          {warningIssues.map((issue, i) => (
-            <li
-              key={i}
-              className="rounded-lg border border-border bg-sunken p-3 text-xs dark:border-border-dark dark:bg-sunken-dark"
-            >
-              {issue.sheetName} · {issue.rowNumber}행 · {issue.message}
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="flex flex-col items-start gap-2.5 sm:flex-row sm:flex-wrap">
-        {questions.length === 0 ? (
-          <p className="w-full text-sm text-text-secondary dark:text-text-dark-secondary">
-            이 시트에는 풀 수 있는 문제가 없습니다. 문제 데이터를 추가한 뒤 다시 검증해주세요.
-          </p>
-        ) : (
-          <button
-            type="button"
-            onClick={() => void startQuiz()}
-            disabled={starting}
-            className="min-h-11 rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 dark:bg-accent-dark"
-          >
-            {starting ? "준비 중…" : "풀이 시작"}
-          </button>
+    <PageContainer maxWidth="42rem" className="break-keep [overflow-wrap:anywhere]">
+      <VStack gap={5} align="start">
+        <VStack gap={1}>
+          <Heading level={1}>검증 완료</Heading>
+          <Text weight="semibold" as="div" display="block">
+            {fileName || "문제 세트"}
+          </Text>
+          <Text color="secondary" as="p">
+            {tabTitle} 탭 · 문제 {questions.length}개
+            {warningIssues.length > 0 ? ` · 경고 ${warningIssues.length}건` : ""}
+          </Text>
+        </VStack>
+        {warningIssues.length > 0 && (
+          <VStack as="ul" gap={2} width="100%">
+            {warningIssues.map((issue, i) => (
+              <li key={i} className="list-none">
+                <Card variant="yellow" padding={3}>
+                  <VStack gap={1} align="start">
+                    <Badge variant="warning" label="경고" />
+                    <Text type="supporting" as="div">
+                      {issue.sheetName} · {issue.rowNumber}행 · {issue.message}
+                    </Text>
+                  </VStack>
+                </Card>
+              </li>
+            ))}
+          </VStack>
         )}
-        {keywordsButton}
-      </div>
+        <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap">
+          {questions.length === 0 ? (
+            <Text color="secondary" as="p">
+              이 시트에는 풀 수 있는 문제가 없습니다. 문제 데이터를 추가한 뒤 다시 검증해주세요.
+            </Text>
+          ) : (
+            <Button
+              label={starting ? "준비 중…" : "풀이 시작"}
+              variant="primary"
+              isDisabled={starting}
+              onClick={() => void startQuiz()}
+            />
+          )}
+          {keywordsButton}
+        </div>
+      </VStack>
     </PageContainer>
   );
 }
