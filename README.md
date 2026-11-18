@@ -3,9 +3,10 @@
 개인용 자격증 학습 웹앱. Google Drive에 정리해 둔 시트를 문제은행으로 삼아
 풀이·채점·복습을 진행합니다.
 
-- React + Vite + TypeScript(strict)
+- React 19 + Vite + TypeScript(strict)
 - React Router
-- Tailwind CSS
+- Astryx 디자인 시스템 (`@astryxdesign/core`)
+- Tailwind CSS (레이아웃 보조)
 - IndexedDB(브라우저 로컬 저장)
 - Google Drive / Google Sheets 연동(읽기 전용)
 - 백엔드 없음, 외부 DB 없음, 런타임 AI 호출 없음

@@ -28,8 +28,9 @@ Google Drive에 저장된 Google Sheet 문제은행을 읽어 자격증 문제�
 
 ## 3. 기술 스택
 
-Vite, React 18, TypeScript(strict), React Router(브라우저 라우터), Tailwind
-CSS, `idb`(IndexedDB 래퍼), Zod, Google Identity Services, Vitest, Testing
+Vite, React 19, TypeScript(strict), React Router(브라우저 라우터), Astryx
+(`@astryxdesign/core`, neutral 테마 — UI 컴포넌트와 디자인 토큰), Tailwind
+CSS 3(레이아웃 보조), `idb`(IndexedDB 래퍼), Zod, Google Identity Services, Vitest, Testing
 Library, Playwright, ESLint, Prettier, pnpm.
 
 Google Drive/Sheets API는 `gapi` 클라이언트 라이브러리를 쓰지 않고 REST
@@ -235,30 +236,40 @@ interface StudyAttempt {
 
 ## 11. 디자인 시스템
 
-`docs/design/handoff/`의 Claude Design 핸드오프를 기준으로 삼는다.
+2026-11-18에 직접 만든 Tailwind 토큰 기반 UI를 Astryx(Meta 오픈소스 React 디자인
+시스템, 0.x 베타)로 전환했다. 전환 계획과 결정 과정은
+`docs/superpowers/plans/2026-11-18-astryx-migration.md`에 있다. 이전에 기준으로 삼던
+`docs/design/handoff/`와 `design-tokens.md`는 더 이상 구현 기준이 아니다.
 
-- **원본 프로토타입**: `풀이장.dc.html` — 시작/드라이브탐색/시트목록/검증오류/
-  문제풀이/제출확인/결과/설정 8개 화면. 프로토타입 구조(`x-dc`, `sc-if`,
-  `sc-for` 등)는 그대로 옮기지 않고, 시각 결과물(레이아웃·색·타이포·간격)만
-  React + Tailwind로 재현한다.
-- **토큰**: `design-tokens.md`의 Tailwind theme extension을 그대로
-  `tailwind.config.js`에 반영한다 — 라이트/다크 색상(`bg`, `surface`, `sunken`,
-  `border`, `text`, `accent`, `status.*`), 폰트(`display`: Paperlogy,
-  `body`: Pretendard, `mono`: IBM Plex Mono), radius, `shadow-card`. 다크모드는
-  Tailwind `darkMode: 'class'` 전략.
-- **상태 5종(문제 네비게이터)**: 색+아이콘+테두리 3중 코딩(안 봄=점선 회색,
-  답변완료=체크 청록, 보류=일시정지 앰버, 다시볼문제=북마크 로즈+모서리 컷,
-  현재문제=인디고 굵은 링). 색상만으로 구분하지 않는다는 접근성 요구사항을
-  이미 충족하는 형태.
-- **시그니처 요소**: 해설/결과 카드의 접힌 모서리(`clip-path` corner cut) —
-  "인덱스 카드로 문제를 정리한다"는 정체성을 반복 사용한다.
-- **커버되지 않은 화면/상태**: 탭 선택, 이어 풀기 선택, Sheet 변경 충돌 처리,
-  검증 오류 화면의 부가 버튼(오류 목록 복사/Markdown 다운로드/원본 열기),
-  문제풀이 화면의 퀵 이동(다음 미응답/보류/다시볼문제, 목록으로 돌아가기),
-  모바일 네비게이터 접기, 결과 화면의 내보내기 버튼과 분류·난이도 필터는 별도
-  목업이 없다. 이미 확정된 토큰과 컴포넌트(버튼, 카드, chip, 배지)를 그대로
-  조합해 해당 기능을 구현하는 단계(3~5단계)에서 채운다. 새로 디자인을 받지
-  않기로 사용자와 합의됨(2026-09-03).
+- **컴포넌트**: Astryx 컴포넌트(`Button`, `Card`, `Item`, `Badge`, `RadioList`,
+  `CheckboxList`, `Collapsible`, `Drawer`, `TopNav` 등)를 하위 경로로 가져와 쓴다
+  (`@astryxdesign/core/Button`). props는 추측하지 말고
+  `pnpm exec astryx component <이름>`으로 확인한다.
+- **Tailwind의 역할**: 레이아웃 보조(flex/grid/간격)에만 쓴다. 색·글자 스타일·다크
+  모드는 Tailwind가 아니라 Astryx 토큰이 맡는다. Astryx의 Tailwind 브릿지는 v4
+  전용이라 쓰지 않으며, Tailwind preflight는 끈다(`@layer` 밖이라 Astryx 스타일을
+  덮어쓰기 때문). Astryx 토큰이 필요하면 `bg-[var(--color-background-surface)]`처럼
+  임의 값으로만 쓴다.
+- **토큰 덮어쓰기**: `src/index.css`에서 포인트 색(라이트 `#5146C8`, 다크 `#6258DC`,
+  로고 색)과 폰트(본문 Pretendard, 제목 Paperlogy)를 덮어쓴다. `<Theme>`이 감싼 요소에도
+  같은 토큰을 다시 선언하므로 선택자는 반드시 `:root, [data-astryx-theme]`로 한다.
+- **다크 모드**: `<Theme mode>`가 `<html data-theme>`을 설정한다. 선택값은 localStorage
+  `sheet-quiz-theme`에 저장하고, `index.html`의 짧은 스크립트가 마운트 전에 적용해 첫
+  화면 깜빡임을 막는다. 모드 상태는 `AstryxProviders`가 한 곳에서 갖고 `useThemeMode()`로
+  공유한다(훅을 컴포넌트마다 따로 호출하면 상태가 어긋난다).
+- **한국어**: `InternationalizationProvider`에 `ko-KR` 카탈로그를 넣어 Astryx 내장
+  문구(본문으로 건너뛰기, 닫기 등)를 한국어로 표시한다.
+- **상태 5종(문제 목록)**: 색+아이콘+테두리 3중 코딩(안 봄=점선 회색, 답변완료=체크
+  초록, 보류=일시정지 노랑, 다시볼문제=깃발 빨강, 현재문제=굵은 강조 링). 범례는 글자
+  대신 실제 칸과 같은 모양의 견본으로 보여준다. 색상만으로 구분하지 않는다.
+  `QuestionNavigatorGrid`는 이 3중 코딩 때문에 Astryx 컴포넌트가 아니라 자체 마크업을 쓴다.
+- **날짜 표기**: 화면의 모든 날짜는 ISO 8601(`YYYY-MM-DD`, 사용자 로컬 시간대)로 보인다.
+- **전환하며 제외한 것**: 해설/결과 카드의 접힌 모서리(`clip-path`) 시그니처 요소와
+  기존 프로토타입의 인디고 단일 팔레트는 Astryx 전환 과정에서 쓰지 않는다.
+- **커버되지 않은 화면/상태**: 탭 선택, 이어 풀기 선택, Sheet 변경 충돌 처리, 검증
+  오류 화면의 부가 버튼, 문제풀이 화면의 퀵 이동, 모바일 문제 목록(서랍), 결과 화면의
+  내보내기 버튼과 필터는 별도 목업이 없다. 이미 확정된 컴포넌트를 조합해 구현한다
+  (2026-09-03 사용자와 합의, 전환 후에도 동일).
 
 ## 12. 테스트 전략
 

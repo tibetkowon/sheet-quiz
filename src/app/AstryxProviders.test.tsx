@@ -19,7 +19,6 @@ describe("AstryxProviders", () => {
   beforeEach(() => {
     window.localStorage.clear();
     document.documentElement.removeAttribute("data-theme");
-    document.documentElement.classList.remove("dark");
   });
 
   it("applies the dark mode saved in localStorage on first render", () => {
@@ -55,6 +54,5 @@ describe("AstryxProviders", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "토글" }));
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    expect(document.documentElement.classList.contains("dark")).toBe(true);
   });
 });

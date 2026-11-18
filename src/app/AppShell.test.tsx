@@ -19,7 +19,6 @@ function renderShell(initialPath = "/") {
 describe("AppShell", () => {
   beforeEach(() => {
     window.localStorage.clear();
-    document.documentElement.classList.remove("dark");
   });
 
   it("links the main destinations from the primary navigation", () => {
@@ -71,6 +70,11 @@ describe("AppShell", () => {
     renderShell("/history");
     const otherToggle = screen.getByRole("button", { name: "다크 모드" }).parentElement;
     expect(otherToggle).not.toHaveClass("bottom-40");
+  });
+
+  it("shows the skip-to-content link in Korean", () => {
+    renderShell();
+    expect(screen.getByRole("link", { name: "본문으로 건너뛰기" })).toBeInTheDocument();
   });
 
   it("renders the page content inside exactly one main landmark", () => {
