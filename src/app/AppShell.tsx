@@ -1,38 +1,70 @@
-import { Link } from "react-router-dom";
+import type { ReactNode } from "react";
+import { Moon, Sun } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { AppShell as AstryxAppShell } from "@astryxdesign/core/AppShell";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { MobileNav, MobileNavToggle } from "@astryxdesign/core/MobileNav";
+import { SideNavItem } from "@astryxdesign/core/SideNav";
+import { TopNav, TopNavHeading, TopNavItem } from "@astryxdesign/core/TopNav";
 import { useThemeMode } from "./ThemeModeContext";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+const NAV_ITEMS = [
+  { label: "자격증", href: "/folders" },
+  { label: "기록", href: "/history" },
+  { label: "설정", href: "/settings" },
+];
+
+export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggleTheme } = useThemeMode();
+  const { pathname } = useLocation();
+  const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+  const isDark = theme === "dark";
 
   return (
-    <div className="min-h-screen bg-bg text-text dark:bg-bg-dark dark:text-text-dark">
-      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-4 py-4 dark:border-border-dark sm:px-8">
-        <Link to="/" className="flex shrink-0 items-center gap-2.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent font-display text-sm font-bold text-white dark:bg-accent-dark">
-            풀
-          </span>
-          <span className="font-display text-[17px] font-semibold">풀이장</span>
-        </Link>
-        <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold text-text-secondary dark:text-text-dark-secondary sm:text-[13px]">
-          <Link to="/folders" className="hover:text-text dark:hover:text-text-dark">
-            자격증
-          </Link>
-          <Link to="/history" className="hover:text-text dark:hover:text-text-dark">
-            기록
-          </Link>
-          <Link to="/settings" className="hover:text-text dark:hover:text-text-dark">
-            설정
-          </Link>
-        </nav>
-        <button
-          type="button"
+    <>
+      <AstryxAppShell
+        height="auto"
+        variant="surface"
+        topNav={
+          <TopNav
+            label="주요 메뉴"
+            heading={
+              <TopNavHeading
+                logo={<img src="/favicon.svg" alt="" className="h-8 w-8" />}
+                heading="풀이장"
+                headingHref="/"
+              />
+            }
+            startContent={NAV_ITEMS.map(({ label, href }) => (
+              <TopNavItem key={href} label={label} href={href} isSelected={isCurrent(href)} />
+            ))}
+            endContent={<MobileNavToggle label="메뉴 열기" />}
+          />
+        }
+        // 기본 드로어는 상단 바의 로고/이름을 그대로 복사해 중복된다.
+        mobileNav={{
+          hasToggle: false,
+          content: (
+            <MobileNav header="메뉴">
+              {NAV_ITEMS.map(({ label, href }) => (
+                <SideNavItem key={href} label={label} href={href} isSelected={isCurrent(href)} />
+              ))}
+            </MobileNav>
+          ),
+        }}
+      >
+        {children}
+      </AstryxAppShell>
+      {/* 상단 바(햄버거 옆)에 두면 모바일에서 오조작이 잦아 우측 하단에 띄운다. */}
+      <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-10">
+        <IconButton
+          label={isDark ? "라이트 모드" : "다크 모드"}
+          icon={isDark ? <Sun /> : <Moon />}
+          variant="secondary"
           onClick={toggleTheme}
-          className="shrink-0 whitespace-nowrap rounded border border-border bg-sunken px-3 py-1.5 text-xs text-text-secondary dark:border-border-dark dark:bg-sunken-dark dark:text-text-dark-secondary sm:text-[13px]"
-        >
-          {theme === "dark" ? "라이트 모드" : "다크 모드"}
-        </button>
-      </header>
-      <main>{children}</main>
-    </div>
+        />
+      </div>
+    </>
   );
 }

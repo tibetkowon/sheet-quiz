@@ -10,11 +10,11 @@ export default defineConfig({
     maskable: {
       sizes: [512],
       padding: 0.1,
-      resizeOptions: { background: "#F7F7FB" },
+      resizeOptions: { background: "#5146C8" },
     },
     apple: {
       sizes: [180],
-      resizeOptions: { background: "#F7F7FB" },
+      resizeOptions: { background: "#5146C8" },
     },
   },
   headLinkOptions: {
