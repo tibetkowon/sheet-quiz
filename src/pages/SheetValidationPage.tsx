@@ -138,10 +138,21 @@ export default function SheetValidationPage() {
     navigate,
   ]);
 
+  const keywordsButton = (
+    <button
+      type="button"
+      onClick={() => navigate(`/sheets/${spreadsheetId}/keywords`)}
+      className="min-h-11 rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
+    >
+      키워드 보기
+    </button>
+  );
+
   if (status === "loading") {
     return (
       <PageContainer maxWidth="42rem">
-        <p className="text-sm">불러오는 중…</p>
+        <p className="mb-5 text-sm">불러오는 중…</p>
+        {keywordsButton}
       </PageContainer>
     );
   }
@@ -150,6 +161,7 @@ export default function SheetValidationPage() {
     return (
       <PageContainer maxWidth="42rem" className="[overflow-wrap:anywhere]">
         <ErrorBanner message={loadError ?? "Sheet 데이터를 불러오지 못했습니다."} onRetry={load} />
+        {keywordsButton}
       </PageContainer>
     );
   }
@@ -220,6 +232,7 @@ export default function SheetValidationPage() {
           >
             Google Sheet 원본 열기
           </a>
+          {keywordsButton}
         </div>
       </PageContainer>
     );
@@ -244,20 +257,23 @@ export default function SheetValidationPage() {
           ))}
         </ul>
       )}
-      {questions.length === 0 ? (
-        <p className="text-sm text-text-secondary dark:text-text-dark-secondary">
-          이 시트에는 풀 수 있는 문제가 없습니다. 문제 데이터를 추가한 뒤 다시 검증해주세요.
-        </p>
-      ) : (
-        <button
-          type="button"
-          onClick={() => void startQuiz()}
-          disabled={starting}
-          className="min-h-11 rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 dark:bg-accent-dark"
-        >
-          {starting ? "준비 중…" : "풀이 시작"}
-        </button>
-      )}
+      <div className="flex flex-col items-start gap-2.5 sm:flex-row sm:flex-wrap">
+        {questions.length === 0 ? (
+          <p className="w-full text-sm text-text-secondary dark:text-text-dark-secondary">
+            이 시트에는 풀 수 있는 문제가 없습니다. 문제 데이터를 추가한 뒤 다시 검증해주세요.
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void startQuiz()}
+            disabled={starting}
+            className="min-h-11 rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 dark:bg-accent-dark"
+          >
+            {starting ? "준비 중…" : "풀이 시작"}
+          </button>
+        )}
+        {keywordsButton}
+      </div>
     </PageContainer>
   );
 }

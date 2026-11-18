@@ -7,6 +7,7 @@ import TopFolderSelectPage from "./pages/TopFolderSelectPage";
 import DriveBrowsePage from "./pages/DriveBrowsePage";
 import SheetTabSelectPage from "./pages/SheetTabSelectPage";
 import SheetValidationPage from "./pages/SheetValidationPage";
+import KeywordsPage from "./pages/KeywordsPage";
 import QuizPage from "./pages/QuizPage";
 import ResumeSelectPage from "./pages/ResumeSelectPage";
 import SubmitConfirmPage from "./pages/SubmitConfirmPage";
@@ -29,6 +30,7 @@ export default function App() {
               <Route path="/folders/:folderId" element={<DriveBrowsePage />} />
               <Route path="/sheets/:spreadsheetId/tabs" element={<SheetTabSelectPage />} />
               <Route path="/sheets/:spreadsheetId/validate" element={<SheetValidationPage />} />
+              <Route path="/sheets/:spreadsheetId/keywords" element={<KeywordsPage />} />
               <Route path="/quiz/:attemptId" element={<QuizPage />} />
               <Route path="/quiz/:attemptId/resume" element={<ResumeSelectPage />} />
               <Route path="/quiz/:attemptId/submit" element={<SubmitConfirmPage />} />

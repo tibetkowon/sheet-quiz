@@ -55,21 +55,28 @@ export async function mockGoogleApis(page: Page) {
     route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ sheets: [{ properties: { sheetId: 0, title: "문제은행" } }] }),
-    }),
-  );
-
-  await page.route("https://sheets.googleapis.com/v4/spreadsheets/sheet-1/values/*", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
       body: JSON.stringify({
-        values: [
-          ["번호", "분류", "난이도", "유형", "문제", "보기 A", "보기 B", "보기 C", "보기 D", "정답", "해설"],
-          ["1", "컴퓨팅", "MEDIUM", "SINGLE", "EC2란?", "가상서버", "저장소", "네트워크", "DB", "A", "해설1"],
-          ["2", "스토리지", "EASY", "SINGLE", "S3란?", "객체스토리지", "블록스토리지", "DB", "큐", "A", "해설2"],
+        sheets: [
+          { properties: { sheetId: 1, title: "키워드" } },
+          { properties: { sheetId: 0, title: "문제은행" } },
         ],
       }),
     }),
   );
+
+  await page.route("https://sheets.googleapis.com/v4/spreadsheets/sheet-1/values/*", (route) => {
+    const path = decodeURIComponent(new URL(route.request().url()).pathname);
+    const values = path.endsWith("/values/'키워드'")
+      ? [
+          ["영역", "키워드", "설명"],
+          ["컴퓨팅", "EC2", "가상 서버"],
+          ["스토리지", "S3", "객체 스토리지"],
+        ]
+      : [
+          ["번호", "분류", "난이도", "유형", "문제", "보기 A", "보기 B", "보기 C", "보기 D", "정답", "해설"],
+          ["1", "컴퓨팅", "MEDIUM", "SINGLE", "EC2란?", "가상서버", "저장소", "네트워크", "DB", "A", "해설1"],
+          ["2", "스토리지", "EASY", "SINGLE", "S3란?", "객체스토리지", "블록스토리지", "DB", "큐", "A", "해설2"],
+        ];
+    return route.fulfill({ json: { values } });
+  });
 }
