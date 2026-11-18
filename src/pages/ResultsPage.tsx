@@ -1,10 +1,20 @@
 // src/pages/ResultsPage.tsx
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Link } from "@astryxdesign/core/Link";
+import { Text } from "@astryxdesign/core/Text";
+import { VStack } from "@astryxdesign/core/VStack";
 import { getAttempt } from "../storage/attemptRepo";
 import { computeStudyResult, gradeAttempt } from "../quiz/grading";
 import { buildResultJson, buildResultMarkdown, downloadTextFile } from "../quiz/export";
+import { LoadingIndicator } from "../components/LoadingIndicator";
 import { ProgressBar } from "../components/ProgressBar";
+import { StatTile } from "../components/StatTile";
 import { PageContainer } from "../components/PageContainer";
 import type { StudyAttempt } from "../types/studyAttempt";
 import { clampAttemptIndex } from "../quiz/clampAttemptIndex";
@@ -44,24 +54,23 @@ export default function ResultsPage() {
   if (state === "loading") {
     return (
       <PageContainer maxWidth="48rem">
-        <p className="text-sm">불러오는 중…</p>
+        <LoadingIndicator />
       </PageContainer>
     );
   }
 
   if (state === "not-found" || !attempt || !attempt.result || !attempt.questionSnapshot) {
     return (
-      <PageContainer maxWidth="48rem" className="[overflow-wrap:anywhere]">
-        <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
-          제출된 결과를 찾을 수 없습니다. 아직 제출하지 않았다면 문제풀이 화면으로 돌아가
-          제출해주세요.
-        </p>
-        <Link
-          to="/folders"
-          className="inline-flex min-h-11 items-center py-2.5 text-sm font-semibold text-accent dark:text-accent-dark"
-        >
-          Drive 폴더로 이동
-        </Link>
+      <PageContainer maxWidth="48rem" className="break-keep [overflow-wrap:anywhere]">
+        <VStack gap={3} align="start">
+          <Text color="secondary" as="p">
+            제출된 결과를 찾을 수 없습니다. 아직 제출하지 않았다면 문제풀이 화면으로 돌아가
+            제출해주세요.
+          </Text>
+          <Link href="/folders" isStandalone weight="semibold">
+            Drive 폴더로 이동
+          </Link>
+        </VStack>
       </PageContainer>
     );
   }
@@ -113,202 +122,163 @@ function ResultsPageContent({
   });
 
   return (
-    <PageContainer maxWidth="48rem" className="[overflow-wrap:anywhere]">
-      <div className="mb-7 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-surface p-5 shadow-card dark:border-border-dark dark:bg-surface-dark">
-          <div className="mb-1.5 text-xs text-text-secondary dark:text-text-dark-secondary">
-            점수
-          </div>
-          <div className="font-display text-3xl font-bold">{result.scorePercent}%</div>
-        </div>
-        <div className="rounded-lg border border-border bg-surface p-5 shadow-card dark:border-border-dark dark:bg-surface-dark">
-          <div className="mb-1.5 text-xs text-text-secondary dark:text-text-dark-secondary">
-            정답 / 전체
-          </div>
-          <div className="font-mono text-2xl font-semibold">
-            {result.correctCount}/{questions.length}
-          </div>
-        </div>
-        <div className="rounded-lg border border-border bg-surface p-5 shadow-card dark:border-border-dark dark:bg-surface-dark">
-          <div className="mb-1.5 text-xs text-text-secondary dark:text-text-dark-secondary">
-            다시 볼 문제
-          </div>
-          <div className="font-mono text-2xl font-semibold text-status-review dark:text-status-review-dark">
-            {flaggedCount}
-          </div>
-        </div>
-      </div>
+    <PageContainer maxWidth="48rem" className="break-keep [overflow-wrap:anywhere]">
+      <VStack gap={6}>
+        <VStack gap={1}>
+          <Heading level={1}>풀이 결과</Heading>
+          <Text color="secondary" as="p">
+            {attempt.spreadsheetName} · {attempt.sheetTabName}
+          </Text>
+        </VStack>
 
-      <div className="mb-7 grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <div>
-          <div className="mb-2.5 text-sm font-semibold text-text-secondary dark:text-text-dark-secondary">
-            분류별 정답률
-          </div>
-          <div className="flex flex-col gap-2.5">
-            {result.categoryStats.map((stat) => (
-              <div key={stat.name}>
-                <div className="mb-1 flex flex-wrap justify-between gap-x-2 text-[13px]">
-                  <span className="min-w-0 break-words">{stat.name}</span>
-                  <span className="font-mono text-text-secondary dark:text-text-dark-secondary">
-                    {stat.correct}/{stat.total}
-                  </span>
-                </div>
-                <ProgressBar
-                  percent={stat.total > 0 ? (stat.correct / stat.total) * 100 : 0}
-                  label={`분류: ${stat.name}`}
-                />
-              </div>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StatTile label="점수" value={`${result.scorePercent}%`} size="3xl" />
+          <StatTile label="정답 / 전체" value={`${result.correctCount}/${questions.length}`} />
+          <StatTile label="다시 볼 문제" value={flaggedCount} variant="red" />
         </div>
-        <div>
-          <div className="mb-2.5 text-sm font-semibold text-text-secondary dark:text-text-dark-secondary">
-            난이도별 정답률
-          </div>
-          <div className="flex flex-col gap-2.5">
-            {result.difficultyStats.map((stat) => (
-              <div key={stat.name}>
-                <div className="mb-1 flex flex-wrap justify-between gap-x-2 text-[13px]">
-                  <span className="min-w-0 break-words">난이도 {stat.name}</span>
-                  <span className="font-mono text-text-secondary dark:text-text-dark-secondary">
-                    {stat.correct}/{stat.total}
-                  </span>
-                </div>
-                <ProgressBar
-                  percent={stat.total > 0 ? (stat.correct / stat.total) * 100 : 0}
-                  label={`난이도: ${stat.name}`}
-                />
-              </div>
-            ))}
-          </div>
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <StatBars
+            title="분류별 정답률"
+            stats={result.categoryStats.map((stat) => ({
+              ...stat,
+              displayName: stat.name,
+              ariaLabel: `분류: ${stat.name}`,
+            }))}
+          />
+          <StatBars
+            title="난이도별 정답률"
+            stats={result.difficultyStats.map((stat) => ({
+              ...stat,
+              displayName: `난이도 ${stat.name}`,
+              ariaLabel: `난이도: ${stat.name}`,
+            }))}
+          />
         </div>
-      </div>
 
-      <div className="mb-4 flex flex-wrap gap-2.5">
-        <button
-          type="button"
-          onClick={downloadMarkdown}
-          className="min-h-11 rounded border border-border px-3.5 py-2.5 text-xs dark:border-border-dark"
-        >
-          Markdown 다운로드
-        </button>
-        <button
-          type="button"
-          onClick={downloadJson}
-          className="min-h-11 rounded border border-border px-3.5 py-2.5 text-xs dark:border-border-dark"
-        >
-          JSON 다운로드
-        </button>
-      </div>
+        <div className="flex flex-wrap gap-2.5">
+          <Button label="Markdown 다운로드" onClick={downloadMarkdown} />
+          <Button label="JSON 다운로드" onClick={downloadJson} />
+        </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            onClick={() => setFilter(f.key)}
-            className={`min-h-11 rounded-full border px-3.5 py-2.5 text-[13px] ${
-              filter === f.key
-                ? "border-accent bg-accent-soft text-accent dark:border-accent-dark dark:bg-accent-dark-soft dark:text-accent-dark"
-                : "border-border bg-sunken text-text-secondary dark:border-border-dark dark:bg-sunken-dark dark:text-text-dark-secondary"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+        <div className="flex flex-wrap gap-2">
+          {FILTERS.map((f) => (
+            <Button
+              key={f.key}
+              label={f.label}
+              size="sm"
+              variant={filter === f.key ? "primary" : "secondary"}
+              aria-pressed={filter === f.key}
+              onClick={() => setFilter(f.key)}
+            />
+          ))}
+        </div>
 
-      <div className="flex flex-col gap-2.5">
-        {rows.map((question) => {
-          const grade = gradeByQuestionId.get(question.id)!;
-          const progress = progressByQuestionId.get(question.id);
-          const isExpanded = expandedId === question.id;
-          const resultLabel = !grade.isAnswered ? "미응답" : grade.isCorrect ? "정답" : "오답";
-          const resultColorClass = !grade.isAnswered
-            ? "text-text-secondary dark:text-text-dark-secondary"
-            : grade.isCorrect
-              ? "text-status-answered dark:text-status-answered-dark"
-              : "text-status-review dark:text-status-review-dark";
+        <VStack gap={3}>
+          {rows.map((question) => {
+            const grade = gradeByQuestionId.get(question.id)!;
+            const progress = progressByQuestionId.get(question.id);
+            const resultBadge = !grade.isAnswered
+              ? ({ variant: "neutral", label: "미응답" } as const)
+              : grade.isCorrect
+                ? ({ variant: "success", label: "정답" } as const)
+                : ({ variant: "error", label: "오답" } as const);
 
-          return (
-            <div
-              key={question.id}
-              className="overflow-hidden rounded-lg border border-border bg-surface dark:border-border-dark dark:bg-surface-dark"
-              style={{
-                clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%)",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setExpandedId(isExpanded ? null : question.id)}
-                aria-expanded={isExpanded}
-                aria-controls={`question-detail-${question.id}`}
-                className="flex min-h-11 w-full min-w-0 flex-wrap items-center gap-3 px-4.5 py-3.5 text-left"
-              >
-                <span className="w-7 shrink-0 font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
-                  {question.questionNumber}
-                </span>
-                {question.category && (
-                  <span className="min-w-0 max-w-full rounded-full bg-sunken px-2 py-0.5 text-[11px] text-text-secondary dark:bg-sunken-dark dark:text-text-dark-secondary">
-                    {question.category}
-                  </span>
-                )}
-                <span className="min-w-0 basis-full break-words text-[13.5px] text-text-secondary sm:flex-1 dark:text-text-dark-secondary">
-                  {question.text}
-                </span>
-                {progress?.reviewMarked && <span aria-label="다시 볼 문제로 표시됨">⚑</span>}
-                <span className={`text-xs font-semibold ${resultColorClass}`}>{resultLabel}</span>
-              </button>
-              {isExpanded && (
-                <div
-                  id={`question-detail-${question.id}`}
-                  className="flex min-w-0 flex-col gap-2 px-4.5 pb-4 sm:pl-14"
-                >
-                  {question.options.map((option) => {
-                    const isCorrectOption = grade.correctAnswers.includes(option.key);
-                    const isSelected = grade.selectedAnswers.includes(option.key);
-                    return (
-                      <div
-                        key={option.key}
-                        className={`rounded border px-3 py-2 text-[13px] ${
-                          isCorrectOption
-                            ? "border-status-answered dark:border-status-answered-dark"
-                            : isSelected
-                              ? "border-status-review dark:border-status-review-dark"
-                              : "border-border dark:border-border-dark"
-                        }`}
-                      >
-                        <div className="flex min-w-0 flex-wrap items-center gap-2">
-                          <span className="font-mono text-xs">{option.key}</span>
-                          <span className="min-w-0 break-words">{option.text}</span>
-                          {isCorrectOption && (
-                            <span className="text-xs font-semibold text-status-answered dark:text-status-answered-dark">
-                              정답
-                            </span>
-                          )}
-                          {isSelected && !isCorrectOption && (
-                            <span className="text-xs font-semibold text-status-review dark:text-status-review-dark">
-                              선택함
-                            </span>
-                          )}
-                        </div>
-                        {option.explanation && (
-                          <p className="m-0 mt-1 text-xs text-text-secondary dark:text-text-dark-secondary">
-                            {option.explanation}
-                          </p>
-                        )}
+            return (
+              <Card key={question.id} padding={3}>
+                <Collapsible
+                  isOpen={expandedId === question.id}
+                  onOpenChange={(open) => setExpandedId(open ? question.id : null)}
+                  trigger={
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <Text type="supporting">{question.questionNumber}</Text>
+                      {question.category && <Badge variant="neutral" label={question.category} />}
+                      <Badge variant={resultBadge.variant} label={resultBadge.label} />
+                      {progress?.reviewMarked && <span aria-label="다시 볼 문제로 표시됨">⚑</span>}
+                      <div className="basis-full">
+                        <Text as="div" display="block">
+                          {question.text}
+                        </Text>
                       </div>
-                    );
-                  })}
-                  <p className="m-0 mt-1 text-[13.5px] leading-[1.65] text-text-secondary dark:text-text-dark-secondary">
-                    {question.explanation}
-                  </p>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                    </div>
+                  }
+                >
+                  {/* 접힌 문제의 상세는 DOM에 두지 않는다(문제가 많은 시트에서 화면이 무거워지지 않도록). */}
+                  {expandedId === question.id && (
+                    <VStack gap={2} paddingBlockStart={3}>
+                      {question.options.map((option) => {
+                        const isCorrectOption = grade.correctAnswers.includes(option.key);
+                        const isSelected = grade.selectedAnswers.includes(option.key);
+                        return (
+                          <Card
+                            key={option.key}
+                            padding={3}
+                            variant={isCorrectOption ? "green" : isSelected ? "red" : "default"}
+                          >
+                            <VStack gap={1} align="start">
+                              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                <Text type="code">{option.key}</Text>
+                                <Text>{option.text}</Text>
+                                {isCorrectOption && <Badge variant="success" label="정답" />}
+                                {isSelected && !isCorrectOption && (
+                                  <Badge variant="error" label="선택함" />
+                                )}
+                              </div>
+                              {option.explanation && (
+                                <Text type="supporting" as="p">
+                                  {option.explanation}
+                                </Text>
+                              )}
+                            </VStack>
+                          </Card>
+                        );
+                      })}
+                      {question.explanation && (
+                        <Card variant="muted" padding={3}>
+                          <VStack gap={1} align="start">
+                            <Text weight="semibold" as="div" display="block">
+                              해설
+                            </Text>
+                            <Text as="p">{question.explanation}</Text>
+                          </VStack>
+                        </Card>
+                      )}
+                    </VStack>
+                  )}
+                </Collapsible>
+              </Card>
+            );
+          })}
+        </VStack>
+      </VStack>
     </PageContainer>
+  );
+}
+
+function StatBars({
+  title,
+  stats,
+}: {
+  title: string;
+  stats: { name: string; displayName: string; ariaLabel: string; correct: number; total: number }[];
+}) {
+  return (
+    <VStack gap={3}>
+      <Heading level={2}>{title}</Heading>
+      {stats.map((stat) => (
+        <VStack key={stat.name} gap={1}>
+          <div className="flex flex-wrap justify-between gap-x-2">
+            <Text>{stat.displayName}</Text>
+            <Text type="supporting">
+              {stat.correct}/{stat.total}
+            </Text>
+          </div>
+          <ProgressBar
+            percent={stat.total > 0 ? (stat.correct / stat.total) * 100 : 0}
+            label={stat.ariaLabel}
+          />
+        </VStack>
+      ))}
+    </VStack>
   );
 }

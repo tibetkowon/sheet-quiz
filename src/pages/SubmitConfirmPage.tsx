@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@astryxdesign/core/Button";
-import { Card } from "@astryxdesign/core/Card";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Link } from "@astryxdesign/core/Link";
 import { Text } from "@astryxdesign/core/Text";
@@ -13,30 +12,8 @@ import { summarizeProgress } from "../quiz/navigation";
 import type { StudyAttempt } from "../types/studyAttempt";
 import { clampAttemptIndex } from "../quiz/clampAttemptIndex";
 import { LoadingIndicator } from "../components/LoadingIndicator";
+import { StatTile } from "../components/StatTile";
 import { PageContainer } from "../components/PageContainer";
-
-type TileVariant = "default" | "green" | "yellow" | "muted" | "red";
-
-function StatTile({
-  label,
-  value,
-  variant,
-}: {
-  label: string;
-  value: number;
-  variant: TileVariant;
-}) {
-  return (
-    <Card variant={variant}>
-      <VStack gap={1} align="start">
-        <Text type="supporting">{label}</Text>
-        <Text size="2xl" weight="semibold">
-          {value}
-        </Text>
-      </VStack>
-    </Card>
-  );
-}
 
 export default function SubmitConfirmPage() {
   const { attemptId } = useParams<{ attemptId: string }>();
