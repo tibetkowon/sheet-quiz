@@ -1,6 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: "class",
+  // preflight는 @layer 밖이라 Astryx reset/컴포넌트 스타일을 덮어쓴다.
+  corePlugins: { preflight: false },
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {

@@ -19,6 +19,15 @@
       content="#14131F"
     />
     <title>풀이장</title>
+    <script>
+      // React 마운트 전에 저장된 테마를 적용해 다크 모드 첫 화면의 깜빡임을 막는다.
+      try {
+        if (localStorage.getItem("sheet-quiz-theme") === "dark") {
+          document.documentElement.classList.add("dark");
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      } catch {}
+    </script>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"

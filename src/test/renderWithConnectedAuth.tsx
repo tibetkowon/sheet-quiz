@@ -2,6 +2,7 @@ import { ReactElement, ReactNode, useEffect } from "react";
 import { render, RenderResult } from "@testing-library/react";
 import { MemoryRouter, MemoryRouterProps } from "react-router-dom";
 import { AuthProvider, useAuth } from "../auth/AuthContext";
+import { AstryxProviders } from "../app/AstryxProviders";
 
 export function ConnectGate({ children }: { children: ReactNode }) {
   const { status, connect } = useAuth();
@@ -18,9 +19,11 @@ export function renderWithConnectedAuth(
 ): RenderResult {
   return render(
     <MemoryRouter initialEntries={initialEntries}>
-      <AuthProvider clientId="client-id">
-        <ConnectGate>{ui}</ConnectGate>
-      </AuthProvider>
+      <AstryxProviders>
+        <AuthProvider clientId="client-id">
+          <ConnectGate>{ui}</ConnectGate>
+        </AuthProvider>
+      </AstryxProviders>
     </MemoryRouter>,
   );
 }

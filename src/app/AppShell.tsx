@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { useTheme } from "./useTheme";
+import { useThemeMode } from "./ThemeModeContext";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useThemeMode();
 
   return (
     <div className="min-h-screen bg-bg text-text dark:bg-bg-dark dark:text-text-dark">
