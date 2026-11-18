@@ -4,7 +4,14 @@ import { REQUIRED_HEADER_KEYS } from "./headerMap";
 import type { RawQuestionRow } from "./parseQuestions";
 import type { ValidationIssue } from "./types";
 
-const OPTION_KEYS = ["option_a", "option_b", "option_c", "option_d", "option_e", "option_f"] as const;
+const OPTION_KEYS = [
+  "option_a",
+  "option_b",
+  "option_c",
+  "option_d",
+  "option_e",
+  "option_f",
+] as const;
 const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 const DIFFICULTY_MAP: Record<string, Difficulty> = {
@@ -44,8 +51,17 @@ function issue(
   field: string,
   message: string,
   severity: "error" | "warning",
+  detail?: string,
 ): ValidationIssue {
-  return { sheetName: context.sheetName, rowNumber, questionNumber, field, message, severity };
+  return {
+    sheetName: context.sheetName,
+    rowNumber,
+    questionNumber,
+    field,
+    message,
+    severity,
+    detail,
+  };
 }
 
 export function validateQuestions(
@@ -58,7 +74,15 @@ export function validateQuestions(
   const missingHeaders = REQUIRED_HEADER_KEYS.filter((key) => !(key in headerIndex));
   if (missingHeaders.length > 0) {
     issues.push(
-      issue(context, 1, null, "header", `필수 헤더가 없습니다: ${missingHeaders.join(", ")}`, "error"),
+      issue(
+        context,
+        1,
+        null,
+        "header",
+        "필수 헤더가 없습니다.",
+        "error",
+        missingHeaders.join(", "),
+      ),
     );
     return { questions: [], issues };
   }
@@ -80,7 +104,9 @@ export function validateQuestions(
 
     const questionText = v.question ?? "";
     if (!questionText) {
-      rowIssues.push(issue(context, row.rowNumber, null, "question", "문제 본문이 비어 있습니다.", "error"));
+      rowIssues.push(
+        issue(context, row.rowNumber, null, "question", "문제 본문이 비어 있습니다.", "error"),
+      );
       hasBlockingError = true;
     }
 
@@ -129,13 +155,29 @@ export function validateQuestions(
 
     let questionOptions: QuestionOption[] | null = null;
     if (lastFilledIndex === -1) {
-      rowIssues.push(issue(context, row.rowNumber, questionNumber, "options", "선택지가 2개 미만입니다.", "error"));
+      rowIssues.push(
+        issue(
+          context,
+          row.rowNumber,
+          questionNumber,
+          "options",
+          "선택지가 2개 미만입니다.",
+          "error",
+        ),
+      );
       hasBlockingError = true;
     } else {
       const hasGap = rawOptionTexts.slice(0, lastFilledIndex + 1).some((text) => !text);
       if (hasGap) {
         rowIssues.push(
-          issue(context, row.rowNumber, questionNumber, "options", "선택지 중간이 비어 있습니다.", "error"),
+          issue(
+            context,
+            row.rowNumber,
+            questionNumber,
+            "options",
+            "선택지 중간이 비어 있습니다.",
+            "error",
+          ),
         );
         hasBlockingError = true;
       } else {
@@ -146,7 +188,14 @@ export function validateQuestions(
         }));
         if (built.length < 2) {
           rowIssues.push(
-            issue(context, row.rowNumber, questionNumber, "options", "선택지가 2개 미만입니다.", "error"),
+            issue(
+              context,
+              row.rowNumber,
+              questionNumber,
+              "options",
+              "선택지가 2개 미만입니다.",
+              "error",
+            ),
           );
           hasBlockingError = true;
         } else {
@@ -162,7 +211,14 @@ export function validateQuestions(
 
     if (rawAnswers.length === 0) {
       rowIssues.push(
-        issue(context, row.rowNumber, questionNumber, "correct_answers", "정답이 비어 있습니다.", "error"),
+        issue(
+          context,
+          row.rowNumber,
+          questionNumber,
+          "correct_answers",
+          "정답이 비어 있습니다.",
+          "error",
+        ),
       );
       hasBlockingError = true;
     } else {
@@ -217,12 +273,26 @@ export function validateQuestions(
     } else if (rawAnswers.length > 0) {
       if (questionType === "SINGLE" && rawAnswers.length > 1) {
         rowIssues.push(
-          issue(context, row.rowNumber, questionNumber, "type", "단일 정답 문제인데 정답이 여러 개입니다.", "error"),
+          issue(
+            context,
+            row.rowNumber,
+            questionNumber,
+            "type",
+            "단일 정답 문제인데 정답이 여러 개입니다.",
+            "error",
+          ),
         );
         hasBlockingError = true;
       } else if (questionType === "MULTIPLE" && rawAnswers.length < 2) {
         rowIssues.push(
-          issue(context, row.rowNumber, questionNumber, "type", "복수 정답 문제인데 정답이 1개뿐입니다.", "error"),
+          issue(
+            context,
+            row.rowNumber,
+            questionNumber,
+            "type",
+            "복수 정답 문제인데 정답이 1개뿐입니다.",
+            "error",
+          ),
         );
         hasBlockingError = true;
       }
@@ -279,7 +349,14 @@ export function validateQuestions(
 
     if (!v.explanation) {
       rowIssues.push(
-        issue(context, row.rowNumber, questionNumber, "explanation", "해설이 비어 있습니다.", "warning"),
+        issue(
+          context,
+          row.rowNumber,
+          questionNumber,
+          "explanation",
+          "해설이 비어 있습니다.",
+          "warning",
+        ),
       );
     }
 
@@ -300,9 +377,17 @@ export function validateQuestions(
       options: questionOptions,
       correctAnswers: rawAnswers,
       explanation: v.explanation ?? "",
-      keyPoints: v.key_points ? v.key_points.split(",").map((s) => s.trim()).filter(Boolean) : undefined,
+      keyPoints: v.key_points
+        ? v.key_points
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : undefined,
       relatedTopics: v.related_topics
-        ? v.related_topics.split(",").map((s) => s.trim()).filter(Boolean)
+        ? v.related_topics
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
         : undefined,
       sourceUrl: v.source_url || undefined,
     });

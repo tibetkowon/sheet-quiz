@@ -1,4 +1,7 @@
 import { Component, ReactNode } from "react";
+import { Button } from "@astryxdesign/core/Button";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
 
 interface Props {
   children: ReactNode;
@@ -28,18 +31,14 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div role="alert" className="flex min-h-screen flex-col items-center justify-center gap-4 px-10 text-center">
-          <h1 className="font-display text-xl font-semibold">문제가 발생했어요</h1>
-          <p className="max-w-sm text-sm text-text-secondary dark:text-text-dark-secondary">
-            예기치 못한 오류로 화면을 표시할 수 없습니다. 시작 화면으로 돌아가 다시
-            시도해주세요.
-          </p>
-          <button
-            type="button"
-            onClick={this.reset}
-            className="rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white dark:bg-accent-dark"
-          >
-            시작 화면으로 돌아가기
-          </button>
+          <Heading level={1}>문제가 발생했어요</Heading>
+          <div className="max-w-sm">
+            <Text color="secondary">
+              예기치 못한 오류로 화면을 표시할 수 없습니다. 시작 화면으로 돌아가 다시
+              시도해주세요.
+            </Text>
+          </div>
+          <Button label="시작 화면으로 돌아가기" variant="primary" onClick={this.reset} />
         </div>
       );
     }

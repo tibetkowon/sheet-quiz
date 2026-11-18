@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Card } from "@astryxdesign/core/Card";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Item } from "@astryxdesign/core/Item";
+import { Text } from "@astryxdesign/core/Text";
+import { VStack } from "@astryxdesign/core/VStack";
 import { useAuth } from "../auth/AuthContext";
 import { useLatestRequest } from "../app/useLatestRequest";
 import { listSheetTabs, pickQuestionTab, SheetsApiError, SheetTab } from "../sheets/sheetsClient";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
 
 interface LocationState {
@@ -36,7 +42,9 @@ export default function SheetTabSelectPage() {
     if (!spreadsheetId) return;
     const accessToken = getAccessToken();
     if (!accessToken) {
-      setError("Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.");
+      setError(
+        "Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.",
+      );
       return;
     }
     listSheetTabs(accessToken, spreadsheetId)
@@ -61,7 +69,9 @@ export default function SheetTabSelectPage() {
       .catch((err) => {
         if (!isLatest()) return;
         if (err instanceof SheetsApiError && err.status === 401) markExpired();
-        setError(err instanceof SheetsApiError ? err.message : "Sheet 탭 목록을 불러오지 못했습니다.");
+        setError(
+          err instanceof SheetsApiError ? err.message : "Sheet 탭 목록을 불러오지 못했습니다.",
+        );
       });
   }, [
     beginRequest,
@@ -99,7 +109,7 @@ export default function SheetTabSelectPage() {
   if (!tabs) {
     return (
       <PageContainer maxWidth="42rem">
-        <p className="text-sm">불러오는 중…</p>
+        <LoadingIndicator />
       </PageContainer>
     );
   }
@@ -108,31 +118,32 @@ export default function SheetTabSelectPage() {
 
   if (!autoSelected && candidates.length === 0) {
     return (
-      <PageContainer maxWidth="42rem">
-        <p className="text-sm text-text-secondary dark:text-text-dark-secondary">
+      <PageContainer maxWidth="42rem" className="break-keep">
+        <Text color="secondary" as="p">
           이 Sheet 파일에 문제 탭이 없습니다. 다른 파일을 선택해주세요.
-        </p>
+        </Text>
       </PageContainer>
     );
   }
 
   return (
-    <PageContainer maxWidth="42rem">
-      <h1 className="mb-4 font-display text-xl font-semibold">문제 탭을 선택해주세요</h1>
-      <ul className="flex flex-col gap-2">
-        {candidates.map((tab) => (
-          <li key={tab.sheetId}>
-            <button
-              type="button"
-              onClick={() => selectTab(tab)}
-              title={tab.title}
-              className="min-w-0 w-full truncate rounded-lg border border-border px-4 py-3 text-left text-sm dark:border-border-dark"
-            >
-              {tab.title}
-            </button>
-          </li>
-        ))}
-      </ul>
+    <PageContainer maxWidth="42rem" className="break-keep">
+      <VStack gap={4}>
+        <Heading level={1}>문제 탭을 선택해주세요</Heading>
+        <Card padding={0}>
+          <VStack as="ul" gap={0}>
+            {candidates.map((tab) => (
+              <Item
+                key={tab.sheetId}
+                as="li"
+                label={tab.title}
+                labelLines={2}
+                onClick={() => selectTab(tab)}
+              />
+            ))}
+          </VStack>
+        </Card>
+      </VStack>
     </PageContainer>
   );
 }

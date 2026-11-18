@@ -2,12 +2,13 @@
 
 개인용 자격증 학습 웹앱.
 
-- React
+- React 19
 - Vite
 - TypeScript strict
 - React Router
 - IndexedDB
-- Tailwind
+- Astryx (`@astryxdesign/core`, UI 컴포넌트·디자인 토큰)
+- Tailwind 3 (레이아웃 보조만)
 - Google Drive / Google Sheets 연동
 - OAuth token은 메모리에만 보관
 - 백엔드 없음
@@ -86,3 +87,13 @@ dependency array를 실제로 exhaustive하게 수정한다.
 const db = await getDb();
 await db.clear("<storeName>");
 ```
+
+### Astryx
+
+- Tailwind 3과 Astryx의 Tailwind 브릿지(v4 전용)는 함께 쓸 수 없다. Tailwind는 레이아웃에만 쓰고 색은 `var(--color-...)` 토큰으로 쓴다.
+- Astryx 토큰을 덮어쓸 때는 `:root, [data-astryx-theme]`에 지정한다. `:root`만 쓰면 `<Theme>`이 감싼 요소에서 무시된다.
+- Tailwind의 `@tailwind base`는 지우지 않는다(`preflight`는 설정에서 끈다). 지우면 `ring`/`shadow` 유틸리티가 그려지지 않는다.
+- `Button`의 `isDisabled`는 네이티브 `disabled`가 아니라 `aria-disabled`다. 테스트는 `toBeDisabled()` 대신 `aria-disabled`를 확인한다.
+- Astryx는 `Spinner` 등을 쓰면 보이지 않는 `role="alert"` 영역을 하나 만든다. 오류 배너 테스트는 `getByRole("alert")` 대신 메시지 텍스트가 알림 영역 안에 있는지(`closest('[role="alert"]')`)로 확인한다.
+- 접힌 `Collapsible`/체크박스 목록은 jsdom에서 보이는지(`toBeVisible`)를 알 수 없다. `aria-expanded` 등 상태로 확인한다.
+

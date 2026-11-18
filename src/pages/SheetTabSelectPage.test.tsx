@@ -71,7 +71,7 @@ describe("SheetTabSelectPage", () => {
 
     renderTabSelect();
 
-    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Sheet 탭 목록을 불러오지 못했습니다."));
+    expect((await screen.findByText(/Sheet 탭 목록을 불러오지 못했습니다\./)).closest('[role="alert"]')).not.toBeNull();
   });
 
   it("forwards folder context and modifiedTime through to the validate route", async () => {

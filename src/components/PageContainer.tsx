@@ -13,7 +13,7 @@ export function PageContainer({
 }: PageContainerProps) {
   return (
     <div
-      className={`mx-auto w-full min-w-0 px-4 py-5 sm:px-8 sm:py-7 ${className}`.trim()}
+      className={`mx-auto w-full min-w-0 px-4 pb-20 pt-5 sm:px-8 sm:pb-20 sm:pt-7 ${className}`.trim()}
       style={{ maxWidth }}
     >
       {children}

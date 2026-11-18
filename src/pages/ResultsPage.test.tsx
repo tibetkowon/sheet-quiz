@@ -93,6 +93,28 @@ describe("ResultsPage", () => {
     expect(screen.getByText("1/3")).toBeInTheDocument();
   });
 
+  it("titles the page and shows which sheet and tab the result belongs to", async () => {
+    await saveAttempt(makeSubmittedAttempt());
+
+    renderResults("attempt-1");
+
+    const heading = await screen.findByRole("heading", { level: 1 });
+    expect(heading).toHaveTextContent(/^풀이 결과$/);
+    expect(screen.getByText("실전 모의고사 1 · 문제은행")).toBeInTheDocument();
+  });
+
+  it("marks the selected filter as pressed", async () => {
+    await saveAttempt(makeSubmittedAttempt());
+
+    renderResults("attempt-1");
+    await waitFor(() => screen.getByText("문제 1 본문"));
+
+    expect(screen.getByRole("button", { name: "전체" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(screen.getByRole("button", { name: "오답" }));
+    expect(screen.getByRole("button", { name: "오답" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "전체" })).toHaveAttribute("aria-pressed", "false");
+  });
+
   it("filters to only incorrect questions when 오답 is selected", async () => {
     await saveAttempt(makeSubmittedAttempt());
 
@@ -174,6 +196,19 @@ describe("ResultsPage", () => {
 
     expect(screen.getByText("A가 정답인 이유")).toBeInTheDocument();
     expect(screen.getByText("B가 오답인 이유")).toBeInTheDocument();
+  });
+
+  it("labels the question explanation so it is not mistaken for an option hint", async () => {
+    await saveAttempt(makeSubmittedAttempt());
+
+    renderResults("attempt-1");
+    await waitFor(() => screen.getByText("문제 2 본문"));
+    expect(screen.queryByText("해설")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByText("문제 2 본문"));
+
+    const label = screen.getByText("해설");
+    expect(label.parentElement).toHaveTextContent("문제 2 해설");
   });
 
   it("downloads a Markdown file with the score when Markdown 다운로드 is clicked", async () => {

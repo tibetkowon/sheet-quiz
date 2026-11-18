@@ -12,6 +12,13 @@ describe("buildValidationIssuesMarkdown", () => {
     expect(buildValidationIssuesMarkdown([])).toContain("# 시트 검증 결과");
   });
 
+  it("appends the detail to the message when an issue has one", () => {
+    const md = buildValidationIssuesMarkdown([
+      { sheetName: "1회차", rowNumber: 1, questionNumber: null, field: "header", message: "필수 헤더가 없습니다.", detail: "question_no, category", severity: "error" },
+    ]);
+    expect(md).toContain("[error] 1회차 · 1행: 필수 헤더가 없습니다. (question_no, category)");
+  });
+
   it("includes severity, location, and message for each issue", () => {
     const md = buildValidationIssuesMarkdown(issues);
     expect(md).toContain("[error] 1회차 · 4행 · 문제 3번: 정답이 없습니다.");

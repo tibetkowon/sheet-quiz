@@ -8,15 +8,10 @@ function readInitialTheme(): Theme {
   return stored === "dark" ? "dark" : "light";
 }
 
-function applyThemeClass(theme: Theme): void {
-  document.documentElement.classList.toggle("dark", theme === "dark");
-}
-
 export function useTheme(): { theme: Theme; toggleTheme: () => void } {
   const [theme, setTheme] = useState<Theme>(readInitialTheme);
 
   useEffect(() => {
-    applyThemeClass(theme);
     window.localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 

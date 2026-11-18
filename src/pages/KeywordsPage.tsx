@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import { VStack } from "@astryxdesign/core/VStack";
 import { useLatestRequest } from "../app/useLatestRequest";
 import { useAuth } from "../auth/AuthContext";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
 import { parseKeywordRows, type ParseKeywordResult } from "../sheets/parseKeywordRows";
 import { getSheetValues, SheetsApiError } from "../sheets/sheetsClient";
@@ -22,7 +29,8 @@ export default function KeywordsPage() {
     if (!token) {
       setResult({
         ok: false,
-        error: "Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.",
+        error:
+          "Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.",
       });
       return;
     }
@@ -40,7 +48,8 @@ export default function KeywordsPage() {
         if (err instanceof SheetsApiError && err.status === 401) markExpired();
         setResult({
           ok: false,
-          error: err instanceof SheetsApiError ? err.message : "Sheet 데이터를 불러오지 못했습니다.",
+          error:
+            err instanceof SheetsApiError ? err.message : "Sheet 데이터를 불러오지 못했습니다.",
         });
       });
   }, [beginRequest, spreadsheetId, getAccessToken, markExpired]);
@@ -50,40 +59,49 @@ export default function KeywordsPage() {
   }, [load]);
 
   return (
-    <PageContainer maxWidth="42rem" className="[overflow-wrap:anywhere]">
-      <button type="button" onClick={() => navigate(-1)} className="mb-2 min-h-11 text-sm underline">
-        뒤로 가기
-      </button>
-      <h1 className="mb-5 font-display text-xl font-semibold">키워드 정리</h1>
-      {result === "loading" ? (
-        <p className="text-sm">불러오는 중…</p>
-      ) : result === "missing" ? (
-        <p className="text-sm">
-          이 시트에 '키워드' 탭이 없습니다. 시트에 '키워드' 탭을 추가하면 시험 전에 키워드 정리본을 볼 수 있습니다.
-        </p>
-      ) : !result.ok ? (
-        <ErrorBanner message={result.error} onRetry={load} />
-      ) : result.groups.length === 0 ? (
-        <p className="text-sm">키워드가 아직 없습니다</p>
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          {result.groups.map(({ category, entries }) => (
-            <details key={category} className="rounded-lg border border-border bg-surface dark:border-border-dark dark:bg-surface-dark">
-              <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-semibold">{category}</summary>
-              <ul className="flex flex-col gap-2 px-4 pb-4 text-sm">
-                {entries.map(({ keyword, description }, index) => (
-                  <li key={index}>
-                    <strong>{keyword}</strong>
-                    {description && (
-                      <p className="text-text-secondary dark:text-text-dark-secondary">{description}</p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          ))}
-        </div>
-      )}
+    <PageContainer maxWidth="42rem" className="break-keep [overflow-wrap:anywhere]">
+      <VStack gap={4} align="start">
+        <Button label="뒤로 가기" variant="ghost" size="sm" onClick={() => navigate(-1)} />
+        <Heading level={1}>키워드 정리</Heading>
+        {result === "loading" ? (
+          <LoadingIndicator />
+        ) : result === "missing" ? (
+          <Text as="p">
+            이 시트에 '키워드' 탭이 없습니다. 시트에 '키워드' 탭을 추가하면 시험 전에 키워드
+            정리본을 볼 수 있습니다.
+          </Text>
+        ) : !result.ok ? (
+          <ErrorBanner message={result.error} onRetry={load} />
+        ) : result.groups.length === 0 ? (
+          <Text as="p">키워드가 아직 없습니다</Text>
+        ) : (
+          <VStack gap={3} width="100%">
+            {result.groups.map(({ category, entries }) => (
+              <Card key={category} padding={3}>
+                <Collapsible trigger={category} defaultIsOpen={false}>
+                  <VStack as="ul" gap={0} paddingBlockStart={3}>
+                    {entries.map(({ keyword, description }, index) => (
+                      <li
+                        key={index}
+                        className="list-none border-t border-[var(--color-border)] py-3"
+                      >
+                        <Text weight="semibold" as="div" display="block">
+                          {keyword}
+                        </Text>
+                        {description && (
+                          <Text color="secondary" as="p" display="block">
+                            {description}
+                          </Text>
+                        )}
+                      </li>
+                    ))}
+                  </VStack>
+                </Collapsible>
+              </Card>
+            ))}
+          </VStack>
+        )}
+      </VStack>
     </PageContainer>
   );
 }

@@ -1,20 +1,43 @@
+@layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
+
+@import "@astryxdesign/core/reset.css";
+@import "@astryxdesign/core/astryx.css";
+@import "@astryxdesign/theme-neutral/theme.css";
+
+/* preflight는 설정에서 꺼져 있고, 여기서는 ring/shadow 등이 쓰는 --tw-* 기본값만 나온다. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* 나눔스퀘어라운드: 서드파티 CSS를 거치지 않고 커밋 SHA로 고정한 파일을 직접 선언한다.
+   Astryx 굵기 토큰(400/500/600/700) 중 400·500은 Regular, 600·700은 Bold로 매핑된다. */
 @font-face {
-  font-family: "Paperlogy";
-  src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-7Bold.woff2")
-    format("woff2");
-  font-weight: 700;
+  font-family: "Nanum Square Round";
+  font-weight: 400;
   font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/fonts-archive/NanumSquareRound@a36996c7df903b993c5ce5ab20e4cec0528a30c8/NanumSquareRound.woff2")
+    format("woff2");
 }
 @font-face {
-  font-family: "Paperlogy";
-  src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-6SemiBold.woff2")
-    format("woff2");
-  font-weight: 600;
+  font-family: "Nanum Square Round";
+  font-weight: 700;
   font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/fonts-archive/NanumSquareRound@a36996c7df903b993c5ce5ab20e4cec0528a30c8/NanumSquareRoundB.woff2")
+    format("woff2");
+}
+
+/* neutral 테마의 기본 폰트(Figtree)에는 한글이 없어 토큰을 덮어쓴다.
+   <Theme>이 감싼 요소에도 같은 토큰을 다시 선언하므로 [data-astryx-theme]까지 지정한다. */
+:root,
+[data-astryx-theme] {
+  /* 로고(#5146C8)에 맞춘 포인트 색. 흰 글자 대비 라이트 6.9, 다크 5.3. */
+  --color-accent: light-dark(#5146c8, #6258dc);
+  --color-on-accent: #ffffff;
+  --color-accent-muted: light-dark(#5146c833, #6258dc4d);
+  --color-text-accent: light-dark(#5146c8, #a9a5ff);
+  --color-icon-accent: light-dark(#5146c8, #a9a5ff);
+  --font-family-body: "Nanum Square Round", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-family-heading: var(--font-family-body);
 }
 
 body {
@@ -22,7 +45,7 @@ body {
 }
 
 *:focus-visible {
-  outline: 2px solid theme("colors.accent.DEFAULT");
+  outline: 2px solid var(--color-text-accent);
   outline-offset: 2px;
   border-radius: 4px;
 }

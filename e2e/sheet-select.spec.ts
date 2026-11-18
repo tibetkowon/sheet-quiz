@@ -30,10 +30,10 @@ test("시험 시작 전 영역별 키워드를 보고 돌아옵니다", async ({
   await page.getByRole("button", { name: "키워드 보기" }).click();
 
   await expect(page.getByRole("heading", { name: "키워드 정리" })).toBeVisible();
-  await page.getByText("컴퓨팅", { exact: true }).press("Enter");
+  await page.getByRole("button", { name: /컴퓨팅/ }).press("Enter");
   await expect(page.getByText("EC2", { exact: true })).toBeVisible();
   await expect(page.getByText("가상 서버")).toBeVisible();
-  await page.getByText("스토리지", { exact: true }).click();
+  await page.getByRole("button", { name: /스토리지/ }).click();
   await expect(page.getByText("S3", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "뒤로 가기" }).click();

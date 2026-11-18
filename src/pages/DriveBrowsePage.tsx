@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Card } from "@astryxdesign/core/Card";
+import { Item } from "@astryxdesign/core/Item";
+import { Link } from "@astryxdesign/core/Link";
+import { Text } from "@astryxdesign/core/Text";
+import { VStack } from "@astryxdesign/core/VStack";
+import { FileSpreadsheet, Folder } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { useLatestRequest } from "../app/useLatestRequest";
 import { DriveApiError } from "../drive/driveApiError";
 import { DriveFile, DriveFolder, listChildFolders, listSheetFiles } from "../drive/driveClient";
 import { getTopFolder, TopFolderSelection } from "../storage/topFolderRepo";
 import { Breadcrumb, BreadcrumbItem } from "../components/Breadcrumb";
+import { formatIsoDate } from "../app/formatDate";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
 
 interface FolderLevel {
@@ -58,7 +66,9 @@ export default function DriveBrowsePage() {
     const accessToken = getAccessToken();
     if (!accessToken) {
       setLoading(false);
-      setError("Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.");
+      setError(
+        "Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.",
+      );
       return;
     }
     setLoading(true);
@@ -87,11 +97,14 @@ export default function DriveBrowsePage() {
   }, [load]);
 
   const openFolder = (folder: DriveFolder) => {
-    navigate(`/folders/${folder.id}`, { state: { trail: [...trail, { id: folder.id, name: folder.name }] } });
+    navigate(`/folders/${folder.id}`, {
+      state: { trail: [...trail, { id: folder.id, name: folder.name }] },
+    });
   };
 
   const openFile = (file: DriveFile) => {
-    const certificationFolderName = trail.length > 0 ? trail[trail.length - 1].name : topFolder?.folderName ?? "";
+    const certificationFolderName =
+      trail.length > 0 ? trail[trail.length - 1].name : (topFolder?.folderName ?? "");
     navigate(`/sheets/${file.id}/tabs`, {
       state: {
         fileName: file.name,
@@ -104,10 +117,10 @@ export default function DriveBrowsePage() {
 
   if (status !== "connected") {
     return (
-      <PageContainer maxWidth="48rem">
-        <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
+      <PageContainer maxWidth="48rem" className="break-keep">
+        <Text color="secondary" as="p">
           Google 연결이 필요합니다. 시작 화면에서 다시 연결해주세요.
-        </p>
+        </Text>
       </PageContainer>
     );
   }
@@ -115,20 +128,22 @@ export default function DriveBrowsePage() {
   if (topFolder === undefined) {
     return (
       <PageContainer maxWidth="48rem">
-        <p className="text-sm">불러오는 중…</p>
+        <LoadingIndicator />
       </PageContainer>
     );
   }
 
   if (topFolder === null) {
     return (
-      <PageContainer maxWidth="48rem">
-        <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
-          먼저 문제은행 최상위 폴더를 선택해주세요.
-        </p>
-        <Link to="/folders/select" className="text-sm font-semibold text-accent dark:text-accent-dark">
-          최상위 폴더 선택하러 가기
-        </Link>
+      <PageContainer maxWidth="48rem" className="break-keep">
+        <VStack gap={3} align="start">
+          <Text color="secondary" as="p">
+            먼저 문제은행 최상위 폴더를 선택해주세요.
+          </Text>
+          <Link href="/folders/select" isStandalone weight="semibold">
+            최상위 폴더 선택하러 가기
+          </Link>
+        </VStack>
       </PageContainer>
     );
   }
@@ -155,47 +170,38 @@ export default function DriveBrowsePage() {
       <Breadcrumb items={breadcrumbItems} />
       {error && <ErrorBanner message={error} onRetry={() => void load()} />}
       {loading ? (
-        <p className="text-sm text-text-secondary dark:text-text-dark-secondary">불러오는 중…</p>
+        <LoadingIndicator />
       ) : folders.length === 0 && files.length === 0 ? (
-        <p className="text-sm text-text-secondary dark:text-text-dark-secondary">
+        <Text color="secondary" as="p">
           하위 폴더나 Sheet 파일이 없습니다.
-        </p>
+        </Text>
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border dark:divide-border-dark dark:border-border-dark">
-          {folders.map((folder) => (
-            <li key={folder.id}>
-              <button
-                type="button"
+        <Card padding={0}>
+          <VStack as="ul" gap={0}>
+            {folders.map((folder) => (
+              <Item
+                key={folder.id}
+                as="li"
+                label={folder.name}
+                labelLines={2}
+                startContent={<Folder size={20} aria-hidden="true" />}
+                description={formatIsoDate(folder.modifiedTime)}
                 onClick={() => openFolder(folder)}
-                className="flex min-w-0 w-full items-center justify-between gap-3 px-4.5 py-3.5 text-left"
-              >
-                <span className="flex-shrink-0">📁</span>
-                <span className="min-w-0 flex-1 truncate text-sm font-medium" title={folder.name}>
-                  {folder.name}
-                </span>
-                <span className="flex-shrink-0 font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
-                  {new Date(folder.modifiedTime).toLocaleDateString("ko-KR")}
-                </span>
-              </button>
-            </li>
-          ))}
-          {files.map((file) => (
-            <li key={file.id}>
-              <button
-                type="button"
+              />
+            ))}
+            {files.map((file) => (
+              <Item
+                key={file.id}
+                as="li"
+                label={file.name}
+                labelLines={2}
+                startContent={<FileSpreadsheet size={20} aria-hidden="true" />}
+                description={formatIsoDate(file.modifiedTime)}
                 onClick={() => openFile(file)}
-                className="flex min-w-0 w-full items-center justify-between gap-3 px-4.5 py-3.5 text-left"
-              >
-                <span className="min-w-0 truncate text-sm font-medium" title={file.name}>
-                  {file.name}
-                </span>
-                <span className="flex-shrink-0 font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
-                  {new Date(file.modifiedTime).toLocaleDateString("ko-KR")}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+              />
+            ))}
+          </VStack>
+        </Card>
       )}
     </PageContainer>
   );

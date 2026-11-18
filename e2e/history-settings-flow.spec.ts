@@ -44,7 +44,7 @@ test("결과 내보내기, 기록 목록, 설정에서 데이터 삭제", async 
   await expect(page.getByText(/100%/)).toBeVisible();
 
   await page.getByRole("link", { name: "설정" }).click();
-  page.once("dialog", (dialog) => void dialog.accept());
   await page.getByRole("button", { name: "모든 데이터 삭제" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "모두 삭제" }).click();
   await expect(page.getByText("Google Drive 연결")).toBeVisible();
 });

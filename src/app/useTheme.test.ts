@@ -5,20 +5,25 @@ import { useTheme } from "./useTheme";
 describe("useTheme", () => {
   beforeEach(() => {
     window.localStorage.clear();
-    document.documentElement.classList.remove("dark");
   });
 
-  it("defaults to light theme and adds no dark class", () => {
+  it("defaults to light theme", () => {
     const { result } = renderHook(() => useTheme());
     expect(result.current.theme).toBe("light");
-    expect(document.documentElement.classList.contains("dark")).toBe(false);
   });
 
-  it("toggles to dark and adds the dark class", () => {
+  it("starts from the theme saved in localStorage", () => {
+    window.localStorage.setItem("sheet-quiz-theme", "dark");
+    const { result } = renderHook(() => useTheme());
+    expect(result.current.theme).toBe("dark");
+  });
+
+  it("toggles between light and dark", () => {
     const { result } = renderHook(() => useTheme());
     act(() => result.current.toggleTheme());
     expect(result.current.theme).toBe("dark");
-    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    act(() => result.current.toggleTheme());
+    expect(result.current.theme).toBe("light");
   });
 
   it("persists the theme choice in localStorage", () => {

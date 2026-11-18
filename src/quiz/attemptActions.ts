@@ -19,7 +19,11 @@ function updateProgress(
   return { ...attempt, progress, updatedAt: nowIso() };
 }
 
-export function selectSingleAnswer(attempt: StudyAttempt, questionId: string, optionKey: string): StudyAttempt {
+export function selectSingleAnswer(
+  attempt: StudyAttempt,
+  questionId: string,
+  optionKey: string,
+): StudyAttempt {
   return updateProgress(attempt, questionId, (p) => ({
     ...p,
     selectedAnswers: [optionKey],
@@ -28,7 +32,11 @@ export function selectSingleAnswer(attempt: StudyAttempt, questionId: string, op
   }));
 }
 
-export function toggleMultipleAnswer(attempt: StudyAttempt, questionId: string, optionKey: string): StudyAttempt {
+export function toggleMultipleAnswer(
+  attempt: StudyAttempt,
+  questionId: string,
+  optionKey: string,
+): StudyAttempt {
   return updateProgress(attempt, questionId, (p) => {
     const alreadySelected = p.selectedAnswers.includes(optionKey);
     const selectedAnswers = alreadySelected
@@ -44,7 +52,21 @@ export function toggleMultipleAnswer(attempt: StudyAttempt, questionId: string, 
 }
 
 export function markHeld(attempt: StudyAttempt, questionId: string): StudyAttempt {
-  return updateProgress(attempt, questionId, (p) => (p.status === "SKIPPED" ? p : { ...p, status: "SKIPPED" }));
+  // 나중에 풀기는 지금 고른 답을 비우고 보류로 돌린다.
+  return updateProgress(attempt, questionId, (p) =>
+    p.status === "SKIPPED" && p.selectedAnswers.length === 0
+      ? p
+      : { ...p, status: "SKIPPED", selectedAnswers: [] },
+  );
+}
+
+// 이미 보류면 풀지 않은 상태로 되돌리고, 아니면 보류로 만든다.
+export function toggleHeld(attempt: StudyAttempt, questionId: string): StudyAttempt {
+  const progress = attempt.progress.find((p) => p.questionId === questionId);
+  if (progress?.status === "SKIPPED") {
+    return updateProgress(attempt, questionId, (p) => ({ ...p, status: "UNSEEN" }));
+  }
+  return markHeld(attempt, questionId);
 }
 
 export function toggleReviewMarked(attempt: StudyAttempt, questionId: string): StudyAttempt {
@@ -52,7 +74,9 @@ export function toggleReviewMarked(attempt: StudyAttempt, questionId: string): S
 }
 
 export function markFirstViewed(attempt: StudyAttempt, questionId: string): StudyAttempt {
-  return updateProgress(attempt, questionId, (p) => (p.firstViewedAt ? p : { ...p, firstViewedAt: nowIso() }));
+  return updateProgress(attempt, questionId, (p) =>
+    p.firstViewedAt ? p : { ...p, firstViewedAt: nowIso() },
+  );
 }
 
 export function moveToIndex(attempt: StudyAttempt, index: number): StudyAttempt {

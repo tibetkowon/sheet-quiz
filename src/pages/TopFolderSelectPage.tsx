@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { Item } from "@astryxdesign/core/Item";
+import { Text } from "@astryxdesign/core/Text";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { VStack } from "@astryxdesign/core/VStack";
+import { Folder } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { useLatestRequest } from "../app/useLatestRequest";
 import { DriveApiError } from "../drive/driveApiError";
 import { DriveFolder, listChildFolders, listRootFolders } from "../drive/driveClient";
 import { saveTopFolder } from "../storage/topFolderRepo";
 import { Breadcrumb, BreadcrumbItem } from "../components/Breadcrumb";
+import { formatIsoDate } from "../app/formatDate";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
 
 interface FolderLevel {
@@ -34,7 +43,9 @@ export default function TopFolderSelectPage() {
     const accessToken = getAccessToken();
     if (!accessToken) {
       setLoading(false);
-      setError("Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.");
+      setError(
+        "Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.",
+      );
       return;
     }
     setLoading(true);
@@ -51,7 +62,9 @@ export default function TopFolderSelectPage() {
       if (err instanceof DriveApiError && err.status === 401) {
         markExpired();
       }
-      setError(err instanceof DriveApiError ? err.message : "Drive 폴더 목록을 불러오지 못했습니다.");
+      setError(
+        err instanceof DriveApiError ? err.message : "Drive 폴더 목록을 불러오지 못했습니다.",
+      );
     } finally {
       if (isLatest()) setLoading(false);
     }
@@ -96,56 +109,51 @@ export default function TopFolderSelectPage() {
     <PageContainer maxWidth="48rem">
       <Breadcrumb items={breadcrumbItems} />
 
-      <div className="mb-5 flex min-w-0 flex-wrap items-center justify-between gap-3">
-        <input
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder="폴더 또는 파일 검색"
-          className="min-w-0 flex-1 rounded border border-border bg-sunken px-3.5 py-2.5 text-sm dark:border-border-dark dark:bg-sunken-dark"
-        />
-        <button
-          type="button"
-          onClick={() => void load()}
-          className="flex-shrink-0 rounded border border-border px-3.5 py-2.5 text-sm dark:border-border-dark"
-        >
-          새로고침
-        </button>
-        <button
-          type="button"
-          onClick={() => void selectAsTopFolder()}
-          className="w-full flex-shrink-0 rounded bg-accent px-3.5 py-2.5 text-sm font-semibold text-white sm:w-auto dark:bg-accent-dark"
-        >
-          이 폴더를 문제은행 최상위 폴더로 선택
-        </button>
+      <div className="mb-5 flex min-w-0 flex-wrap items-end gap-3">
+        <div className="min-w-0 flex-1 basis-48">
+          <TextInput
+            label="폴더 또는 파일 검색"
+            isLabelHidden
+            placeholder="폴더 또는 파일 검색"
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+        </div>
+        <Button label="새로고침" onClick={() => void load()} />
+        <div className="w-full sm:w-auto">
+          <Button
+            label="이 폴더를 문제은행 최상위 폴더로 선택"
+            variant="primary"
+            width="100%"
+            onClick={() => void selectAsTopFolder()}
+          />
+        </div>
       </div>
 
       {error && <ErrorBanner message={error} onRetry={() => void load()} />}
 
       {loading ? (
-        <p className="text-sm text-text-secondary dark:text-text-dark-secondary">불러오는 중…</p>
+        <LoadingIndicator />
       ) : visibleFolders.length === 0 ? (
-        <p className="text-sm text-text-secondary dark:text-text-dark-secondary">
+        <Text color="secondary" as="p">
           하위 폴더가 없습니다.
-        </p>
+        </Text>
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border dark:divide-border-dark dark:border-border-dark">
-          {visibleFolders.map((folder) => (
-            <li key={folder.id}>
-              <button
-                type="button"
+        <Card padding={0}>
+          <VStack as="ul" gap={0}>
+            {visibleFolders.map((folder) => (
+              <Item
+                key={folder.id}
+                as="li"
+                label={folder.name}
+                labelLines={2}
+                startContent={<Folder size={20} aria-hidden="true" />}
+                description={formatIsoDate(folder.modifiedTime)}
                 onClick={() => openFolder(folder)}
-                className="flex min-w-0 w-full items-center justify-between gap-3 px-4.5 py-3.5 text-left"
-              >
-                <span className="min-w-0 truncate text-sm font-medium" title={folder.name}>
-                  {folder.name}
-                </span>
-                <span className="flex-shrink-0 font-mono text-xs text-text-secondary dark:text-text-dark-secondary">
-                  {folder.modifiedTime}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+              />
+            ))}
+          </VStack>
+        </Card>
       )}
     </PageContainer>
   );

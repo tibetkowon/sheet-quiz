@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { Button } from "@astryxdesign/core/Button";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Link } from "@astryxdesign/core/Link";
+import { Text } from "@astryxdesign/core/Text";
+import { VStack } from "@astryxdesign/core/VStack";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import { restartAttempt } from "../quiz/attemptActions";
 import { summarizeProgress } from "../quiz/navigation";
 import type { StudyAttempt } from "../types/studyAttempt";
 import { clampAttemptIndex } from "../quiz/clampAttemptIndex";
+import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
 
 export default function ResumeSelectPage() {
@@ -29,20 +35,22 @@ export default function ResumeSelectPage() {
   if (state === "loading") {
     return (
       <PageContainer maxWidth="28rem">
-        <p className="text-sm">불러오는 중…</p>
+        <LoadingIndicator />
       </PageContainer>
     );
   }
 
   if (state === "not-found" || !attempt) {
     return (
-      <PageContainer maxWidth="28rem">
-        <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
-          풀이 기록을 찾을 수 없습니다. Sheet 파일을 다시 선택해주세요.
-        </p>
-        <Link to="/folders" className="text-sm font-semibold text-accent dark:text-accent-dark">
-          Drive 폴더로 이동
-        </Link>
+      <PageContainer maxWidth="28rem" className="break-keep">
+        <VStack gap={3} align="start">
+          <Text color="secondary" as="p">
+            풀이 기록을 찾을 수 없습니다. Sheet 파일을 다시 선택해주세요.
+          </Text>
+          <Link href="/folders" isStandalone weight="semibold">
+            Drive 폴더로 이동
+          </Link>
+        </VStack>
       </PageContainer>
     );
   }
@@ -57,34 +65,32 @@ export default function ResumeSelectPage() {
   };
 
   return (
-    <PageContainer maxWidth="28rem">
-      <h1 className="mb-2 font-display text-xl font-semibold">이어서 풀어볼까요?</h1>
-      <p className="mb-5 text-sm text-text-secondary dark:text-text-dark-secondary">
-        <span
-          className="block min-w-0 truncate"
-          title={`${attempt.spreadsheetName} · ${attempt.sheetTabName}`}
-        >
-          {attempt.spreadsheetName} · {attempt.sheetTabName}
-        </span>
-        <span>{summary.answered}/{summary.total} 답변 완료</span>
-      </p>
-      <div className="flex flex-wrap gap-2.5">
-        <button
-          type="button"
-          onClick={() => navigate(`/quiz/${attemptId}`)}
-          className="rounded bg-accent px-4.5 py-2.5 text-sm font-semibold text-white dark:bg-accent-dark"
-        >
-          이어서 풀기
-        </button>
-        <button
-          type="button"
-          onClick={() => void restart()}
-          disabled={restarting}
-          className="rounded border border-border px-4.5 py-2.5 text-sm dark:border-border-dark"
-        >
-          {restarting ? "초기화 중…" : "처음부터 다시 풀기"}
-        </button>
-      </div>
+    <PageContainer maxWidth="28rem" className="break-keep">
+      <VStack gap={4}>
+        <VStack gap={1}>
+          <Heading level={1}>이어서 풀어볼까요?</Heading>
+          <div title={`${attempt.spreadsheetName} · ${attempt.sheetTabName}`}>
+            <Text color="secondary" maxLines={1} display="block">
+              {attempt.spreadsheetName} · {attempt.sheetTabName}
+            </Text>
+          </div>
+          <Text color="secondary">
+            {summary.answered}/{summary.total} 답변 완료
+          </Text>
+        </VStack>
+        <div className="flex flex-wrap gap-2.5">
+          <Button
+            label="이어서 풀기"
+            variant="primary"
+            onClick={() => navigate(`/quiz/${attemptId}`)}
+          />
+          <Button
+            label={restarting ? "초기화 중…" : "처음부터 다시 풀기"}
+            isDisabled={restarting}
+            onClick={() => void restart()}
+          />
+        </div>
+      </VStack>
     </PageContainer>
   );
 }

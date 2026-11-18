@@ -3,6 +3,7 @@ import {
   markFirstViewed,
   markHeld,
   moveToIndex,
+  toggleHeld,
   restartAttempt,
   selectSingleAnswer,
   submitAttempt,
@@ -79,17 +80,31 @@ describe("toggleMultipleAnswer", () => {
 });
 
 describe("markHeld", () => {
-  it("sets status to SKIPPED without touching selected answers", () => {
+  it("sets status to SKIPPED and clears the selected answers", () => {
     const result = markHeld(makeAttempt(), "q2");
     const progress = result.progress.find((p) => p.questionId === "q2")!;
     expect(progress.status).toBe("SKIPPED");
-    expect(progress.selectedAnswers).toEqual(["A"]);
+    expect(progress.selectedAnswers).toEqual([]);
   });
 
   it("returns the exact same attempt reference when already SKIPPED", () => {
     const once = markHeld(makeAttempt(), "q2");
     const twice = markHeld(once, "q2");
     expect(twice).toBe(once);
+  });
+});
+
+describe("toggleHeld", () => {
+  it("holds a question and clears its answers, then releases it back to unseen", () => {
+    const held = toggleHeld(makeAttempt(), "q2");
+    const heldProgress = held.progress.find((p) => p.questionId === "q2")!;
+    expect(heldProgress.status).toBe("SKIPPED");
+    expect(heldProgress.selectedAnswers).toEqual([]);
+
+    const released = toggleHeld(held, "q2");
+    const releasedProgress = released.progress.find((p) => p.questionId === "q2")!;
+    expect(releasedProgress.status).toBe("UNSEEN");
+    expect(releasedProgress.selectedAnswers).toEqual([]);
   });
 });
 

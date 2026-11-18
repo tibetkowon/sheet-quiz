@@ -105,6 +105,14 @@ describe("validateQuestions", () => {
     expect(result.issues[0]).toMatchObject({ field: "header", severity: "error" });
   });
 
+  it("keeps the missing header names in detail, out of the short message", () => {
+    const { headerIndex, rows } = parseSheetRows([["번호", "문제"], ["1", "본문"]]);
+    const [headerIssue] = validateQuestions(headerIndex, rows, CONTEXT).issues;
+    expect(headerIssue.message).toBe("필수 헤더가 없습니다.");
+    expect(headerIssue.detail).toContain("category");
+    expect(headerIssue.detail).toContain("explanation");
+  });
+
   it("parses a valid single-answer row into a Question", () => {
     const { questions, issues } = run([
       ["1", "컴퓨팅", "MEDIUM", "SINGLE", "EC2란?", "가상서버", "저장소", "네트워크", "DB", "A", "해설입니다"],

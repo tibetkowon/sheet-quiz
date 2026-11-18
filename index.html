@@ -11,18 +11,24 @@
     <meta
       name="theme-color"
       media="(prefers-color-scheme: light)"
-      content="#F7F7FB"
+      content="#FFFFFF"
     />
     <meta
       name="theme-color"
       media="(prefers-color-scheme: dark)"
-      content="#14131F"
+      content="#262626"
     />
     <title>풀이장</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
-    />
+    <script>
+      // React 마운트 전에 저장된 테마를 적용해 첫 화면 깜빡임을 막는다.
+      // 라이트도 명시해야 한다. 비워 두면 OS가 다크일 때 첫 화면이 어둡게 나왔다가 바뀐다.
+      try {
+        document.documentElement.setAttribute(
+          "data-theme",
+          localStorage.getItem("sheet-quiz-theme") === "dark" ? "dark" : "light",
+        );
+      } catch {}
+    </script>
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
