@@ -58,9 +58,7 @@ describe("AppShell", () => {
   it("keeps the color mode toggle out of the top navigation bar", () => {
     renderShell();
     const nav = screen.getByRole("navigation", { name: "주요 메뉴" });
-    expect(
-      within(nav).queryByRole("button", { name: "다크 모드" }),
-    ).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("button", { name: "다크 모드" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "다크 모드" })).toBeVisible();
   });
 
@@ -104,6 +102,15 @@ describe("AppShell", () => {
         "/history",
       );
       expect(within(drawer).queryByRole("link", { name: /풀이장/ })).not.toBeInTheDocument();
+    });
+
+    it("closes the drawer after a destination is chosen", () => {
+      renderShell();
+      const toggle = screen.getByRole("button", { name: "메뉴 열기" });
+      fireEvent.click(toggle);
+      expect(toggle).toHaveAttribute("aria-expanded", "true");
+      fireEvent.click(within(screen.getByRole("dialog")).getByRole("link", { name: "설정" }));
+      expect(toggle).toHaveAttribute("aria-expanded", "false");
     });
   });
 });

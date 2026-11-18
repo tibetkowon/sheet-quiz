@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Link } from "@astryxdesign/core/Link";
+import { Spinner } from "@astryxdesign/core/Spinner";
+import { Text } from "@astryxdesign/core/Text";
+import { VStack } from "@astryxdesign/core/VStack";
 import { useAuth } from "../auth/AuthContext";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { PageContainer } from "../components/PageContainer";
@@ -41,13 +48,15 @@ export default function HistoryPage() {
 
   if (!googleUserId) {
     return (
-      <PageContainer maxWidth="42rem">
-        <p className="mb-4 text-sm text-text-secondary dark:text-text-dark-secondary">
-          Google 계정을 연결하면 저장된 풀이 기록을 볼 수 있습니다.
-        </p>
-        <Link to="/" className="text-sm font-semibold text-accent dark:text-accent-dark">
-          시작 화면으로 이동
-        </Link>
+      <PageContainer maxWidth="42rem" className="break-keep">
+        <VStack gap={3} align="start">
+          <Text color="secondary" as="p">
+            Google 계정을 연결하면 저장된 풀이 기록을 볼 수 있습니다.
+          </Text>
+          <Link href="/" isStandalone weight="semibold">
+            시작 화면으로 이동
+          </Link>
+        </VStack>
       </PageContainer>
     );
   }
@@ -63,7 +72,7 @@ export default function HistoryPage() {
   if (attempts === null) {
     return (
       <PageContainer maxWidth="42rem">
-        <p className="text-sm">불러오는 중…</p>
+        <Spinner label="불러오는 중…" />
       </PageContainer>
     );
   }
@@ -82,62 +91,62 @@ export default function HistoryPage() {
   };
 
   return (
-    <PageContainer maxWidth="42rem">
-      <h1 className="mb-5 font-display text-xl font-semibold">저장된 풀이 기록</h1>
-      {loadError && <ErrorBanner message={loadError} onRetry={load} />}
-      {deleteError && <ErrorBanner message={deleteError} />}
-      {attempts.length === 0 ? (
-        <p className="text-sm text-text-secondary dark:text-text-dark-secondary">
-          아직 저장된 풀이 기록이 없습니다.
-        </p>
-      ) : (
-        <ul className="flex flex-col gap-2.5">
-          {attempts.map((attempt) => {
-            const summary = summarizeProgress(attempt.progress);
-            const isSubmitted = Boolean(attempt.result);
-            return (
-              <li
-                key={attempt.id}
-                className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between dark:border-border-dark dark:bg-surface-dark"
-              >
-                <div className="min-w-0">
-                  <div
-                    className="min-w-0 truncate text-sm font-semibold"
-                    title={`${attempt.certificationFolderName} · ${attempt.sheetTabName}`}
-                  >
-                    {attempt.certificationFolderName} · {attempt.sheetTabName}
-                  </div>
-                  <div className="text-xs text-text-secondary dark:text-text-dark-secondary">
-                    {isSubmitted
-                      ? `제출완료 · ${attempt.result!.scorePercent}%`
-                      : `진행 중 · ${summary.answered}/${summary.total}`}
-                    {" · "}
-                    {new Date(attempt.updatedAt).toLocaleDateString("ko-KR")}
-                  </div>
-                </div>
-                <div className="flex flex-shrink-0 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => navigate(isSubmitted ? `/results/${attempt.id}` : `/quiz/${attempt.id}`)}
-                    aria-label={`${attempt.certificationFolderName} ${attempt.sheetTabName} ${isSubmitted ? "결과 보기" : "이어서 풀기"}`}
-                    className="rounded border border-border px-3 py-1.5 text-xs dark:border-border-dark"
-                  >
-                    {isSubmitted ? "결과 보기" : "이어서 풀기"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete(attempt.id)}
-                    aria-label={`${attempt.certificationFolderName} ${attempt.sheetTabName} 삭제`}
-                    className="rounded border border-danger px-3 py-1.5 text-xs text-danger"
-                  >
-                    삭제
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+    <PageContainer maxWidth="42rem" className="break-keep">
+      <VStack gap={4}>
+        <Heading level={1}>저장된 풀이 기록</Heading>
+        {loadError && <ErrorBanner message={loadError} onRetry={load} />}
+        {deleteError && <ErrorBanner message={deleteError} />}
+        {attempts.length === 0 ? (
+          <Text color="secondary" as="p">
+            아직 저장된 풀이 기록이 없습니다.
+          </Text>
+        ) : (
+          <VStack as="ul" gap={3}>
+            {attempts.map((attempt) => {
+              const summary = summarizeProgress(attempt.progress);
+              const isSubmitted = Boolean(attempt.result);
+              const name = `${attempt.certificationFolderName} ${attempt.sheetTabName}`;
+              return (
+                <li key={attempt.id} className="min-w-0 list-none">
+                  <Card>
+                    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div title={`${attempt.certificationFolderName} · ${attempt.sheetTabName}`}>
+                          <Text weight="semibold" maxLines={1} display="block">
+                            {attempt.certificationFolderName} · {attempt.sheetTabName}
+                          </Text>
+                        </div>
+                        <Text type="supporting" as="div">
+                          {isSubmitted
+                            ? `제출완료 · ${attempt.result!.scorePercent}%`
+                            : `진행 중 · ${summary.answered}/${summary.total}`}
+                          {" · "}
+                          {new Date(attempt.updatedAt).toLocaleDateString("ko-KR")}
+                        </Text>
+                      </div>
+                      <div className="flex flex-shrink-0 gap-2">
+                        <Button
+                          size="sm"
+                          label={isSubmitted ? "결과 보기" : "이어서 풀기"}
+                          aria-label={`${name} ${isSubmitted ? "결과 보기" : "이어서 풀기"}`}
+                          onClick={() => navigate(isSubmitted ? `/results/${attempt.id}` : `/quiz/${attempt.id}`)}
+                        />
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          label="삭제"
+                          aria-label={`${name} 삭제`}
+                          onClick={() => void handleDelete(attempt.id)}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                </li>
+              );
+            })}
+          </VStack>
+        )}
+      </VStack>
     </PageContainer>
   );
 }

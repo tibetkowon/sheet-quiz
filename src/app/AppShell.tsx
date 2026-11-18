@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Moon, Sun } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { AppShell as AstryxAppShell } from "@astryxdesign/core/AppShell";
@@ -17,6 +17,8 @@ const NAV_ITEMS = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggleTheme } = useThemeMode();
   const { pathname } = useLocation();
+  // 직접 만든 드로어는 Astryx 기본 드로어와 달리 항목을 눌러도 닫히지 않아 열림 상태를 직접 관리한다.
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   const isDark = theme === "dark";
@@ -45,10 +47,18 @@ export function AppShell({ children }: { children: ReactNode }) {
         // 기본 드로어는 상단 바의 로고/이름을 그대로 복사해 중복된다.
         mobileNav={{
           hasToggle: false,
+          isOpen: isDrawerOpen,
+          onOpenChange: setIsDrawerOpen,
           content: (
             <MobileNav header="메뉴">
               {NAV_ITEMS.map(({ label, href }) => (
-                <SideNavItem key={href} label={label} href={href} isSelected={isCurrent(href)} />
+                <SideNavItem
+                  key={href}
+                  label={label}
+                  href={href}
+                  isSelected={isCurrent(href)}
+                  onClick={() => setIsDrawerOpen(false)}
+                />
               ))}
             </MobileNav>
           ),
