@@ -251,7 +251,7 @@ interface StudyAttempt {
   덮어쓰기 때문). Astryx 토큰이 필요하면 `bg-[var(--color-background-surface)]`처럼
   임의 값으로만 쓴다.
 - **토큰 덮어쓰기**: `src/index.css`에서 포인트 색(라이트 `#5146C8`, 다크 `#6258DC`,
-  로고 색)과 폰트(본문 Pretendard, 제목 Paperlogy)를 덮어쓴다. `<Theme>`이 감싼 요소에도
+  로고 색)과 폰트(본문·제목 모두 나눔스퀘어라운드, 글자 끝이 둥근 한글 폰트)를 덮어쓴다. `<Theme>`이 감싼 요소에도
   같은 토큰을 다시 선언하므로 선택자는 반드시 `:root, [data-astryx-theme]`로 한다.
 - **다크 모드**: `<Theme mode>`가 `<html data-theme>`을 설정한다. 선택값은 localStorage
   `sheet-quiz-theme`에 저장하고, `index.html`의 짧은 스크립트가 마운트 전에 적용해 첫

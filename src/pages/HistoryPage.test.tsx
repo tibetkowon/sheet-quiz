@@ -1,16 +1,20 @@
 import { Route, Routes } from "react-router-dom";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import * as googleIdentity from "../auth/googleIdentity";
 import * as userInfo from "../auth/userInfo";
 import * as attemptRepo from "../storage/attemptRepo";
+import { confirmInDialog, stubDialogApi } from "../test/confirmDialog";
 import { renderWithConnectedAuth } from "../test/renderWithConnectedAuth";
 import HistoryPage from "./HistoryPage";
 import type { StudyAttempt } from "../types/studyAttempt";
 
 function mockAuthenticated() {
   vi.spyOn(googleIdentity, "createGoogleIdentityClient").mockReturnValue({
-    requestAccessToken: async () => ({ accessToken: "token-abc", expiresAt: Date.now() + 3600_000 }),
+    requestAccessToken: async () => ({
+      accessToken: "token-abc",
+      expiresAt: Date.now() + 3600_000,
+    }),
   });
   vi.spyOn(userInfo, "fetchGoogleUserInfo").mockResolvedValue({
     googleUserId: "user-1",
@@ -50,6 +54,7 @@ function renderPage() {
 }
 
 describe("HistoryPage", () => {
+  beforeAll(stubDialogApi);
 
   it("최신 기록부터 표시하면서 저장소가 반환한 배열은 변경하지 않습니다", async () => {
     const attempts = [
@@ -73,10 +78,19 @@ describe("HistoryPage", () => {
   });
 
   it("제출 기록의 결과 보기 버튼으로 결과 화면에 이동합니다", async () => {
-    vi.spyOn(attemptRepo, "listAttemptsByUser").mockResolvedValue([makeAttempt({
-      submittedAt: "2026-09-06T00:00:00.000Z",
-      result: { scorePercent: 0, correctCount: 0, incorrectCount: 0, unansweredCount: 1, categoryStats: [], difficultyStats: [] },
-    })]);
+    vi.spyOn(attemptRepo, "listAttemptsByUser").mockResolvedValue([
+      makeAttempt({
+        submittedAt: "2026-09-06T00:00:00.000Z",
+        result: {
+          scorePercent: 0,
+          correctCount: 0,
+          incorrectCount: 0,
+          unansweredCount: 1,
+          categoryStats: [],
+          difficultyStats: [],
+        },
+      }),
+    ]);
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "AWS 1회차 결과 보기" }));
     expect(await screen.findByText("결과 화면")).toBeInTheDocument();
@@ -101,7 +115,14 @@ describe("HistoryPage", () => {
     vi.spyOn(attemptRepo, "listAttemptsByUser").mockResolvedValue([
       makeAttempt({
         submittedAt: "2026-09-04T02:00:00.000Z",
-        result: { scorePercent: 80, correctCount: 4, incorrectCount: 1, unansweredCount: 0, categoryStats: [], difficultyStats: [] },
+        result: {
+          scorePercent: 80,
+          correctCount: 4,
+          incorrectCount: 1,
+          unansweredCount: 0,
+          categoryStats: [],
+          difficultyStats: [],
+        },
       }),
     ]);
     renderPage();
@@ -121,23 +142,26 @@ describe("HistoryPage", () => {
     vi.spyOn(attemptRepo, "listAttemptsByUser")
       .mockResolvedValueOnce([makeAttempt()])
       .mockResolvedValueOnce([]);
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     renderPage();
 
     await screen.findByText(/AWS · 1회차/);
     fireEvent.click(screen.getByRole("button", { name: "AWS 1회차 삭제" }));
+    await confirmInDialog("삭제");
 
     await waitFor(() => expect(attemptRepo.deleteAttempt).toHaveBeenCalledWith("attempt-1"));
     await screen.findByText("아직 저장된 풀이 기록이 없습니다.");
   });
 
   it("조회 실패를 안내하고 재시도하면 기록을 표시합니다", async () => {
-    const list = vi.spyOn(attemptRepo, "listAttemptsByUser")
+    const list = vi
+      .spyOn(attemptRepo, "listAttemptsByUser")
       .mockRejectedValueOnce(new Error("boom"))
       .mockResolvedValueOnce([makeAttempt()]);
     renderPage();
 
-    expect((await screen.findByText(/풀이 기록을 불러오지 못했습니다\./)).closest('[role="alert"]')).not.toBeNull();
+    expect(
+      (await screen.findByText(/풀이 기록을 불러오지 못했습니다\./)).closest('[role="alert"]'),
+    ).not.toBeNull();
     expect(screen.queryByText("불러오는 중…")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "다시 시도" }));
 
@@ -148,19 +172,23 @@ describe("HistoryPage", () => {
   });
 
   it("삭제 실패 시 목록을 유지하고 삭제를 재시도할 수 있습니다", async () => {
-    const list = vi.spyOn(attemptRepo, "listAttemptsByUser")
+    const list = vi
+      .spyOn(attemptRepo, "listAttemptsByUser")
       .mockResolvedValueOnce([makeAttempt()])
       .mockResolvedValueOnce([]);
     vi.mocked(attemptRepo.deleteAttempt).mockRejectedValueOnce(new Error("boom"));
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     renderPage();
 
     fireEvent.click(await screen.findByRole("button", { name: "AWS 1회차 삭제" }));
-    expect((await screen.findByText(/풀이 기록을 삭제하지 못했습니다\./)).closest('[role="alert"]')).not.toBeNull();
+    await confirmInDialog("삭제");
+    expect(
+      (await screen.findByText(/풀이 기록을 삭제하지 못했습니다\./)).closest('[role="alert"]'),
+    ).not.toBeNull();
     expect(screen.getByText(/AWS · 1회차/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "AWS 1회차 삭제" })).toBeEnabled();
     expect(list).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole("button", { name: "AWS 1회차 삭제" }));
+    await confirmInDialog("삭제");
 
     await screen.findByText("아직 저장된 풀이 기록이 없습니다.");
     expect(attemptRepo.deleteAttempt).toHaveBeenCalledTimes(2);
@@ -173,11 +201,13 @@ describe("HistoryPage", () => {
       .mockResolvedValueOnce([makeAttempt()])
       .mockRejectedValueOnce(new Error("boom"))
       .mockResolvedValueOnce([]);
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     renderPage();
 
     fireEvent.click(await screen.findByRole("button", { name: "AWS 1회차 삭제" }));
-    expect((await screen.findByText(/풀이 기록을 불러오지 못했습니다\./)).closest('[role="alert"]')).not.toBeNull();
+    await confirmInDialog("삭제");
+    expect(
+      (await screen.findByText(/풀이 기록을 불러오지 못했습니다\./)).closest('[role="alert"]'),
+    ).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "다시 시도" }));
 
     await screen.findByText("아직 저장된 풀이 기록이 없습니다.");
@@ -187,12 +217,24 @@ describe("HistoryPage", () => {
 
   it("does not delete when the user cancels the confirmation", async () => {
     vi.spyOn(attemptRepo, "listAttemptsByUser").mockResolvedValue([makeAttempt()]);
-    vi.spyOn(window, "confirm").mockReturnValue(false);
     renderPage();
 
     await screen.findByText(/AWS · 1회차/);
     fireEvent.click(screen.getByRole("button", { name: "AWS 1회차 삭제" }));
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("풀이 기록 삭제")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "취소" }));
 
+    expect(attemptRepo.deleteAttempt).not.toHaveBeenCalled();
+  });
+
+  it("does not ask for confirmation or delete anything until the delete button is pressed", async () => {
+    vi.spyOn(attemptRepo, "listAttemptsByUser").mockResolvedValue([makeAttempt()]);
+    renderPage();
+
+    await screen.findByText(/AWS · 1회차/);
+
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(attemptRepo.deleteAttempt).not.toHaveBeenCalled();
   });
 });

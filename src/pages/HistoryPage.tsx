@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AlertDialog } from "@astryxdesign/core/AlertDialog";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { Heading } from "@astryxdesign/core/Heading";
@@ -23,6 +24,7 @@ export default function HistoryPage() {
 
   const [loadError, setLoadError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const beginRequest = useLatestRequest(googleUserId);
 
@@ -79,7 +81,6 @@ export default function HistoryPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("이 풀이 기록을 삭제할까요? 되돌릴 수 없습니다.")) return;
     const isLatest = beginRequest();
     setDeleteError(null);
     try {
@@ -139,7 +140,7 @@ export default function HistoryPage() {
                           variant="destructive"
                           label="삭제"
                           aria-label={`${name} 삭제`}
-                          onClick={() => void handleDelete(attempt.id)}
+                          onClick={() => setPendingDeleteId(attempt.id)}
                         />
                       </div>
                     </div>
@@ -150,6 +151,21 @@ export default function HistoryPage() {
           </VStack>
         )}
       </VStack>
+      <AlertDialog
+        isOpen={pendingDeleteId !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteId(null);
+        }}
+        title="풀이 기록 삭제"
+        description="이 풀이 기록을 삭제할까요? 되돌릴 수 없습니다."
+        actionLabel="삭제"
+        cancelLabel="취소"
+        onAction={() => {
+          const id = pendingDeleteId;
+          setPendingDeleteId(null);
+          if (id) void handleDelete(id);
+        }}
+      />
     </PageContainer>
   );
 }

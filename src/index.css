@@ -9,21 +9,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: "Paperlogy";
-  src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-7Bold.woff2")
-    format("woff2");
-  font-weight: 700;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Paperlogy";
-  src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-6SemiBold.woff2")
-    format("woff2");
-  font-weight: 600;
-  font-display: swap;
-}
-
 /* neutral 테마의 기본 폰트(Figtree)에는 한글이 없어 토큰을 덮어쓴다.
    <Theme>이 감싼 요소에도 같은 토큰을 다시 선언하므로 [data-astryx-theme]까지 지정한다. */
 :root,
@@ -34,8 +19,8 @@
   --color-accent-muted: light-dark(#5146c833, #6258dc4d);
   --color-text-accent: light-dark(#5146c8, #a9a5ff);
   --color-icon-accent: light-dark(#5146c8, #a9a5ff);
-  --font-family-body: "Pretendard", sans-serif;
-  --font-family-heading: "Paperlogy", "Pretendard", sans-serif;
+  --font-family-body: "Nanum Square Round", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-family-heading: var(--font-family-body);
 }
 
 body {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AlertDialog } from "@astryxdesign/core/AlertDialog";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { Heading } from "@astryxdesign/core/Heading";
@@ -16,6 +17,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const resetTopFolder = async () => {
     if (!googleUserId) return;
@@ -33,8 +35,6 @@ export default function SettingsPage() {
 
   const deleteAllData = async () => {
     if (!googleUserId) return;
-    if (!window.confirm("저장된 모든 풀이 기록과 폴더 설정을 삭제할까요? 되돌릴 수 없습니다."))
-      return;
     setBusy(true);
     setError(null);
     try {
@@ -104,11 +104,23 @@ export default function SettingsPage() {
               label="모든 데이터 삭제"
               variant="destructive"
               isDisabled={busy}
-              onClick={() => void deleteAllData()}
+              onClick={() => setIsConfirmOpen(true)}
             />
           </VStack>
         </Card>
       </VStack>
+      <AlertDialog
+        isOpen={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        title="모든 데이터 삭제"
+        description="저장된 모든 풀이 기록과 폴더 설정을 삭제할까요? 되돌릴 수 없습니다."
+        actionLabel="모두 삭제"
+        cancelLabel="취소"
+        onAction={() => {
+          setIsConfirmOpen(false);
+          void deleteAllData();
+        }}
+      />
     </PageContainer>
   );
 }
