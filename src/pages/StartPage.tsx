@@ -27,8 +27,7 @@ export default function StartPage() {
         <div className="text-center break-keep">
           <Text color="secondary" as="p">
             Google Drive에 저장된 시트 문제은행을 연결해 자격증 문제를 한 문제씩 풀고, 채점과 해설을
-            확인하는 개인용 도구입니다. 서버 없이 브라우저에서만 동작하며, 시트 데이터는 어디로도
-            전송되지 않습니다.
+            확인하는 개인용 도구입니다.
           </Text>
         </div>
 
@@ -44,7 +43,7 @@ export default function StartPage() {
         />
         <div className="text-center break-keep">
           <Text type="supporting" as="p">
-            읽기 권한만 요청합니다. 계정 정보는 브라우저에만 저장됩니다.
+            풀이 기록은 내 Google 계정에 연결된 Firebase에 저장되어 다른 기기에서 이어 풀 수 있습니다. 시트는 읽기 권한만 요청합니다.
           </Text>
         </div>
       </VStack>

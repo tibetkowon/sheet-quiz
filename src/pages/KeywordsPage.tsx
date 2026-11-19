@@ -8,6 +8,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { VStack } from "@astryxdesign/core/VStack";
 import { useLatestRequest } from "../app/useLatestRequest";
 import { useAuth } from "../auth/AuthContext";
+import { DriveReconnectNotice } from "../components/DriveReconnectNotice";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
@@ -57,6 +58,10 @@ export default function KeywordsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  if (typeof result === "object" && !result.ok && googleUserId && status !== "connected") {
+    return <DriveReconnectNotice />;
+  }
 
   return (
     <PageContainer maxWidth="42rem" className="break-keep [overflow-wrap:anywhere]">

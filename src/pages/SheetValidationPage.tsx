@@ -19,6 +19,7 @@ import type { Question } from "../types/question";
 import { createInitialProgress } from "../types/progress";
 import type { StudyAttempt } from "../types/studyAttempt";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
+import { DriveReconnectNotice } from "../components/DriveReconnectNotice";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
@@ -47,6 +48,7 @@ export default function SheetValidationPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const beginRequest = useLatestRequest(JSON.stringify([location.key, googleUserId, authStatus]));
@@ -101,6 +103,7 @@ export default function SheetValidationPage() {
     if (!spreadsheetId || !googleUserId) return;
     const isLatest = beginRequest();
     setStarting(true);
+    setStartError(null);
     try {
       const fingerprint = createSetFingerprint(questions);
       const attemptId = createAttemptId(googleUserId, spreadsheetId, tabId, fingerprint);
@@ -132,6 +135,10 @@ export default function SheetValidationPage() {
       await saveAttempt(attempt);
       if (!isLatest()) return;
       navigate(`/quiz/${attemptId}`);
+    } catch (err) {
+      if (isLatest()) {
+        setStartError(err instanceof Error ? err.message : "풀이를 시작하지 못했습니다.");
+      }
     } finally {
       if (isLatest()) setStarting(false);
     }
@@ -165,6 +172,7 @@ export default function SheetValidationPage() {
   }
 
   if (status === "error") {
+    if (googleUserId && authStatus !== "connected") return <DriveReconnectNotice />;
     return (
       <PageContainer maxWidth="42rem" className="[overflow-wrap:anywhere]">
         <VStack gap={4} align="start">
@@ -275,6 +283,7 @@ export default function SheetValidationPage() {
             ))}
           </VStack>
         )}
+        {startError && <ErrorBanner message={startError} />}
         <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap">
           {questions.length === 0 ? (
             <Text color="secondary" as="p">

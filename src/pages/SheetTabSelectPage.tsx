@@ -8,6 +8,7 @@ import { VStack } from "@astryxdesign/core/VStack";
 import { useAuth } from "../auth/AuthContext";
 import { useLatestRequest } from "../app/useLatestRequest";
 import { listSheetTabs, pickQuestionTab, SheetsApiError, SheetTab } from "../sheets/sheetsClient";
+import { DriveReconnectNotice } from "../components/DriveReconnectNotice";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
@@ -99,6 +100,7 @@ export default function SheetTabSelectPage() {
   };
 
   if (error) {
+    if (googleUserId && status !== "connected") return <DriveReconnectNotice />;
     return (
       <PageContainer maxWidth="42rem">
         <ErrorBanner message={error} />

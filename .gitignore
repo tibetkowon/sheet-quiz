@@ -11,4 +11,7 @@ test-results
 .DS_Store
 .claude/settings.local.json
 .idea/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
 orca/

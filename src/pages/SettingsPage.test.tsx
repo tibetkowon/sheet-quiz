@@ -185,7 +185,7 @@ describe("SettingsPage", () => {
     const dialog = await screen.findByRole("alertdialog");
     expect(
       within(dialog).getByText(
-        "저장된 모든 풀이 기록과 폴더 설정을 삭제할까요? 되돌릴 수 없습니다.",
+        "저장된 모든 풀이 기록과 폴더 설정을 삭제할까요? 모든 기기에서 풀이 기록이 삭제되며 되돌릴 수 없습니다.",
       ),
     ).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole("button", { name: "취소" }));

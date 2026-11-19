@@ -6,7 +6,7 @@ export interface TokenResponse {
 }
 
 export interface GoogleIdentityClient {
-  requestAccessToken(): Promise<TokenResponse>;
+  requestAccessToken(loginHint?: string): Promise<TokenResponse>;
 }
 
 const SCOPES = [
@@ -59,7 +59,7 @@ function mapClientError(error: { type: string }): GoogleAuthError {
 
 export function createGoogleIdentityClient(clientId: string): GoogleIdentityClient {
   return {
-    async requestAccessToken() {
+    async requestAccessToken(loginHint) {
       await loadGisScript();
       if (!window.google) {
         throw new GoogleAuthError("network_error", "Google 인증 스크립트를 불러오지 못했습니다.");
@@ -69,6 +69,7 @@ export function createGoogleIdentityClient(clientId: string): GoogleIdentityClie
         const tokenClient = window.google!.accounts.oauth2.initTokenClient({
           client_id: clientId,
           scope: SCOPES,
+          login_hint: loginHint,
           callback: (response) => {
             if (response.error) {
               reject(mapTokenError(response.error));
@@ -81,7 +82,8 @@ export function createGoogleIdentityClient(clientId: string): GoogleIdentityClie
           },
           error_callback: (error) => reject(mapClientError(error)),
         });
-        tokenClient.requestAccessToken();
+        // prompt ""는 이미 동의한 계정이면 계정 선택·동의 화면 없이 토큰만 받는다.
+        tokenClient.requestAccessToken({ prompt: "" });
       });
     },
   };

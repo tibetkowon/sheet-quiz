@@ -13,6 +13,7 @@ import { DriveFile, DriveFolder, listChildFolders, listSheetFiles } from "../dri
 import { getTopFolder, TopFolderSelection } from "../storage/topFolderRepo";
 import { Breadcrumb, BreadcrumbItem } from "../components/Breadcrumb";
 import { formatIsoDate } from "../app/formatDate";
+import { DriveReconnectNotice } from "../components/DriveReconnectNotice";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
@@ -114,6 +115,8 @@ export default function DriveBrowsePage() {
       },
     });
   };
+
+  if (googleUserId && status !== "connected") return <DriveReconnectNotice />;
 
   if (status !== "connected") {
     return (

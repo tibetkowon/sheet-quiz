@@ -23,13 +23,14 @@ test("검증 통과 → 풀이 시작 → 답변 선택 → 다음 문제 → �
   await expect(page.getByText("저장됨")).toBeVisible();
 
   // A raw reload on /quiz/:attemptId silently continues where autosave left off —
-  // no resume prompt, since the attempt is loaded straight from IndexedDB by URL.
+  // no resume prompt, since the attempt is loaded straight from Firestore by URL
+  // (the restored Firebase session is awaited first).
   await page.reload();
   await expect(page.getByText("문제 2 / 2")).toBeVisible();
 
   // Re-entering through the Sheet browse → validate → 풀이 시작 flow a second time,
   // now that progress exists, routes through the actual resume-prompt screen.
-  // The top-level folder was already saved to IndexedDB on the first pass (keyed by
+  // The top-level folder was already saved to Firestore on the first pass (keyed by
   // googleUserId, which the mock keeps stable), so DriveBrowsePage skips straight to
   // the certification folder list instead of showing "최상위 폴더 선택하러 가기" again.
   await page.getByText("풀이장").click();

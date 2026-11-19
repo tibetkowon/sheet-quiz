@@ -1,12 +1,11 @@
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import type { StudyAttempt } from "../types/studyAttempt";
 import type { Question } from "../types/question";
 import ResumeSelectPage from "./ResumeSelectPage";
-import { getDb } from "../storage/db";
 import { selectSingleAnswer, submitAttempt } from "../quiz/attemptActions";
 
 function makeAttempt(): StudyAttempt {
@@ -87,11 +86,6 @@ function renderResume(id: string) {
 }
 
 describe("ResumeSelectPage", () => {
-  beforeEach(async () => {
-    const db = await getDb();
-    await db.clear("attempts");
-  });
-
   it("shows progress so far and navigates to the quiz on 이어서 풀기", async () => {
     await saveAttempt(makeAttempt());
     renderResume("attempt-1");
@@ -141,9 +135,11 @@ describe("ResumeSelectPage", () => {
     expect(reset?.submittedAt).toBeUndefined();
     expect(reset?.lastViewedIndex).toBe(0);
     expect(reset?.questionSnapshot).toEqual(original.questionSnapshot);
-    expect(reset?.progress.every((p) =>
-      p.status === "UNSEEN" && p.selectedAnswers.length === 0 && !p.reviewMarked,
-    )).toBe(true);
+    expect(
+      reset?.progress.every(
+        (p) => p.status === "UNSEEN" && p.selectedAnswers.length === 0 && !p.reviewMarked,
+      ),
+    ).toBe(true);
 
     const answered = selectSingleAnswer(reset!, "q1", "B");
     await saveAttempt(answered);

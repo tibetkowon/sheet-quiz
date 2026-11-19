@@ -5,6 +5,7 @@ import { GoogleAuthError } from "./googleAuthError";
 interface TokenClientConfig {
   client_id: string;
   scope: string;
+  login_hint?: string;
   callback: (response: { access_token: string; expires_in: number; error?: string }) => void;
   error_callback?: (error: { type: string; message?: string }) => void;
 }
@@ -93,5 +94,18 @@ describe("createGoogleIdentityClient", () => {
     await expect(client.requestAccessToken()).rejects.toMatchObject({
       code: "popup_blocked",
     } satisfies Partial<GoogleAuthError>);
+  });
+
+  it("passes login_hint and prompt \"\" so a known account skips the picker", async () => {
+    requestAccessToken.mockImplementation(() => {
+      lastConfig.callback({ access_token: "token-abc", expires_in: 3600 });
+    });
+
+    await createGoogleIdentityClient("client-id").requestAccessToken("user@example.com");
+
+    expect(initTokenClient).toHaveBeenCalledWith(
+      expect.objectContaining({ login_hint: "user@example.com" }),
+    );
+    expect(requestAccessToken).toHaveBeenCalledWith({ prompt: "" });
   });
 });
