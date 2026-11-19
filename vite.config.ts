@@ -50,6 +50,8 @@ export default defineConfig({
       },
     },
     globals: true,
+    // 다이얼로그를 여러 번 여닫는 페이지 테스트는 병렬 부하에서 5초 기본값을 넘긴다.
+    testTimeout: 15_000,
     setupFiles: ["./src/test/setup.ts"],
     exclude: ["e2e/**", "node_modules/**"],
   },
