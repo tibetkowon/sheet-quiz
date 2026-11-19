@@ -1,4 +1,7 @@
 {
+  "env": {
+    "ECC_HOOK_PROFILE": "strict"
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -6,10 +9,9 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(git commit*)",
-            "command": "{ pnpm test && pnpm typecheck && pnpm lint && pnpm build; } >&2 || { echo '커밋 차단: test/typecheck/lint/build 중 실패한 항목을 고친 뒤 다시 커밋하세요.' >&2; exit 2; }",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/verify-before-commit.sh",
             "timeout": 600,
-            "statusMessage": "커밋 전 검증 중 (test, typecheck, lint, build)"
+            "statusMessage": "커밋 명령 확인 중 (git commit이면 test, typecheck, lint, build 실행)"
           }
         ]
       }
