@@ -7,11 +7,13 @@
 ## 1. 개요
 
 Google Drive에 저장된 Google Sheet 문제은행을 읽어 자격증 문제를 풀 수 있는
-개인용 정적 웹앱. 서버·DB·회원 시스템·AI API 연동 없음. 특정 자격증(AWS)에
+개인용 정적 웹앱. 자체 서버·회원 시스템·AI API 연동 없음. 특정 자격증(AWS)에
 종속되지 않고, 정해진 Sheet 형식만 지키면 어떤 자격증에도 재사용 가능해야 한다.
 
-풀이 기록은 브라우저 IndexedDB에만 저장되고, Google OAuth 액세스 토큰은
-메모리에만 유지한다(영구 저장 금지). Drive·Sheets는 읽기 전용으로만 접근한다.
+풀이 기록은 Firestore(사용자별, 소유자만 접근)에 저장하고 SDK 오프라인 캐시를
+쓴다. 그래서 새로고침해도, 다른 기기(PC↔모바일)에서도 이어 풀 수 있다. 로그인
+세션은 Firebase Auth가 유지하고, Drive/Sheets OAuth 액세스 토큰은 메모리에만
+유지한다(영구 저장 금지). Drive·Sheets는 읽기 전용으로만 접근한다.
 
 이 문서는 사용자가 최초 요청에서 제공한 요구사항(제품 스펙, 30개 항목)을
 기술 아키텍처로 옮긴 것이다. 기능 요구사항의 원문은 대화 기록에 있으며, 이
@@ -19,8 +21,9 @@ Google Drive에 저장된 Google Sheet 문제은행을 읽어 자격증 문제�
 
 ## 2. 핵심 제약
 
-- Java/Spring Boot, 별도 백엔드, Supabase/Firebase/PostgreSQL 등 외부 DB 금지
-- 관리자 기능, 회원 관리, AI API 연동, 클라우드 동기화 금지
+- Java/Spring Boot 등 자체 백엔드 서버 금지. 저장/인증 외부 서비스는 Firebase
+  Auth와 Firestore만 허용한다(2026-11-19 사용자 결정). 그 밖의 외부 DB 금지
+- 관리자 기능, 회원 관리, AI API 연동 금지
 - 순수 정적 파일로 빌드되어 Vercel/Cloudflare Pages/GitHub Pages/일반 정적
   서버 어디에나 배포 가능해야 함
 - 전역 상태 관리 라이브러리 없이 React Context + hooks로 해결
@@ -30,7 +33,8 @@ Google Drive에 저장된 Google Sheet 문제은행을 읽어 자격증 문제�
 
 Vite, React 19, TypeScript(strict), React Router(브라우저 라우터), Astryx
 (`@astryxdesign/core`, neutral 테마 — UI 컴포넌트와 디자인 토큰), Tailwind
-CSS 3(레이아웃 보조), `idb`(IndexedDB 래퍼), Zod, Google Identity Services, Vitest, Testing
+CSS 3(레이아웃 보조), Firebase(Auth, Firestore), `idb`(기존 IndexedDB 데이터
+마이그레이션 전용), Zod, Google Identity Services, Vitest, Testing
 Library, Playwright, ESLint, Prettier, pnpm.
 
 Google Drive/Sheets API는 `gapi` 클라이언트 라이브러리를 쓰지 않고 REST
@@ -42,11 +46,12 @@ Google Drive/Sheets API는 `gapi` 클라이언트 라이브러리를 쓰지 않�
 ```
 src/
   app/          라우터, 레이아웃, 최상위 App
-  auth/         GIS 연동, AuthContext (토큰은 메모리에만)
+  firebase.ts   Firebase 앱·Auth·Firestore 초기화 (e2e에서는 Emulator 연결)
+  auth/         Firebase Auth 로그인, GIS 연동(Drive 재연결), AuthContext (Drive 토큰은 메모리에만)
   drive/        Drive REST 클라이언트, 폴더 탐색 훅
   sheets/       Sheets REST 클라이언트, 헤더 매핑, 파서, Zod 검증
   quiz/         문제풀이 상태기계, 네비게이션, 채점 엔진, fingerprint
-  storage/      IndexedDB(idb) 레포지토리
+  storage/      Firestore 레포지토리 + 1회성 IndexedDB 마이그레이션
   export/       Markdown/JSON 내보내기
   types/        공용 타입 (Question, StudyAttempt 등)
   components/   재사용 UI (버튼, 상태 배지, 카드, chip 등 — 디자인 토큰 기반)
@@ -62,12 +67,18 @@ docs/
 
 전역 라이브러리 없이 Context + hooks만 사용한다.
 
-- **AuthContext**: GIS 토큰 클라이언트, in-memory access token, 로그인/로그아웃/
-  재연결, Google 사용자 ID·이메일. 토큰은 `useRef`/모듈 스코프 변수에만 보관하고
-  리렌더 트리거용 상태(연결됨/만료됨)만 Context state로 노출한다.
+- **AuthContext**: 신원과 Drive 토큰을 나눠서 다룬다.
+  - 신원: Firebase Auth 사용자(세션은 SDK가 브라우저에 유지, 새로고침해도 유지).
+    Google 사용자 ID(Google sub)·이메일.
+  - Drive 토큰: 첫 로그인(`signInWithPopup`, Drive/Sheets 읽기 범위 포함) 결과에서
+    받고, 이후 재연결은 GIS 토큰 클라이언트(`login_hint`)로 받는다. `useRef`에만
+    보관한다.
+  - 상태: 시작 시 `connecting`(세션 복원 중), Firebase 사용자는 있는데 토큰이
+    없으면 `expired`(→ "드라이브 다시 연결"), 둘 다 있으면 `connected`, 사용자가
+    없으면 `signed_out`. 풀이·결과·기록 화면은 신원만 있으면 동작한다.
 - **폴더 탐색**: 현재 폴더 ID를 라우트 파라미터로 관리한다. 별도 전역 컨텍스트
   불필요 — breadcrumb과 뒤로가기가 URL과 자연스럽게 맞물린다.
-- **QuizContext**: 진행 중인 attempt의 로컬 상태 + IndexedDB 동기화 훅
+- **QuizContext**: 진행 중인 attempt의 로컬 상태 + repo 동기화 훅
   (`useAutosave`, debounce). attempt 단위로 provider를 마운트한다.
 
 ## 6. 라우팅 (React Router, 브라우저 라우터)
@@ -220,13 +231,28 @@ interface StudyAttempt {
 - 키워드는 화면에 들어갈 때마다 Sheets API로 읽으며 IndexedDB에 저장하지 않는다.
 - 시험 풀이 중 키워드 보기는 지원하지 않는다.
 
-## 9. IndexedDB 스키마 (`idb` 사용)
+## 9. 저장소 (Firestore)
 
-- `topFolder`: Google 사용자별 선택된 최상위 폴더(싱글턴 per user)
-- `recentItems`: 최근 사용한 폴더/파일
-- `attempts`: `StudyAttempt`, keyPath `id`, 인덱스: `googleUserId`,
-  `[spreadsheetId+sheetTabId]`
-- 액세스 토큰은 어떤 store에도 저장하지 않는다.
+2026-11-19부터 Firestore가 원본이다. 계획: `docs/superpowers/plans/2026-11-19-firestore-sync.md`.
+
+```
+users/{firebaseUid}/attempts/{attemptId}       StudyAttempt (questionSnapshot 포함)
+users/{firebaseUid}/topFolder/{googleUserId}   TopFolderSelection
+```
+
+- 보안 규칙: `users/{uid}/**`는 `request.auth.uid == uid`일 때만 읽고 쓸 수 있다.
+  문서 내용과 `attemptId`는 계속 Google sub(`googleUserId`)를 쓴다.
+- 오프라인: SDK `persistentLocalCache`(`persistentMultipleTabManager`). 쓰기는 서버
+  응답을 기다리지 않는다("저장됨" = 이 기기에 저장, 동기화 대기).
+- 기기 간 동기화: 화면을 열 때 읽는다(실시간 구독 없음).
+- 충돌: 문서 단위 last write wins. 단, 이미 제출된 문서를 제출 전 상태로 덮어쓰지
+  않고(`allowSubmittedOverwrite` 제외), `updatedAt`이 더 오래된 쓰기는 버린다.
+  두 기기에서 같은 attempt를 동시에 풀면 늦게 저장한 쪽이 이긴다.
+- 문서 크기(1 MiB 한도): JSON 크기가 900 KB를 넘으면 저장하지 않고 탭을 나누라고
+  안내한다. 문제 생성 프롬프트는 탭당 150문항, 필드별 글자 수 상한을 둔다.
+- 기존 IndexedDB(`sheet-quiz` DB, `idb`) 기록은 기기별 첫 로그인 때 한 번 업로드하고
+  이후로는 읽지 않는다.
+- 액세스 토큰은 어디에도 저장하지 않는다.
 
 ## 10. 채점 엔진
 
@@ -278,7 +304,11 @@ interface StudyAttempt {
   테스트가 쉽다.
 - **Testing Library**: 문제풀이 화면, 네비게이터, 검증 오류 화면 등 컴포넌트
   단위.
-- **Playwright E2E**: GIS 연동 모듈을 인터페이스로 감싸고, E2E에서는
+- **Firestore rules**: `@firebase/rules-unit-testing`으로 소유자만 접근되는지
+  검증한다(Emulator에서만 실행).
+- **Playwright E2E**: Firebase Emulator(auth+firestore) 위에서 돈다. 로그인은
+  테스트 전용 경로(GIS mock → userinfo mock → `signInWithCredential`)를 쓴다.
+  GIS 연동 모듈을 인터페이스로 감싸고, E2E에서는
   `page.addInitScript`로 `window.google.accounts.oauth2`를 가짜 구현으로
   주입하고 `page.route()`로 Drive/Sheets REST 엔드포인트를 가로채 고정 응답을
   반환한다. 실제 Google 계정 없이 전체 사용자 흐름(로그인 mock → 폴더 선택 →
@@ -288,8 +318,12 @@ interface StudyAttempt {
 
 Vercel을 1차 검증 대상으로 하고, README에 다른 정적 호스팅(Cloudflare Pages,
 GitHub Pages, 일반 정적 서버) 배포 절차를 함께 문서화한다. 환경변수는
-`VITE_GOOGLE_CLIENT_ID` 하나를 기본으로 하며, 필요성이 명확해지기 전까지 추가
-환경변수를 만들지 않는다.
+`VITE_GOOGLE_CLIENT_ID`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`,
+`VITE_FIREBASE_PROJECT_ID`이고, `VITE_FIREBASE_EMULATOR`는 e2e 전용이다. 필요성이
+명확해지기 전까지 추가 환경변수를 만들지 않는다.
+
+배포 전에 Firebase 설정(`scripts/setup-firebase.sh`로 자동화된 부분 + 콘솔 수동
+작업)과 Firestore rules 배포가 필요하다.
 
 ## 14. Claude-Codex 협업 프로세스
 
@@ -330,3 +364,6 @@ GitHub Pages, 일반 정적 서버) 배포 절차를 함께 문서화한다. 환
 - 다크모드: 라이트/다크 모두 지원 (2026-09-03 확정)
 - 디자인 톤: 차분하고 신뢰감 있는 집중형 (2026-09-03 확정)
 - 디자인 커버되지 않은 화면/상태는 기존 토큰·컴포넌트로 확장 구현 (2026-09-03 합의)
+- Firebase Auth + Firestore 도입: 새로고침 로그인 유지, 기기 간 이어 풀기. Drive
+  토큰은 메모리 유지, Firestore가 원본, 기존 기록 1회 업로드, E2E는 Emulator
+  (2026-11-19 확정, `docs/superpowers/plans/2026-11-19-firestore-sync.md`)

@@ -6,13 +6,14 @@
 - Vite
 - TypeScript strict
 - React Router
-- IndexedDB
+- Firebase Auth + Firestore (로그인 유지, 풀이 기록 기기 간 동기화)
+- IndexedDB (기존 기록 마이그레이션 전용)
 - Astryx (`@astryxdesign/core`, UI 컴포넌트·디자인 토큰)
 - Tailwind 3 (레이아웃 보조만)
 - Google Drive / Google Sheets 연동
-- OAuth token은 메모리에만 보관
-- 백엔드 없음
-- 외부 DB 없음
+- Drive OAuth access token은 메모리에만 보관
+- 자체 백엔드 서버 없음
+- Firestore 외 외부 DB 없음
 - 런타임 AI 호출 없음
 
 ## 주요 문서
@@ -72,6 +73,10 @@ pnpm e2e
 따라서 이 rule을 suppress하지 않는다.
 
 dependency array를 실제로 exhaustive하게 수정한다.
+
+### Firebase Emulator
+
+`pnpm e2e`는 Firebase Emulator(auth, firestore)를 띄운다. `firebase-tools`와 JDK 21 이상이 필요하다.
 
 ### IndexedDB 테스트 격리
 
