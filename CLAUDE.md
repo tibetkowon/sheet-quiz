@@ -43,21 +43,23 @@ pnpm e2e
 `git commit`은 `.claude/settings.json`의 hook이 `test`, `typecheck`, `lint`, `build` 통과를 요구한다.
 `e2e`는 느려서 hook에서 제외했으므로 `PASS` 처리 전에 직접 실행한다.
 
-## 작업 위임 방식
+## 작업 방식 (ECC)
 
-작업은 plan 항목 하나를 단위로 작게 나눈다.
-테스트까지 포함해 단독으로 검증되는 크기여야 한다.
+작업 종류에 맞는 orch 명령으로 시작한다.
 
-- 문서 읽기, 검증 명령 실행 같은 단순 반복 작업: haiku 서브에이전트
-- 실제 코딩: Orca Worker (`--agent codex`, 모델 `gpt-6.2-sol`, effort `medium`)
-- 코딩 완료 후 리뷰: sonnet 5.5 서브에이전트 (diff와 해당 plan 항목을 전달)
+- 새 기능 / Phase: `/ecc:orch-add-feature`
+- 버그: `/ecc:orch-fix-defect`
+- 동작 변경: `/ecc:orch-change-feature`
+- 리팩터링: `/ecc:orch-refine-code`
 
-Orca Worker 규칙:
+규칙:
 
-- Task spec은 혼자서 읽어도 되게 쓴다. 대상, 변경 내용, 제약, 수정 가능한 파일, 완료 증거를 넣고 아래 특이사항도 포함한다.
-- 같은 파일을 동시에 고치는 Task는 `--worktree new-child`로 분리한다.
-- Worker를 띄운 뒤에는 턴을 끝내고 Orca가 깨울 때까지 기다린다. 폴링하지 않는다.
-- Architecture spec은 요약본이 아니라 원문 경로를 넘긴다.
+- Plan 단계에서 Architecture spec 원문 경로를 넘긴다. Plan은 `docs/superpowers/plans/`에 저장한다.
+- Gate 1(plan 승인), Gate 2(커밋 확인)에서 반드시 멈춘다.
+- 서브에이전트에 작업을 넘길 때 아래 특이사항도 함께 전달한다.
+- 리뷰는 `/ecc:orch-review`로 한다.
+- PASS 전 `pnpm e2e`를 직접 실행한다 (hook은 e2e를 검사하지 않음).
+- 모델은 ECC 에이전트 기본값을 쓴다 (planner: opus, 코딩·리뷰: sonnet). `model`을 따로 넘기지 않는다.
 
 ## 알려진 프로젝트 특이사항
 

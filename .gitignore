@@ -9,3 +9,5 @@ test-results
 .playwright-mcp
 *.tsbuildinfo
 .DS_Store
+.claude/settings.local.json
+.idea/
