@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import "fake-indexeddb/auto";
-import { vi } from "vitest";
+import { afterEach, vi } from "vitest";
 
 // vi.fn이 아닌 일반 함수: 테스트의 vi.restoreAllMocks()가 구현을 지우지 않는다. 필요하면 vi.spyOn으로 덮어쓴다.
 // 페이지·Context 테스트는 실제 Firebase 대신 이 mock과 GIS/userinfo spy를 쓴다.
@@ -29,3 +29,9 @@ vi.mock("../auth/firebaseSignIn", async () => {
     },
   };
 });
+
+// repo는 기본적으로 in-memory fake를 쓴다. 실제 구현을 검사하는 repo 테스트는 vi.unmock으로 푼다.
+vi.mock("../storage/attemptRepo", async () => (await import("./fakeRepos")).fakeAttemptRepo);
+vi.mock("../storage/topFolderRepo", async () => (await import("./fakeRepos")).fakeTopFolderRepo);
+
+afterEach(async () => (await import("./fakeRepos")).resetFakeRepos());

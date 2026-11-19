@@ -37,9 +37,8 @@ users/{firebaseUid}/topFolder/{googleUserId}        TopFolderSelection 그대로
 
 ## 충돌 정책과 동시성
 
-- 기본은 last write wins다. `saveAttempt`는 쓰기 전에 기존 문서를 읽어서 다음 두 경우에는 쓰지 않는다.
-  1. 기존 문서가 이미 제출됐는데 새 문서는 제출 전 상태이고, `allowSubmittedOverwrite`도 아닌 경우. 이 보호 장치는 지금 코드에 있는 것을 그대로 유지한다.
-  2. `existing.updatedAt > attempt.updatedAt`인 경우. 늦게 도착한 오래된 상태가 새 상태를 덮어쓰는 것을 막는다.
+- 기본은 last write wins다. `saveAttempt`는 쓰기 전에 기존 문서를 읽어서, 기존 문서가 이미 제출됐는데 새 문서는 제출 전 상태이고 `allowSubmittedOverwrite`도 아니면 쓰지 않는다. 이 보호 장치는 지금 코드에 있는 것을 그대로 유지한다.
+- `updatedAt` 비교는 하지 않는다(Task 3 리뷰에서 제거). 기기마다 시계가 달라서, 시계가 늦은 기기의 자동저장과 다시 시작하기가 오류 없이 버려지기 때문이다.
 - **트랜잭션을 쓰지 않는다.** `runTransaction`은 오프라인이면 실패해서 오프라인 자동저장이 깨진다. 대신 `getDocFromCache(ref)`를 먼저 시도하고 실패하면 `getDoc(ref)`를 쓴 다음 `setDoc`한다. 이 보호 장치의 원래 목적은 "같은 기기에서 제출 직후 늦게 도착한 autosave"를 막는 것이라 캐시만 읽어도 충분하다. 캐시를 먼저 읽는 또 다른 이유가 있다. `beforeunload`/`visibilitychange`에서 호출되는 flush가 네트워크 왕복을 기다리지 않아도 된다.
 - **서버 응답(ack)을 기다리지 않는다.** 오프라인이면 `setDoc` Promise가 resolve되지 않아서 "저장 중"이 계속 표시된다. 그래서 `saveAttempt`는 `setDoc`을 호출한 뒤 `void setDoc(...).catch(console.error)`로 넘기고 반환한다. 로컬 캐시에 쓰는 것은 같은 인스턴스의 다음 읽기에 바로 보인다. 화면의 "저장됨"은 "이 기기에 저장됨, 동기화 대기"라는 뜻이 된다. 코드에 `shortcut:` 주석을 남긴다.
 - **알려진 동시성 위험:** 두 기기에서 같은 attempt를 동시에 열어 두면, 늦게 autosave한 쪽이 문서 전체를 덮어써서 다른 기기의 진행이 사라진다. 실시간 구독(`onSnapshot`)과 문항 단위 병합은 범위 밖이다. "이어 풀기"는 한 기기에서 그만 풀고 다른 기기에서 다시 여는 흐름이라 화면을 열 때 읽기만 해도 된다. README에 "한 번에 한 기기에서 풀기"를 적는다.
@@ -173,7 +172,7 @@ users/{firebaseUid}/topFolder/{googleUserId}        TopFolderSelection 그대로
 - [ ] `src/test/fakeRepos.ts`: in-memory `Map`으로 두 repo의 export를 똑같이 구현한다. `saveAttempt`의 보호 로직은 실제 repo의 순수 판단 함수 하나(`shouldWriteAttempt(existing, incoming, options)`, attemptRepo에서 export)를 같이 써서 동작이 갈라지지 않게 한다. `resetFakeRepos()`도 둔다. `setup.ts`에서 `vi.mock("../storage/attemptRepo")`와 `vi.mock("../storage/topFolderRepo")`를 fake로 연결하고, `afterEach(resetFakeRepos)`를 등록한다.
 - [ ] `getDb()`로 데이터를 직접 넣던 페이지 테스트 4개는 fake `saveAttempt`로 데이터를 넣도록 바꾼다.
 - [ ] **TDD (attemptRepo.test.ts / topFolderRepo.test.ts):** 전역 mock을 `vi.unmock`/`vi.importActual`로 풀고 `firebase/firestore`를 mock한다. 확인할 것:
-  - `shouldWriteAttempt` 표 테스트: 제출된 문서를 덮어쓰지 않음, `allowSubmittedOverwrite`, 새 문서가 제출본이면 허용, 기존 `updatedAt`이 더 새로우면 쓰지 않음, 기존 문서 없음.
+  - `shouldWriteAttempt` 표 테스트: 제출된 문서를 덮어쓰지 않음, `allowSubmittedOverwrite`, 새 문서가 제출본이면 허용, 기존 `updatedAt`이 더 새로워도 씀(시계 차이), 기존 문서 없음.
   - 900 KB를 넘으면 오류를 던지고 `setDoc`을 호출하지 않음.
   - 비로그인이면 오류.
   - 경로가 `users/{uid}/attempts/{id}`인지.

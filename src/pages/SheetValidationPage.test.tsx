@@ -1,13 +1,13 @@
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import * as googleIdentity from "../auth/googleIdentity";
 import * as userInfo from "../auth/userInfo";
 import * as sheetsClient from "../sheets/sheetsClient";
 import { AuthProvider } from "../auth/AuthContext";
 import { ConnectGate, renderWithConnectedAuth } from "../test/renderWithConnectedAuth";
-import { getDb } from "../storage/db";
+import * as attemptRepo from "../storage/attemptRepo";
 import SheetValidationPage from "./SheetValidationPage";
 
 const VALID_HEADER = [
@@ -26,7 +26,10 @@ const VALID_HEADER = [
 
 function renderValidation() {
   vi.spyOn(googleIdentity, "createGoogleIdentityClient").mockReturnValue({
-    requestAccessToken: async () => ({ accessToken: "token-abc", expiresAt: Date.now() + 3600_000 }),
+    requestAccessToken: async () => ({
+      accessToken: "token-abc",
+      expiresAt: Date.now() + 3600_000,
+    }),
   });
   vi.spyOn(userInfo, "fetchGoogleUserInfo").mockResolvedValue({
     googleUserId: "user-1",
@@ -49,11 +52,6 @@ function renderValidation() {
 
 describe("SheetValidationPage", () => {
   afterEach(() => vi.restoreAllMocks());
-
-  beforeEach(async () => {
-    const db = await getDb();
-    await db.clear("attempts");
-  });
 
   it("shows the question count when validation has no errors", async () => {
     vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([
@@ -81,7 +79,10 @@ describe("SheetValidationPage", () => {
   });
 
   it("shows the file name beside a failed validation without putting it in the heading", async () => {
-    vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([["번호", "문제"], ["1", "본문"]]);
+    vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([
+      ["번호", "문제"],
+      ["1", "본문"],
+    ]);
 
     renderValidation();
 
@@ -139,10 +140,12 @@ describe("SheetValidationPage", () => {
   });
 
   it("re-fetches when 다시 검증 is clicked", async () => {
-    const spy = vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([
-      VALID_HEADER,
-      ["1", "분류", "MEDIUM", "SINGLE", "", "A", "B", "", "", "A", "해설"],
-    ]);
+    const spy = vi
+      .spyOn(sheetsClient, "getSheetValues")
+      .mockResolvedValue([
+        VALID_HEADER,
+        ["1", "분류", "MEDIUM", "SINGLE", "", "A", "B", "", "", "A", "해설"],
+      ]);
 
     renderValidation();
     await waitFor(() => screen.getByText("다시 검증"));
@@ -154,12 +157,17 @@ describe("SheetValidationPage", () => {
 
   it("shows a retryable error banner when the Sheet request fails", async () => {
     vi.spyOn(sheetsClient, "getSheetValues").mockRejectedValue(
-      new (await import("../sheets/sheetsClient")).SheetsApiError(500, "Sheet 데이터를 불러오지 못했습니다."),
+      new (await import("../sheets/sheetsClient")).SheetsApiError(
+        500,
+        "Sheet 데이터를 불러오지 못했습니다.",
+      ),
     );
 
     renderValidation();
 
-    expect((await screen.findByText(/Sheet 데이터를 불러오지 못했습니다\./)).closest('[role="alert"]')).not.toBeNull();
+    expect(
+      (await screen.findByText(/Sheet 데이터를 불러오지 못했습니다\./)).closest('[role="alert"]'),
+    ).not.toBeNull();
   });
 
   it("shows warnings without blocking when only warnings are present", async () => {
@@ -181,7 +189,10 @@ describe("SheetValidationPage", () => {
       ["1", "분류", "MEDIUM", "SINGLE", "문제 1", "A", "B", "", "", "A", "해설"],
     ]);
     vi.spyOn(googleIdentity, "createGoogleIdentityClient").mockReturnValue({
-      requestAccessToken: async () => ({ accessToken: "token-abc", expiresAt: Date.now() + 3600_000 }),
+      requestAccessToken: async () => ({
+        accessToken: "token-abc",
+        expiresAt: Date.now() + 3600_000,
+      }),
     });
     vi.spyOn(userInfo, "fetchGoogleUserInfo").mockResolvedValue({
       googleUserId: "user-1",
@@ -221,12 +232,32 @@ describe("SheetValidationPage", () => {
     await waitFor(() => expect(screen.getByText("퀴즈 화면")).toBeInTheDocument());
   });
 
+  it("shows the save error message when 풀이 시작 fails to save", async () => {
+    vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([
+      VALID_HEADER,
+      ["1", "분류", "MEDIUM", "SINGLE", "문제 1", "A", "B", "", "", "A", "해설"],
+    ]);
+    vi.spyOn(attemptRepo, "saveAttempt").mockRejectedValue(
+      new Error("문제 수가 너무 많아 저장할 수 없습니다. 시트를 나눠주세요."),
+    );
+
+    renderValidation();
+
+    await waitFor(() => screen.getByRole("button", { name: "풀이 시작" }));
+    await userEvent.click(screen.getByRole("button", { name: "풀이 시작" }));
+
+    const message = await screen.findByText(/문제 수가 너무 많아 저장할 수 없습니다/);
+    expect(message.closest('[role="alert"]')).not.toBeNull();
+  });
+
   it("shows an empty-state message instead of 풀이 시작 when the sheet has zero questions", async () => {
     vi.spyOn(sheetsClient, "getSheetValues").mockResolvedValue([VALID_HEADER]);
 
     renderValidation();
 
-    await waitFor(() => expect(screen.getByText(/이 시트에는 풀 수 있는 문제가 없습니다/)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText(/이 시트에는 풀 수 있는 문제가 없습니다/)).toBeInTheDocument(),
+    );
     expect(screen.queryByRole("button", { name: "풀이 시작" })).not.toBeInTheDocument();
   });
 });

@@ -1,9 +1,8 @@
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
-import { getDb } from "../storage/db";
 import type { StudyAttempt } from "../types/studyAttempt";
 import type { Question } from "../types/question";
 import SubmitConfirmPage from "./SubmitConfirmPage";
@@ -26,7 +25,10 @@ function makeQuestion(id: string, questionNumber: number): Question {
   };
 }
 
-function makeAttempt(questions: Question[], progressOverrides: Partial<StudyAttempt["progress"][number]>[] = []): StudyAttempt {
+function makeAttempt(
+  questions: Question[],
+  progressOverrides: Partial<StudyAttempt["progress"][number]>[] = [],
+): StudyAttempt {
   return {
     id: "attempt-1",
     googleUserId: "user-1",
@@ -66,11 +68,6 @@ function renderConfirm(id: string) {
 }
 
 describe("SubmitConfirmPage", () => {
-  beforeEach(async () => {
-    const db = await getDb();
-    await db.clear("attempts");
-  });
-
   it("shows the current progress counts", async () => {
     await saveAttempt(
       makeAttempt(
@@ -97,7 +94,10 @@ describe("SubmitConfirmPage", () => {
 
   it("grades, saves, and navigates to results on 제출하기", async () => {
     await saveAttempt(
-      makeAttempt([makeQuestion("q1", 1), makeQuestion("q2", 2)], [{ selectedAnswers: ["A"] }, { selectedAnswers: ["B"] }]),
+      makeAttempt(
+        [makeQuestion("q1", 1), makeQuestion("q2", 2)],
+        [{ selectedAnswers: ["A"] }, { selectedAnswers: ["B"] }],
+      ),
     );
 
     renderConfirm("attempt-1");

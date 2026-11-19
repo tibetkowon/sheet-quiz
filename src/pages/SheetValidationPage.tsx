@@ -48,6 +48,7 @@ export default function SheetValidationPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const beginRequest = useLatestRequest(JSON.stringify([location.key, googleUserId, authStatus]));
@@ -102,6 +103,7 @@ export default function SheetValidationPage() {
     if (!spreadsheetId || !googleUserId) return;
     const isLatest = beginRequest();
     setStarting(true);
+    setStartError(null);
     try {
       const fingerprint = createSetFingerprint(questions);
       const attemptId = createAttemptId(googleUserId, spreadsheetId, tabId, fingerprint);
@@ -133,6 +135,10 @@ export default function SheetValidationPage() {
       await saveAttempt(attempt);
       if (!isLatest()) return;
       navigate(`/quiz/${attemptId}`);
+    } catch (err) {
+      if (isLatest()) {
+        setStartError(err instanceof Error ? err.message : "풀이를 시작하지 못했습니다.");
+      }
     } finally {
       if (isLatest()) setStarting(false);
     }
@@ -277,6 +283,7 @@ export default function SheetValidationPage() {
             ))}
           </VStack>
         )}
+        {startError && <ErrorBanner message={startError} />}
         <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap">
           {questions.length === 0 ? (
             <Text color="secondary" as="p">

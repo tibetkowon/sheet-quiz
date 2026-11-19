@@ -2,9 +2,8 @@
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { saveAttempt } from "../storage/attemptRepo";
-import { getDb } from "../storage/db";
 import { computeStudyResult } from "../quiz/grading";
 import type { StudyAttempt } from "../types/studyAttempt";
 import type { Question } from "../types/question";
@@ -16,7 +15,11 @@ vi.mock("../quiz/export", async (importOriginal) => {
   return { ...actual, downloadTextFile: vi.fn() };
 });
 
-function makeQuestion(id: string, questionNumber: number, overrides: Partial<Question> = {}): Question {
+function makeQuestion(
+  id: string,
+  questionNumber: number,
+  overrides: Partial<Question> = {},
+): Question {
   return {
     id,
     sourceRow: questionNumber + 1,
@@ -43,9 +46,27 @@ function makeSubmittedAttempt(): StudyAttempt {
     makeQuestion("q3", 3, { category: "네트워크", difficulty: "HARD" }),
   ];
   const progress = [
-    { questionId: "q1", selectedAnswers: ["A"], status: "ANSWERED" as const, reviewMarked: false, updatedAt: "" },
-    { questionId: "q2", selectedAnswers: ["B"], status: "ANSWERED" as const, reviewMarked: true, updatedAt: "" },
-    { questionId: "q3", selectedAnswers: [], status: "UNSEEN" as const, reviewMarked: false, updatedAt: "" },
+    {
+      questionId: "q1",
+      selectedAnswers: ["A"],
+      status: "ANSWERED" as const,
+      reviewMarked: false,
+      updatedAt: "",
+    },
+    {
+      questionId: "q2",
+      selectedAnswers: ["B"],
+      status: "ANSWERED" as const,
+      reviewMarked: true,
+      updatedAt: "",
+    },
+    {
+      questionId: "q3",
+      selectedAnswers: [],
+      status: "UNSEEN" as const,
+      reviewMarked: false,
+      updatedAt: "",
+    },
   ];
   return {
     id: "attempt-1",
@@ -79,11 +100,6 @@ function renderResults(id: string) {
 }
 
 describe("ResultsPage", () => {
-  beforeEach(async () => {
-    const db = await getDb();
-    await db.clear("attempts");
-  });
-
   it("shows the score, correct/total, and flagged counts", async () => {
     await saveAttempt(makeSubmittedAttempt());
 
@@ -234,7 +250,7 @@ describe("ResultsPage", () => {
 
     expect(exportModule.downloadTextFile).toHaveBeenCalledWith(
       expect.stringMatching(/\.json$/),
-      expect.stringContaining("\"scorePercent\""),
+      expect.stringContaining('"scorePercent"'),
       "application/json",
     );
   });

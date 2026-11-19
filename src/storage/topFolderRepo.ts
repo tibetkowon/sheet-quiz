@@ -1,4 +1,5 @@
-import { getDb } from "./db";
+import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, firestore } from "../firebase";
 
 export interface TopFolderSelection {
   googleUserId: string;
@@ -7,19 +8,25 @@ export interface TopFolderSelection {
   updatedAt: string;
 }
 
-export async function saveTopFolder(selection: TopFolderSelection): Promise<void> {
-  const db = await getDb();
-  await db.put("topFolder", selection);
+async function userRef() {
+  await auth.authStateReady();
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error("로그인이 필요합니다.");
+  return doc(firestore, "users", uid);
 }
 
-export async function getTopFolder(
-  googleUserId: string,
-): Promise<TopFolderSelection | undefined> {
-  const db = await getDb();
-  return db.get("topFolder", googleUserId);
+export async function saveTopFolder(selection: TopFolderSelection): Promise<void> {
+  // shortcut: saveAttempt처럼 서버 응답을 기다리지 않는다(오프라인에서 멈추지 않고, 선택 직후 화면 전환이 서버 왕복에 막히지 않게). 서버 거부는 로그만 남는다. 거부를 알려야 하면 await한다.
+  void setDoc(doc(await userRef(), "topFolder", selection.googleUserId), selection).catch(
+    console.error,
+  );
+}
+
+export async function getTopFolder(googleUserId: string): Promise<TopFolderSelection | undefined> {
+  const snap = await getDoc(doc(await userRef(), "topFolder", googleUserId));
+  return snap.data() as TopFolderSelection | undefined;
 }
 
 export async function clearTopFolder(googleUserId: string): Promise<void> {
-  const db = await getDb();
-  await db.delete("topFolder", googleUserId);
+  await deleteDoc(doc(await userRef(), "topFolder", googleUserId));
 }

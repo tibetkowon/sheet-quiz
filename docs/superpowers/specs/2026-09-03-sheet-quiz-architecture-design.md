@@ -246,8 +246,8 @@ users/{firebaseUid}/topFolder/{googleUserId}   TopFolderSelection
   응답을 기다리지 않는다("저장됨" = 이 기기에 저장, 동기화 대기).
 - 기기 간 동기화: 화면을 열 때 읽는다(실시간 구독 없음).
 - 충돌: 문서 단위 last write wins. 단, 이미 제출된 문서를 제출 전 상태로 덮어쓰지
-  않고(`allowSubmittedOverwrite` 제외), `updatedAt`이 더 오래된 쓰기는 버린다.
-  두 기기에서 같은 attempt를 동시에 풀면 늦게 저장한 쪽이 이긴다.
+  않는다(`allowSubmittedOverwrite` 제외). 기기마다 시계가 달라 `updatedAt`은
+  비교하지 않는다. 두 기기에서 같은 attempt를 동시에 풀면 늦게 저장한 쪽이 이긴다.
 - 문서 크기(1 MiB 한도): JSON 크기가 900 KB를 넘으면 저장하지 않고 탭을 나누라고
   안내한다. 문제 생성 프롬프트는 탭당 150문항, 필드별 글자 수 상한을 둔다.
 - 기존 IndexedDB(`sheet-quiz` DB, `idb`) 기록은 기기별 첫 로그인 때 한 번 업로드하고
