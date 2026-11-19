@@ -1,7 +1,7 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as firebaseAuth from "firebase/auth";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { auth } from "../firebase";
 import * as firebaseSignIn from "./firebaseSignIn";
 import { AuthProvider, useAuth } from "./AuthContext";
@@ -40,10 +40,207 @@ function restoreSession() {
   }) as unknown as typeof firebaseAuth.onAuthStateChanged);
 }
 
+const TOKEN_KEY = "sheet-quiz-drive-token";
+const storeToken = (over: Record<string, unknown> = {}) =>
+  window.sessionStorage.setItem(
+    TOKEN_KEY,
+    JSON.stringify({
+      accessToken: "stored-token",
+      expiresAt: Date.now() + 3600_000,
+      googleUserId: "google-sub-1",
+      ...over,
+    }),
+  );
+
 describe("AuthContext", () => {
+  beforeEach(() => window.sessionStorage.clear());
   afterEach(() => {
     (auth as { currentUser: unknown }).currentUser = null;
+    window.sessionStorage.clear();
     vi.restoreAllMocks();
+  });
+
+  describe("Drive token in sessionStorage", () => {
+    let probe!: ReturnType<typeof useAuth>;
+    function Probe() {
+      probe = useAuth();
+      return <span data-testid="status">{probe.status}</span>;
+    }
+    const renderProbe = () =>
+      render(
+        <AuthProvider clientId="client-id">
+          <Probe />
+        </AuthProvider>,
+      );
+    const mockReconnect = () => {
+      vi.spyOn(googleIdentity, "createGoogleIdentityClient").mockReturnValue({
+        requestAccessToken: vi
+          .fn()
+          .mockResolvedValue({ accessToken: "fresh", expiresAt: Date.now() + 3600_000 }),
+      });
+      vi.spyOn(userInfo, "fetchGoogleUserInfo").mockResolvedValue({
+        googleUserId: "google-sub-1",
+        email: "user@example.com",
+      });
+    };
+
+    it("restores a stored valid token as connected", async () => {
+      restoreSession();
+      storeToken();
+
+      renderProbe();
+
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("connected"));
+      expect(probe.getAccessToken()).toBe("stored-token");
+    });
+
+    it.each([
+      ["a different Google account", { googleUserId: "other-sub" }],
+      ["an expired token", { expiresAt: Date.now() - 1000 }],
+      ["a token inside the expiry buffer", { expiresAt: Date.now() + 30_000 }],
+    ])("treats %s as expired and clears it", async (_name, over) => {
+      restoreSession();
+      storeToken(over);
+
+      renderProbe();
+
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("expired"));
+      expect(probe.getAccessToken()).toBeNull();
+      expect(window.sessionStorage.getItem(TOKEN_KEY)).toBeNull();
+    });
+
+    it("treats a malformed stored entry as expired and clears it", async () => {
+      restoreSession();
+      storeToken({ accessToken: 123 });
+
+      renderProbe();
+
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("expired"));
+      expect(window.sessionStorage.getItem(TOKEN_KEY)).toBeNull();
+    });
+
+    it("drops the previous account's token when another account signs in (e.g. from another tab)", async () => {
+      let notify!: (u: unknown) => void;
+      (auth as { currentUser: unknown }).currentUser = mockUser;
+      vi.spyOn(firebaseAuth, "onAuthStateChanged").mockImplementation(((
+        _a: unknown,
+        cb: (u: unknown) => void,
+      ) => {
+        notify = cb;
+        cb(mockUser);
+        return () => {};
+      }) as unknown as typeof firebaseAuth.onAuthStateChanged);
+      storeToken();
+      renderProbe();
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("connected"));
+
+      act(() =>
+        notify({
+          ...mockUser,
+          uid: "firebase-uid-2",
+          email: "b@example.com",
+          providerData: [{ providerId: "google.com", uid: "google-sub-2" }],
+        }),
+      );
+
+      expect(screen.getByTestId("status")).toHaveTextContent("expired");
+      expect(probe.getAccessToken()).toBeNull();
+      expect(window.sessionStorage.getItem(TOKEN_KEY)).toBeNull();
+    });
+
+    it("clears a stored token when there is no signed-in user", async () => {
+      storeToken();
+
+      renderProbe();
+
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("signed_out"));
+      expect(window.sessionStorage.getItem(TOKEN_KEY)).toBeNull();
+    });
+
+    it("saves the token on connect() and clears it on disconnect()", async () => {
+      restoreSession();
+      mockReconnect();
+      renderProbe();
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("expired"));
+
+      await act(async () => {
+        await probe.connect();
+      });
+      expect(JSON.parse(window.sessionStorage.getItem(TOKEN_KEY) ?? "null")).toMatchObject({
+        accessToken: "fresh",
+        googleUserId: "google-sub-1",
+      });
+
+      act(() => probe.disconnect());
+      expect(window.sessionStorage.getItem(TOKEN_KEY)).toBeNull();
+    });
+
+    it("clears the stored token on markExpired()", async () => {
+      restoreSession();
+      storeToken();
+      renderProbe();
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("connected"));
+
+      act(() => probe.markExpired());
+
+      expect(window.sessionStorage.getItem(TOKEN_KEY)).toBeNull();
+      expect(screen.getByTestId("status")).toHaveTextContent("expired");
+    });
+
+    it("clears the stored token when getAccessToken() finds it expired", async () => {
+      restoreSession();
+      mockReconnect();
+      renderProbe();
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("expired"));
+      await act(async () => {
+        await probe.connect();
+      });
+      vi.spyOn(Date, "now").mockReturnValue(Date.now() + 2 * 3600_000);
+
+      act(() => {
+        expect(probe.getAccessToken()).toBeNull();
+      });
+
+      expect(window.sessionStorage.getItem(TOKEN_KEY)).toBeNull();
+    });
+
+    it("clears the stored token when connect() starts and fails", async () => {
+      restoreSession();
+      storeToken();
+      vi.spyOn(googleIdentity, "createGoogleIdentityClient").mockReturnValue({
+        requestAccessToken: vi.fn().mockRejectedValue(new Error("popup closed")),
+      });
+      renderProbe();
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("connected"));
+
+      await act(async () => {
+        await probe.connect();
+      });
+
+      expect(window.sessionStorage.getItem(TOKEN_KEY)).toBeNull();
+    });
+
+    it("works memory-only when sessionStorage throws", async () => {
+      restoreSession();
+      mockReconnect();
+      vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+        throw new Error("denied");
+      });
+      vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+        throw new Error("denied");
+      });
+      vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+        throw new Error("denied");
+      });
+      renderProbe();
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("expired"));
+
+      await act(async () => {
+        expect(await probe.connect()).toBe(true);
+      });
+
+      expect(probe.getAccessToken()).toBe("fresh");
+    });
   });
 
   it("restores the session as expired with the user's identity and no Drive token", async () => {
@@ -216,6 +413,7 @@ describe("AuthContext", () => {
       cb(null);
       return () => {};
     }) as unknown as typeof firebaseAuth.onAuthStateChanged);
+    vi.spyOn(migrateLocalData, "migrateLocalData").mockResolvedValue(undefined as never);
     let finishSignIn!: (v: Awaited<ReturnType<typeof firebaseSignIn.signInWithGoogle>>) => void;
     vi.spyOn(firebaseSignIn, "signInWithGoogle").mockImplementation(
       () =>

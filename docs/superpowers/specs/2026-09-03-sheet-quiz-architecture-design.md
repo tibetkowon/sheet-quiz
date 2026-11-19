@@ -12,8 +12,8 @@ Google Drive에 저장된 Google Sheet 문제은행을 읽어 자격증 문제�
 
 풀이 기록은 Firestore(사용자별, 소유자만 접근)에 저장하고 SDK 오프라인 캐시를
 쓴다. 그래서 새로고침해도, 다른 기기(PC↔모바일)에서도 이어 풀 수 있다. 로그인
-세션은 Firebase Auth가 유지하고, Drive/Sheets OAuth 액세스 토큰은 메모리에만
-유지한다(영구 저장 금지). Drive·Sheets는 읽기 전용으로만 접근한다.
+세션은 Firebase Auth가 유지하고, Drive/Sheets OAuth 액세스 토큰은 sessionStorage에
+보관한다(탭 단위, 만료 시 삭제, 영구 저장 금지). Drive·Sheets는 읽기 전용으로만 접근한다.
 
 이 문서는 사용자가 최초 요청에서 제공한 요구사항(제품 스펙, 30개 항목)을
 기술 아키텍처로 옮긴 것이다. 기능 요구사항의 원문은 대화 기록에 있으며, 이
@@ -47,7 +47,7 @@ Google Drive/Sheets API는 `gapi` 클라이언트 라이브러리를 쓰지 않�
 src/
   app/          라우터, 레이아웃, 최상위 App
   firebase.ts   Firebase 앱·Auth·Firestore 초기화 (e2e에서는 Emulator 연결)
-  auth/         Firebase Auth 로그인, GIS 연동(Drive 재연결), AuthContext (Drive 토큰은 메모리에만)
+  auth/         Firebase Auth 로그인, GIS 연동(Drive 재연결), AuthContext (Drive 토큰은 sessionStorage)
   drive/        Drive REST 클라이언트, 폴더 탐색 훅
   sheets/       Sheets REST 클라이언트, 헤더 매핑, 파서, Zod 검증
   quiz/         문제풀이 상태기계, 네비게이션, 채점 엔진, fingerprint
@@ -71,8 +71,9 @@ docs/
   - 신원: Firebase Auth 사용자(세션은 SDK가 브라우저에 유지, 새로고침해도 유지).
     Google 사용자 ID(Google sub)·이메일.
   - Drive 토큰: 첫 로그인(`signInWithPopup`, Drive/Sheets 읽기 범위 포함) 결과에서
-    받고, 이후 재연결은 GIS 토큰 클라이언트(`login_hint`)로 받는다. `useRef`에만
-    보관한다.
+    받고, 이후 재연결은 GIS 토큰 클라이언트(`login_hint`)로 받는다. `useRef`에 두고
+    sessionStorage(`sheet-quiz-drive-token`)에도 저장해 새로고침 후 같은 사용자의
+    만료 전 토큰을 복원한다.
   - 상태: 시작 시 `connecting`(세션 복원 중), Firebase 사용자는 있는데 토큰이
     없으면 `expired`(→ "드라이브 다시 연결"), 둘 다 있으면 `connected`, 사용자가
     없으면 `signed_out`. 풀이·결과·기록 화면은 신원만 있으면 동작한다.
@@ -252,7 +253,8 @@ users/{firebaseUid}/topFolder/{googleUserId}   TopFolderSelection
   안내한다. 문제 생성 프롬프트는 탭당 150문항, 필드별 글자 수 상한을 둔다.
 - 기존 IndexedDB(`sheet-quiz` DB, `idb`) 기록은 기기별 첫 로그인 때 한 번 업로드하고
   이후로는 읽지 않는다.
-- 액세스 토큰은 어디에도 저장하지 않는다.
+- 액세스 토큰은 sessionStorage에만 저장한다(`localStorage` 금지). 탭을 닫거나 만료,
+  연결 해제 시 지우고, 저장소 접근이 실패하면 메모리로만 동작한다.
 
 ## 10. 채점 엔진
 
@@ -367,3 +369,7 @@ GitHub Pages, 일반 정적 서버) 배포 절차를 함께 문서화한다. 환
 - Firebase Auth + Firestore 도입: 새로고침 로그인 유지, 기기 간 이어 풀기. Drive
   토큰은 메모리 유지, Firestore가 원본, 기존 기록 1회 업로드, E2E는 Emulator
   (2026-11-19 확정, `docs/superpowers/plans/2026-11-19-firestore-sync.md`)
+- Drive 토큰을 sessionStorage에 보관: 앱이 공개되지 않고 `drive.readonly` 범위라
+  본인과 지인만 쓰므로 새로고침 때 재연결을 없앤다. 감수하는 위험은 XSS 시 읽기 전용
+  토큰이 최대 1시간 노출되는 것이다. (2026-11-19 확정,
+  `docs/superpowers/plans/2026-11-19-drive-token-session-storage.md`)
