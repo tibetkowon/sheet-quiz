@@ -97,7 +97,8 @@ export default function SettingsPage() {
             <VStack gap={1}>
               <Heading level={2}>전체 데이터 삭제</Heading>
               <Text type="supporting" as="p">
-                저장된 모든 풀이 기록과 폴더 설정을 브라우저에서 삭제하고 연결을 해제합니다.
+                저장된 모든 풀이 기록과 폴더 설정을 삭제하고 연결을 해제합니다. 모든 기기에서 풀이
+                기록이 삭제됩니다.
               </Text>
             </VStack>
             <Button
@@ -113,7 +114,7 @@ export default function SettingsPage() {
         isOpen={isConfirmOpen}
         onOpenChange={setIsConfirmOpen}
         title="모든 데이터 삭제"
-        description="저장된 모든 풀이 기록과 폴더 설정을 삭제할까요? 되돌릴 수 없습니다."
+        description="저장된 모든 풀이 기록과 폴더 설정을 삭제할까요? 모든 기기에서 풀이 기록이 삭제되며 되돌릴 수 없습니다."
         actionLabel="모두 삭제"
         cancelLabel="취소"
         onAction={() => {

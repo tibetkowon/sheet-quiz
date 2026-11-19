@@ -7,9 +7,10 @@
 - React Router
 - Astryx 디자인 시스템 (`@astryxdesign/core`)
 - Tailwind CSS (레이아웃 보조)
-- IndexedDB(브라우저 로컬 저장)
+- Firebase Auth + Firestore(로그인 유지, 풀이 기록 기기 간 동기화)
+- IndexedDB(기존 기록 마이그레이션 전용)
 - Google Drive / Google Sheets 연동(읽기 전용)
-- 백엔드 없음, 외부 DB 없음, 런타임 AI 호출 없음
+- 자체 백엔드 없음, Firestore 외 외부 DB 없음, 런타임 AI 호출 없음
 
 ## 사전 준비: Google OAuth 클라이언트 발급
 
@@ -40,7 +41,35 @@ cp .env.example .env.local
 VITE_GOOGLE_CLIENT_ID=여기에_클라이언트_ID
 ```
 
-이 값 하나 외에 다른 환경변수는 사용하지 않습니다.
+| 변수 | 설명 |
+| --- | --- |
+| `VITE_GOOGLE_CLIENT_ID` | Google OAuth 클라이언트 ID |
+| `VITE_FIREBASE_API_KEY` | Firebase 웹 앱 API 키 |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase Auth 도메인 |
+| `VITE_FIREBASE_PROJECT_ID` | Firebase(GCP) 프로젝트 ID |
+
+`VITE_FIREBASE_EMULATOR`는 e2e 전용이며 `.env.e2e`에서만 설정합니다.
+
+## Firebase 설정
+
+로그인 유지와 풀이 기록 동기화에 Firebase Auth/Firestore를 사용합니다.
+`VITE_GOOGLE_CLIENT_ID`가 속한 **기존** GCP 프로젝트를 대상으로 합니다.
+
+```bash
+pnpm exec firebase login   # 처음 한 번만
+scripts/setup-firebase.sh <gcpProjectId> [location=asia-northeast3]
+# Google 로그인까지 자동으로 켜려면:
+SUPPORT_EMAIL=you@example.com scripts/setup-firebase.sh <gcpProjectId>
+```
+
+스크립트는 Firebase 추가, Firestore 생성, 웹 앱 등록, `.env.local`에 `VITE_FIREBASE_*` 기록,
+rules 배포를 수행합니다. 스크립트가 출력하는 나머지 수동 작업은 다음과 같습니다.
+
+- Firebase 콘솔 > Authentication > Sign-in method > Google 사용 설정(`SUPPORT_EMAIL`을 주지 않았거나 자동 설정에 실패한 경우)
+- Authentication > Settings > Authorized domains에 Vercel 도메인 추가
+- Google Cloud 콘솔 > OAuth 동의 화면: `drive.readonly`, `spreadsheets.readonly` 범위 확인(Testing 모드면 테스트 사용자 추가)
+- 사용자 인증 정보: `VITE_GOOGLE_CLIENT_ID`의 승인된 자바스크립트 원본에 배포 도메인 확인
+- Vercel 환경변수에 `.env.local`의 `VITE_FIREBASE_*` 3개 추가
 
 ## 개발 명령
 
@@ -53,9 +82,12 @@ VITE_GOOGLE_CLIENT_ID=여기에_클라이언트_ID
 | `pnpm lint` | ESLint 검사 |
 | `pnpm build` | `tsc -b && vite build`로 프로덕션 번들을 `dist/`에 생성 |
 | `pnpm preview` | `pnpm build`로 만든 `dist/`를 정적 서버로 구동(포트 4173) |
-| `pnpm e2e` | Playwright E2E 테스트 실행 — 내부적으로 `pnpm dev` 서버를 자동 기동한다 |
+| `pnpm e2e` | Playwright E2E 테스트 실행 — Firebase Emulator(auth, firestore)와 Vite(`--mode e2e`, 5199)를 자동 기동한다 |
 
-`pnpm e2e`는 프로덕션 번들이 아니라 `pnpm dev` 서버를 대상으로 실행되므로,
+`pnpm e2e` 사전 요구사항: JDK 21 이상, `firebase-tools`(devDependency, 설치됨),
+포트 5199/8080/9099 비어 있음.
+
+`pnpm e2e`는 프로덕션 번들이 아니라 개발 서버를 대상으로 실행되므로,
 실제 배포 전에는 `pnpm build && pnpm preview`로 프로덕션 번들이 정상 동작하는지
 별도로 확인하는 것을 권장합니다.
 
@@ -84,8 +116,10 @@ VITE_GOOGLE_CLIENT_ID=여기에_클라이언트_ID
 
 - 문제는 단일 정답(라디오) 또는 복수 정답(체크박스) 형식입니다.
 - 문제별로 **검토 표시(review mark)**와 **개인 메모**를 남길 수 있습니다.
-- 풀이 중 진행 상황은 각 답변 시점마다 IndexedDB에 자동 저장되므로, 탭을
-  닫았다가 돌아와도 이어서 풀 수 있습니다.
+- 풀이 중 진행 상황은 각 답변 시점마다 Firestore에 자동 저장되므로, 탭을
+  닫거나 다른 기기에서 접속해도 이어서 풀 수 있습니다.
+- 한 번에 한 기기에서 풀어 주세요. 같은 풀이를 두 기기에서 동시에 열어 두면
+  마지막에 저장한 쪽이 덮어씁니다.
 - 모든 문제를 다 풀지 않아도 제출할 수 있으며, 제출 확인 화면에서 미응답
   문제 수를 다시 알려줍니다.
 
@@ -108,7 +142,7 @@ VITE_GOOGLE_CLIENT_ID=여기에_클라이언트_ID
 
 - 최상위 Drive 폴더 재선택
 - 라이트/다크 모드 전환(우측 상단 토글, 선택값은 `localStorage`에 저장)
-- 전체 데이터 삭제(저장된 모든 풀이 기록과 폴더 설정을 브라우저에서 삭제)
+- 전체 데이터 삭제(저장된 모든 풀이 기록과 폴더 설정을 모든 기기에서 삭제)
 
 ### Google Sheet 문제 양식
 
@@ -167,24 +201,25 @@ VITE_GOOGLE_CLIENT_ID=여기에_클라이언트_ID
 
 ## 데이터와 프라이버시
 
-- OAuth access token은 **메모리에만** 보관됩니다. 어떤 저장소(IndexedDB,
-  localStorage 등)에도 기록하지 않으며, 새로고침하면 다시 로그인해야 합니다.
-- 풀이 진행 상황, 채점 결과, 풀이 기록은 브라우저의 **IndexedDB**에만
-  저장되고 서버로 전송되지 않습니다. 브라우저 저장소를 지우거나 다른
-  기기/브라우저로 접속하면 기록이 보이지 않습니다.
-- 다크모드 설정만 `localStorage`에 저장됩니다.
+- Drive OAuth access token은 **메모리에만** 보관됩니다. 어떤 저장소에도
+  기록하지 않으며, 새로고침하면 로그인은 유지되지만 Drive는 "드라이브 다시
+  연결"을 눌러야 합니다.
+- 풀이 진행 상황, 채점 결과, 풀이 기록은 로그인한 계정의 **Firestore**
+  (`users/{uid}/...`)에 저장되어 기기 간에 동기화됩니다. rules가 본인 문서만
+  읽고 쓰게 제한합니다. 기존 IndexedDB 기록은 첫 로그인 때 한 번 이전됩니다.
+- `localStorage`에는 다크모드 설정과 기존 기록 이전 완료 표시만 저장됩니다.
 - Drive/Sheets API 호출은 모두 읽기 전용(list/get)입니다.
 
 ## 배포
 
 정적 파일(`pnpm build`의 `dist/` 산출물)만 있으면 어디서든 호스팅할 수
-있습니다. `VITE_GOOGLE_CLIENT_ID`는 빌드 시점에 번들에 인라인되므로, 빌드
+있습니다. `VITE_*` 환경변수는 빌드 시점에 번들에 인라인되므로, 빌드
 전에 배포 환경의 값으로 설정되어 있어야 합니다.
 
 ### Vercel (1차 검증 대상)
 
 1. GitHub 저장소를 Vercel에 import합니다.
-2. 프로젝트 환경변수에 `VITE_GOOGLE_CLIENT_ID`를 등록합니다.
+2. 프로젝트 환경변수에 `VITE_GOOGLE_CLIENT_ID`와 `VITE_FIREBASE_*` 3개를 등록합니다.
 3. Build Command는 `pnpm build`, Output Directory는 `dist`로 설정합니다
    (Vite 프로젝트로 인식되면 기본값으로 자동 설정됩니다).
 4. 배포된 도메인을 Google Cloud Console의 "승인된 자바스크립트 원본"에
@@ -207,9 +242,9 @@ VITE_GOOGLE_CLIENT_ID=여기에_클라이언트_ID
 
 - 앱은 PWA로 설치할 수 있으며, 설치 후에는 네트워크 없이도 앱 화면 자체는
   실행됩니다. 다만 Drive/Sheets 목록 조회와 최초 문제 불러오기에는 여전히
-  네트워크 연결이 필요합니다(한 번 불러온 풀이는 IndexedDB에서 이어서 풀 수
+  네트워크 연결이 필요합니다(한 번 불러온 풀이는 Firestore 오프라인 캐시로 이어서 풀 수
   있습니다).
-- 여러 브라우저 탭에서 동시에 같은 풀이를 진행하면 마지막에 저장된 내용만
+- 여러 탭·기기에서 동시에 같은 풀이를 진행하면 마지막에 저장된 내용만
   남습니다.
 - GitHub Pages 서브경로 배포는 위 안내대로 별도 설정이 필요하며, 이 저장소는
   해당 설정을 기본 포함하지 않습니다.
