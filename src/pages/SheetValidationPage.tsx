@@ -19,6 +19,7 @@ import type { Question } from "../types/question";
 import { createInitialProgress } from "../types/progress";
 import type { StudyAttempt } from "../types/studyAttempt";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
+import { DriveReconnectNotice } from "../components/DriveReconnectNotice";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
@@ -165,6 +166,7 @@ export default function SheetValidationPage() {
   }
 
   if (status === "error") {
+    if (googleUserId && authStatus !== "connected") return <DriveReconnectNotice />;
     return (
       <PageContainer maxWidth="42rem" className="[overflow-wrap:anywhere]">
         <VStack gap={4} align="start">

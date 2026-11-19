@@ -14,6 +14,7 @@ import { DriveFolder, listChildFolders, listRootFolders } from "../drive/driveCl
 import { saveTopFolder } from "../storage/topFolderRepo";
 import { Breadcrumb, BreadcrumbItem } from "../components/Breadcrumb";
 import { formatIsoDate } from "../app/formatDate";
+import { DriveReconnectNotice } from "../components/DriveReconnectNotice";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
@@ -95,6 +96,8 @@ export default function TopFolderSelectPage() {
       setError("최상위 폴더 저장에 실패했습니다. 다시 시도해주세요.");
     }
   };
+
+  if (error && googleUserId && status !== "connected") return <DriveReconnectNotice />;
 
   const breadcrumbItems: BreadcrumbItem[] = path.map((level, index) => ({
     label: level.name,

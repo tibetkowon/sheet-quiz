@@ -3,6 +3,7 @@ export type GoogleAuthErrorCode =
   | "popup_closed"
   | "access_denied"
   | "network_error"
+  | "account_mismatch"
   | "unknown";
 
 export class GoogleAuthError extends Error {
@@ -21,5 +22,6 @@ export const AUTH_ERROR_MESSAGES: Record<GoogleAuthErrorCode, string> = {
   popup_closed: "로그인 창이 닫혔습니다. 다시 시도해주세요.",
   access_denied: "Google 계정 접근 권한이 거부되었습니다. 읽기 권한을 승인해야 계속할 수 있습니다.",
   network_error: "네트워크 연결에 실패했습니다. 연결 상태를 확인한 뒤 다시 시도해주세요.",
+  account_mismatch: "로그인한 계정과 다른 Google 계정이 선택되었습니다. 같은 계정으로 다시 연결해주세요.",
   unknown: "알 수 없는 오류로 Google 연결에 실패했습니다. 다시 시도해주세요.",
 };

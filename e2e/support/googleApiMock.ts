@@ -1,10 +1,12 @@
+import { randomUUID } from "node:crypto";
 import type { Page } from "@playwright/test";
 
 interface MockTokenClientConfig {
   callback: (response: { access_token: string; expires_in: number }) => void;
 }
 
-export async function mockGoogleApis(page: Page) {
+// Emulator는 같은 sub(와 같은 email)를 같은 사용자로 묶으므로 병렬 테스트끼리 섞이지 않게 테스트마다 고유 sub·email을 쓴다.
+export async function mockGoogleApis(page: Page, sub = `mock-user-${randomUUID()}`) {
   await page.addInitScript(() => {
     (window as unknown as { google: unknown }).google = {
       accounts: {
@@ -23,7 +25,7 @@ export async function mockGoogleApis(page: Page) {
     route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ sub: "mock-user-1", email: "mock-user@example.com" }),
+      body: JSON.stringify({ sub, email: `${sub}@example.com` }),
     }),
   );
 
@@ -79,4 +81,6 @@ export async function mockGoogleApis(page: Page) {
         ];
     return route.fulfill({ json: { values } });
   });
+
+  return sub;
 }

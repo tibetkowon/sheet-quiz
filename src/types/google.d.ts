@@ -8,13 +8,14 @@ declare global {
           initTokenClient(config: {
             client_id: string;
             scope: string;
+            login_hint?: string;
             callback: (response: {
               access_token: string;
               expires_in: number;
               error?: string;
             }) => void;
             error_callback?: (error: { type: string; message?: string }) => void;
-          }): { requestAccessToken: () => void };
+          }): { requestAccessToken: (overrides?: { prompt?: string }) => void };
         };
       };
     };
