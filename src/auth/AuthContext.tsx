@@ -13,6 +13,7 @@ import { createGoogleIdentityClient, TokenResponse } from "./googleIdentity";
 import { signInWithGoogle } from "./firebaseSignIn";
 import { fetchGoogleUserInfo } from "./userInfo";
 import { GoogleAuthError } from "./googleAuthError";
+import { migrateLocalData } from "../storage/migrateLocalData";
 
 type AuthStatus = "signed_out" | "connecting" | "connected" | "expired";
 
@@ -39,7 +40,9 @@ const identityOf = (user: User) => ({
 // login_hint는 힌트일 뿐이라 다른 계정을 고를 수 있다. 로그인한 사용자의 토큰만 받는다.
 async function reconnect(clientId: string, user: User) {
   const identity = identityOf(user);
-  const token = await createGoogleIdentityClient(clientId).requestAccessToken(user.email ?? undefined);
+  const token = await createGoogleIdentityClient(clientId).requestAccessToken(
+    user.email ?? undefined,
+  );
   const info = await fetchGoogleUserInfo(token.accessToken);
   if (info.googleUserId !== identity.googleUserId) {
     throw new GoogleAuthError("account_mismatch", "로그인한 계정과 다른 Google 계정입니다.");
@@ -47,13 +50,7 @@ async function reconnect(clientId: string, user: User) {
   return { ...identity, token };
 }
 
-export function AuthProvider({
-  clientId,
-  children,
-}: {
-  clientId: string;
-  children: ReactNode;
-}) {
+export function AuthProvider({ clientId, children }: { clientId: string; children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("connecting");
   const [googleUserId, setGoogleUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -99,6 +96,11 @@ export function AuthProvider({
         ? await reconnect(clientId, existing)
         : await signInWithGoogle(clientId);
       if (generation !== generationRef.current) return false;
+      if (!existing) {
+        // 업그레이드 전 기기는 Firebase 세션이 없어 반드시 이 경로를 지난다. 실패해도 로그인은 막지 않는다.
+        await migrateLocalData(result.googleUserId).catch(console.error);
+        if (generation !== generationRef.current) return false;
+      }
       tokenRef.current = result.token;
       setGoogleUserId(result.googleUserId);
       setEmail(result.email);
@@ -148,7 +150,16 @@ export function AuthProvider({
 
   return (
     <AuthContext.Provider
-      value={{ status, googleUserId, email, error, connect, disconnect, markExpired, getAccessToken }}
+      value={{
+        status,
+        googleUserId,
+        email,
+        error,
+        connect,
+        disconnect,
+        markExpired,
+        getAccessToken,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -7,6 +7,7 @@ import * as firebaseSignIn from "./firebaseSignIn";
 import { AuthProvider, useAuth } from "./AuthContext";
 import * as googleIdentity from "./googleIdentity";
 import * as userInfo from "./userInfo";
+import * as migrateLocalData from "../storage/migrateLocalData";
 
 function TestConsumer() {
   const auth = useAuth();
@@ -89,7 +90,9 @@ describe("AuthContext", () => {
   it("rejects a reconnect token from a different Google account", async () => {
     restoreSession();
     vi.spyOn(googleIdentity, "createGoogleIdentityClient").mockReturnValue({
-      requestAccessToken: vi.fn().mockResolvedValue({ accessToken: "t", expiresAt: Date.now() + 3600_000 }),
+      requestAccessToken: vi
+        .fn()
+        .mockResolvedValue({ accessToken: "t", expiresAt: Date.now() + 3600_000 }),
     });
     vi.spyOn(userInfo, "fetchGoogleUserInfo").mockResolvedValue({
       googleUserId: "other-sub",
@@ -139,6 +142,68 @@ describe("AuthContext", () => {
     await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("connected"));
     expect(signIn).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("uid")).toHaveTextContent("google-sub-1");
+  });
+
+  describe("local data migration", () => {
+    const signInResult = {
+      googleUserId: "google-sub-1",
+      email: "user@example.com",
+      token: { accessToken: "t", expiresAt: Date.now() + 3600_000 },
+    };
+    const renderAndConnect = async (initial: string) => {
+      render(
+        <AuthProvider clientId="client-id">
+          <TestConsumer />
+        </AuthProvider>,
+      );
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent(initial));
+      await act(async () => {
+        await userEvent.click(screen.getByText("connect"));
+      });
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("connected"));
+    };
+
+    it("migrates once on the first connect() while still connecting", async () => {
+      vi.spyOn(firebaseSignIn, "signInWithGoogle").mockResolvedValue(signInResult);
+      let statusDuring = "";
+      const migrate = vi
+        .spyOn(migrateLocalData, "migrateLocalData")
+        .mockImplementation(async () => {
+          statusDuring = screen.getByTestId("status").textContent ?? "";
+        });
+
+      await renderAndConnect("signed_out");
+
+      expect(migrate).toHaveBeenCalledTimes(1);
+      expect(migrate).toHaveBeenCalledWith("google-sub-1");
+      expect(statusDuring).toBe("connecting");
+    });
+
+    it("still connects when the migration fails", async () => {
+      vi.spyOn(firebaseSignIn, "signInWithGoogle").mockResolvedValue(signInResult);
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(migrateLocalData, "migrateLocalData").mockRejectedValue(new Error("boom"));
+
+      await renderAndConnect("signed_out");
+
+      expect(screen.getByTestId("uid")).toHaveTextContent("google-sub-1");
+    });
+
+    it("does not migrate on session restore or reconnect", async () => {
+      restoreSession();
+      vi.spyOn(googleIdentity, "createGoogleIdentityClient").mockReturnValue({
+        requestAccessToken: vi.fn().mockResolvedValue(signInResult.token),
+      });
+      vi.spyOn(userInfo, "fetchGoogleUserInfo").mockResolvedValue({
+        googleUserId: "google-sub-1",
+        email: "user@example.com",
+      });
+      const migrate = vi.spyOn(migrateLocalData, "migrateLocalData");
+
+      await renderAndConnect("expired");
+
+      expect(migrate).not.toHaveBeenCalled();
+    });
   });
 
   it("does not flash expired when the auth listener fires during the first connect()", async () => {
