@@ -11,7 +11,7 @@
 - Astryx (`@astryxdesign/core`, UI 컴포넌트·디자인 토큰)
 - Tailwind 3 (레이아웃 보조만)
 - Google Drive / Google Sheets 연동
-- Drive OAuth access token은 메모리에만 보관
+- Drive OAuth access token은 sessionStorage에 보관(탭 단위, 최대 1시간)
 - 자체 백엔드 서버 없음
 - Firestore 외 외부 DB 없음
 - 런타임 AI 호출 없음
