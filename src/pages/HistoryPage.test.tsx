@@ -162,7 +162,8 @@ describe("HistoryPage", () => {
     expect(
       (await screen.findByText(/풀이 기록을 불러오지 못했습니다\./)).closest('[role="alert"]'),
     ).not.toBeNull();
-    expect(screen.queryByText("불러오는 중…")).not.toBeInTheDocument();
+    // Spinner 라벨은 Astryx 알림 영역에 남으므로 텍스트 대신 progressbar로 확인한다.
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "다시 시도" }));
 
     await screen.findByText(/AWS · 1회차/);
