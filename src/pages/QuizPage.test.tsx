@@ -3,7 +3,8 @@ import { Route, Routes } from "react-router-dom";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as attemptRepo from "../storage/attemptRepo";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import type { StudyAttempt } from "../types/studyAttempt";
 import type { Question } from "../types/question";
@@ -310,6 +311,20 @@ describe("QuizPage", () => {
       "aria-expanded",
       "false",
     );
+  });
+
+  it("읽기에 실패하면 오류와 다시 시도 버튼을 보여주고 다시 시도하면 불러옵니다", async () => {
+    await saveAttempt(makeAttempt([makeQuestion("q1", 1), makeQuestion("q2", 2)]));
+    vi.spyOn(attemptRepo, "getAttempt").mockRejectedValueOnce(new Error("연결 실패"));
+
+    renderQuiz("attempt-1");
+
+    const message = await screen.findByText("풀이 기록을 불러오지 못했습니다.");
+    expect(message.closest('[role="alert"]')).not.toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "다시 시도" }));
+
+    await waitFor(() => expect(screen.getByText("문제 1")).toBeInTheDocument());
   });
 
   it("shows a not-found message when the attempt id doesn't exist", async () => {

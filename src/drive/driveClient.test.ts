@@ -26,6 +26,7 @@ describe("listChildFolders", () => {
     expect(calledUrl).toContain("%27parent-1%27+in+parents");
     expect(fetchMock.mock.calls[0][1]).toEqual({
       headers: { Authorization: "Bearer token-abc" },
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -73,6 +74,7 @@ describe("listSheetFiles", () => {
     const calledUrl = fetchMock.mock.calls[0][0] as string;
     expect(calledUrl).toContain("mimeType+%3D+%27application%2Fvnd.google-apps.spreadsheet%27");
     expect(calledUrl).toContain("%27parent-1%27+in+parents");
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ signal: expect.any(AbortSignal) });
   });
 
   it("throws DriveApiError with status 401 when the token is expired", async () => {

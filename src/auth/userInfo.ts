@@ -1,3 +1,4 @@
+import { timeoutSignal } from "../storage/withTimeout";
 import { GoogleAuthError } from "./googleAuthError";
 
 export interface GoogleUserInfo {
@@ -8,6 +9,7 @@ export interface GoogleUserInfo {
 export async function fetchGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
   const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
     headers: { Authorization: `Bearer ${accessToken}` },
+    signal: timeoutSignal(),
   });
   if (!response.ok) {
     throw new GoogleAuthError("unknown", "Google 사용자 정보를 가져오지 못했습니다.");

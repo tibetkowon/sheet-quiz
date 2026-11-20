@@ -18,7 +18,7 @@ describe("fetchGoogleUserInfo", () => {
     expect(result).toEqual({ googleUserId: "1234567890", email: "user@example.com" });
     expect(fetchMock).toHaveBeenCalledWith(
       "https://www.googleapis.com/oauth2/v3/userinfo",
-      { headers: { Authorization: "Bearer token-abc" } },
+      { headers: { Authorization: "Bearer token-abc" }, signal: expect.any(AbortSignal) },
     );
   });
 
