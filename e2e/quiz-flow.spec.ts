@@ -33,9 +33,13 @@ test("검증 통과 → 풀이 시작 → 답변 선택 → 다음 문제 → �
   // The top-level folder was already saved to Firestore on the first pass (keyed by
   // googleUserId, which the mock keeps stable), so DriveBrowsePage skips straight to
   // the certification folder list instead of showing "최상위 폴더 선택하러 가기" again.
+  // The logo goes straight to /folders while signed in, where the in-progress attempt
+  // shows up as a badge on the Sheet row.
   await page.getByText("풀이장").click();
-  await page.getByRole("button", { name: "Google Drive 연결" }).click();
   await page.getByText("AWS").click();
+  await expect(page.getByRole("listitem").filter({ hasText: "실전 모의고사 1" })).toContainText(
+    "풀이 중 1",
+  );
   await page.getByText("실전 모의고사 1").click();
   await expect(page.getByText("검증 완료")).toBeVisible();
   await page.getByRole("button", { name: "풀이 시작" }).click();

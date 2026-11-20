@@ -45,7 +45,7 @@ export default function TopFolderSelectPage() {
     if (!accessToken) {
       setLoading(false);
       setError(
-        "Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.",
+        "Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 다시 연결해주세요.",
       );
       return;
     }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Badge } from "@astryxdesign/core/Badge";
 import { Card } from "@astryxdesign/core/Card";
 import { Item } from "@astryxdesign/core/Item";
 import { Link } from "@astryxdesign/core/Link";
@@ -10,6 +11,8 @@ import { useAuth } from "../auth/AuthContext";
 import { useLatestRequest } from "../app/useLatestRequest";
 import { DriveApiError } from "../drive/driveApiError";
 import { DriveFile, DriveFolder, listChildFolders, listSheetFiles } from "../drive/driveClient";
+import { listAttemptsByUser } from "../storage/attemptRepo";
+import { summarizeAttemptsBySheet, SheetAttemptStatus } from "../quiz/sheetAttemptStatus";
 import { getTopFolder, TopFolderSelection } from "../storage/topFolderRepo";
 import { Breadcrumb, BreadcrumbItem } from "../components/Breadcrumb";
 import { formatIsoDate } from "../app/formatDate";
@@ -25,6 +28,25 @@ interface FolderLevel {
 
 interface LocationState {
   trail?: FolderLevel[];
+}
+
+function attemptStatusText(status: SheetAttemptStatus): string {
+  return `풀어 본 ${status.attemptedTabs}탭 중 ${status.submittedTabs}탭 제출, ${status.inProgressTabs}탭 풀이 중`;
+}
+
+// 배지는 Item의 버튼 밖에 그려져 포커스 이동 시 읽히지 않는다. 같은 내용은 description의 sr-only 문장이 전한다.
+function AttemptBadges({ status }: { status: SheetAttemptStatus | undefined }) {
+  if (!status) return null;
+  return (
+    <span className="flex flex-wrap gap-1" aria-hidden="true">
+      {status.submittedTabs > 0 && (
+        <Badge variant="success" label={`제출 ${status.submittedTabs}/${status.attemptedTabs}`} />
+      )}
+      {status.inProgressTabs > 0 && (
+        <Badge variant="warning" label={`풀이 중 ${status.inProgressTabs}`} />
+      )}
+    </span>
+  );
 }
 
 export default function DriveBrowsePage() {
@@ -56,6 +78,23 @@ export default function DriveBrowsePage() {
       });
   }, [googleUserId, beginTopFolderRequest]);
 
+  const [attemptStatuses, setAttemptStatuses] = useState<Map<string, SheetAttemptStatus>>(
+    () => new Map(),
+  );
+  const beginAttemptsRequest = useLatestRequest(googleUserId);
+
+  useEffect(() => {
+    const isLatest = beginAttemptsRequest();
+    setAttemptStatuses(new Map());
+    if (!googleUserId) return;
+    void listAttemptsByUser(googleUserId)
+      .then((attempts) => {
+        if (isLatest()) setAttemptStatuses(summarizeAttemptsBySheet(attempts));
+      })
+      // 배지는 부가 정보라 실패해도 목록과 오류 배너에는 영향을 주지 않는다.
+      .catch(console.error);
+  }, [googleUserId, beginAttemptsRequest]);
+
   const currentFolderId = folderId ?? topFolder?.folderId ?? null;
   const trail = (location.state as LocationState | null)?.trail ?? [];
 
@@ -67,9 +106,7 @@ export default function DriveBrowsePage() {
     const accessToken = getAccessToken();
     if (!accessToken) {
       setLoading(false);
-      setError(
-        "Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 시작 화면에서 다시 연결해주세요.",
-      );
+      setError("Google 연결이 필요합니다. 상단의 '풀이장' 로고를 눌러 다시 연결해주세요.");
       return;
     }
     setLoading(true);
@@ -199,7 +236,17 @@ export default function DriveBrowsePage() {
                 label={file.name}
                 labelLines={2}
                 startContent={<FileSpreadsheet size={20} aria-hidden="true" />}
-                description={formatIsoDate(file.modifiedTime)}
+                description={
+                  <>
+                    {formatIsoDate(file.modifiedTime)}
+                    {attemptStatuses.has(file.id) && (
+                      <span className="sr-only">
+                        {`, ${attemptStatusText(attemptStatuses.get(file.id)!)}`}
+                      </span>
+                    )}
+                  </>
+                }
+                endContent={<AttemptBadges status={attemptStatuses.get(file.id)} />}
                 onClick={() => openFile(file)}
               />
             ))}

@@ -6,6 +6,7 @@ import { IconButton } from "@astryxdesign/core/IconButton";
 import { MobileNav, MobileNavToggle } from "@astryxdesign/core/MobileNav";
 import { SideNavItem } from "@astryxdesign/core/SideNav";
 import { TopNav, TopNavHeading, TopNavItem } from "@astryxdesign/core/TopNav";
+import { useAuth } from "../auth/AuthContext";
 import { useThemeMode } from "./ThemeModeContext";
 
 const NAV_ITEMS = [
@@ -16,6 +17,7 @@ const NAV_ITEMS = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggleTheme } = useThemeMode();
+  const { googleUserId } = useAuth();
   const { pathname } = useLocation();
   // 직접 만든 드로어는 Astryx 기본 드로어와 달리 항목을 눌러도 닫히지 않아 열림 상태를 직접 관리한다.
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -37,7 +39,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <TopNavHeading
                 logo={<img src="/favicon.svg" alt="" className="h-8 w-8" />}
                 heading="풀이장"
-                headingHref="/"
+                headingHref={googleUserId ? "/folders" : "/"}
               />
             }
             startContent={NAV_ITEMS.map(({ label, href }) => (
