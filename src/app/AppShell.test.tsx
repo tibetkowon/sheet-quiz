@@ -1,16 +1,25 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as googleIdentity from "../auth/googleIdentity";
+import * as userInfo from "../auth/userInfo";
+import { AuthProvider } from "../auth/AuthContext";
+import { ConnectGate } from "../test/renderWithConnectedAuth";
 import { AppShell } from "./AppShell";
 import { AstryxProviders } from "./AstryxProviders";
 
-function renderShell(initialPath = "/") {
+function renderShell(initialPath = "/", { signedIn = false } = {}) {
+  const shell = (
+    <AppShell>
+      <h1>본문 제목</h1>
+    </AppShell>
+  );
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <AstryxProviders>
-        <AppShell>
-          <h1>본문 제목</h1>
-        </AppShell>
+        <AuthProvider clientId="client-id">
+          {signedIn ? <ConnectGate>{shell}</ConnectGate> : shell}
+        </AuthProvider>
       </AstryxProviders>
     </MemoryRouter>,
   );
@@ -20,6 +29,7 @@ describe("AppShell", () => {
   beforeEach(() => {
     window.localStorage.clear();
   });
+  afterEach(() => vi.restoreAllMocks());
 
   it("links the main destinations from the primary navigation", () => {
     renderShell();
@@ -32,6 +42,18 @@ describe("AppShell", () => {
   it("links the product name back to the start page", () => {
     renderShell("/history");
     expect(screen.getByRole("link", { name: /풀이장/ })).toHaveAttribute("href", "/");
+  });
+
+  it("links the product name to the folder list when signed in", async () => {
+    vi.spyOn(googleIdentity, "createGoogleIdentityClient").mockReturnValue({
+      requestAccessToken: async () => ({ accessToken: "token-abc", expiresAt: Date.now() + 3600_000 }),
+    });
+    vi.spyOn(userInfo, "fetchGoogleUserInfo").mockResolvedValue({
+      googleUserId: "user-1",
+      email: "user@example.com",
+    });
+    renderShell("/history", { signedIn: true });
+    expect(await screen.findByRole("link", { name: /풀이장/ })).toHaveAttribute("href", "/folders");
   });
 
   it("shows the app logo image next to the product name", () => {
