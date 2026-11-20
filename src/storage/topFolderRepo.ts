@@ -1,5 +1,6 @@
 import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, firestore } from "../firebase";
+import { withTimeout } from "./withTimeout";
 
 export interface TopFolderSelection {
   googleUserId: string;
@@ -22,9 +23,13 @@ export async function saveTopFolder(selection: TopFolderSelection): Promise<void
   );
 }
 
-export async function getTopFolder(googleUserId: string): Promise<TopFolderSelection | undefined> {
-  const snap = await getDoc(doc(await userRef(), "topFolder", googleUserId));
-  return snap.data() as TopFolderSelection | undefined;
+export function getTopFolder(googleUserId: string): Promise<TopFolderSelection | undefined> {
+  return withTimeout(
+    (async () => {
+      const snap = await getDoc(doc(await userRef(), "topFolder", googleUserId));
+      return snap.data() as TopFolderSelection | undefined;
+    })(),
+  );
 }
 
 export async function clearTopFolder(googleUserId: string): Promise<void> {

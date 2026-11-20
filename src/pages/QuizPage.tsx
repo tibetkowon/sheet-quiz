@@ -1,5 +1,5 @@
 // src/pages/QuizPage.tsx
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Button } from "@astryxdesign/core/Button";
@@ -11,11 +11,13 @@ import { Link } from "@astryxdesign/core/Link";
 import { RadioList, RadioListItem } from "@astryxdesign/core/RadioList";
 import { Text } from "@astryxdesign/core/Text";
 import { VStack } from "@astryxdesign/core/VStack";
+import { useLatestRequest } from "../app/useLatestRequest";
 import { getAttempt, saveAttempt } from "../storage/attemptRepo";
 import type { StudyAttempt } from "../types/studyAttempt";
 import { clampAttemptIndex } from "../quiz/clampAttemptIndex";
 import { QuizProvider, useQuiz } from "../quiz/QuizContext";
 import { AutosaveIndicator } from "../components/AutosaveIndicator";
+import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import { PageContainer } from "../components/PageContainer";
 import { ProgressBar } from "../components/ProgressBar";
@@ -23,26 +25,47 @@ import { QuestionNavigatorGrid } from "../components/QuestionNavigatorGrid";
 
 export default function QuizPage() {
   const { attemptId } = useParams<{ attemptId: string }>();
-  const [state, setState] = useState<"loading" | "not-found" | "ready">("loading");
+  const [state, setState] = useState<"loading" | "not-found" | "error" | "ready">("loading");
   const [attempt, setAttempt] = useState<StudyAttempt | null>(null);
 
-  useEffect(() => {
+  const beginRequest = useLatestRequest(attemptId);
+
+  const load = useCallback(() => {
     if (!attemptId) return;
+    const isLatest = beginRequest();
     setState("loading");
-    getAttempt(attemptId).then((found) => {
-      if (!found || !found.questionSnapshot || found.questionSnapshot.length === 0) {
-        setState("not-found");
-        return;
-      }
-      setAttempt(clampAttemptIndex(found));
-      setState("ready");
-    });
-  }, [attemptId]);
+    getAttempt(attemptId)
+      .then((found) => {
+        if (!isLatest()) return;
+        if (!found || !found.questionSnapshot || found.questionSnapshot.length === 0) {
+          setState("not-found");
+          return;
+        }
+        setAttempt(clampAttemptIndex(found));
+        setState("ready");
+      })
+      .catch(() => {
+        if (!isLatest()) return;
+        setState("error");
+      });
+  }, [attemptId, beginRequest]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   if (state === "loading") {
     return (
       <PageContainer>
         <LoadingIndicator />
+      </PageContainer>
+    );
+  }
+
+  if (state === "error") {
+    return (
+      <PageContainer>
+        <ErrorBanner message="풀이 기록을 불러오지 못했습니다." onRetry={load} />
       </PageContainer>
     );
   }

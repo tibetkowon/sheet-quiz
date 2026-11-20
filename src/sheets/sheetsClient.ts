@@ -1,3 +1,5 @@
+import { timeoutSignal } from "../storage/withTimeout";
+
 export interface SheetTab {
   sheetId: number;
   title: string;
@@ -17,7 +19,7 @@ export async function listSheetTabs(accessToken: string, spreadsheetId: string):
   const params = new URLSearchParams({ fields: "sheets.properties(sheetId,title)" });
   const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?${params.toString()}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
+    { headers: { Authorization: `Bearer ${accessToken}` }, signal: timeoutSignal() },
   );
 
   if (response.status === 401) {
@@ -44,7 +46,7 @@ export async function getSheetValues(
   const range = encodeURIComponent(`'${tabTitle.replace(/'/g, "''")}'`);
   const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueRenderOption=UNFORMATTED_VALUE`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
+    { headers: { Authorization: `Bearer ${accessToken}` }, signal: timeoutSignal() },
   );
 
   if (response.status === 401) {

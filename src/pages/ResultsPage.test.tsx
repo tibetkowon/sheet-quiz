@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import * as attemptRepo from "../storage/attemptRepo";
 import { saveAttempt } from "../storage/attemptRepo";
 import { computeStudyResult } from "../quiz/grading";
 import type { StudyAttempt } from "../types/studyAttempt";
@@ -253,6 +254,20 @@ describe("ResultsPage", () => {
       expect.stringContaining('"scorePercent"'),
       "application/json",
     );
+  });
+
+  it("읽기에 실패하면 오류와 다시 시도 버튼을 보여주고 다시 시도하면 불러옵니다", async () => {
+    await saveAttempt(makeSubmittedAttempt());
+    vi.spyOn(attemptRepo, "getAttempt").mockRejectedValueOnce(new Error("연결 실패"));
+
+    renderResults("attempt-1");
+
+    const message = await screen.findByText("풀이 기록을 불러오지 못했습니다.");
+    expect(message.closest('[role="alert"]')).not.toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "다시 시도" }));
+
+    await waitFor(() => expect(screen.getByText("33%")).toBeInTheDocument());
   });
 
   it("shows a not-found message when the attempt hasn't been submitted", async () => {

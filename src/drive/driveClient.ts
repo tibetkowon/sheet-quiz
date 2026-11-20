@@ -1,4 +1,5 @@
 import { DriveApiError } from "./driveApiError";
+import { timeoutSignal } from "../storage/withTimeout";
 
 export interface DriveFolder {
   id: string;
@@ -29,6 +30,7 @@ export async function listChildFolders(
 
   const response = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
+    signal: timeoutSignal(),
   });
 
   if (response.status === 401) {
@@ -68,6 +70,7 @@ export async function listSheetFiles(accessToken: string, parentId: string): Pro
 
   const response = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
+    signal: timeoutSignal(),
   });
 
   if (response.status === 401) {

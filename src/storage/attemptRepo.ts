@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 import { auth, firestore } from "../firebase";
 import type { StudyAttempt } from "../types/studyAttempt";
+import { withTimeout } from "./withTimeout";
 
 async function userRef() {
   await auth.authStateReady();
@@ -54,16 +55,24 @@ export async function saveAttempt(
   void setDoc(ref, attempt).catch(console.error);
 }
 
-export async function getAttempt(id: string): Promise<StudyAttempt | undefined> {
-  const snap = await getDoc(doc(await userRef(), "attempts", id));
-  return snap.data() as StudyAttempt | undefined;
+export function getAttempt(id: string): Promise<StudyAttempt | undefined> {
+  return withTimeout(
+    (async () => {
+      const snap = await getDoc(doc(await userRef(), "attempts", id));
+      return snap.data() as StudyAttempt | undefined;
+    })(),
+  );
 }
 
-export async function listAttemptsByUser(googleUserId: string): Promise<StudyAttempt[]> {
-  const snap = await getDocs(
-    query(collection(await userRef(), "attempts"), where("googleUserId", "==", googleUserId)),
+export function listAttemptsByUser(googleUserId: string): Promise<StudyAttempt[]> {
+  return withTimeout(
+    (async () => {
+      const snap = await getDocs(
+        query(collection(await userRef(), "attempts"), where("googleUserId", "==", googleUserId)),
+      );
+      return snap.docs.map((d) => d.data() as StudyAttempt);
+    })(),
   );
-  return snap.docs.map((d) => d.data() as StudyAttempt);
 }
 
 export async function deleteAttempt(id: string): Promise<void> {

@@ -18,21 +18,21 @@ describe("listSheetTabs", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it("returns sheet tabs from the spreadsheet metadata", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          sheets: [
-            { properties: { sheetId: 0, title: "문제은행" } },
-            { properties: { sheetId: 1, title: "오답노트" } },
-          ],
-        }),
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        sheets: [
+          { properties: { sheetId: 0, title: "문제은행" } },
+          { properties: { sheetId: 1, title: "오답노트" } },
+        ],
       }),
-    );
+    });
+    vi.stubGlobal("fetch", fetchMock);
 
     const tabs = await listSheetTabs("token-abc", "sheet-1");
+
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ signal: expect.any(AbortSignal) });
 
     expect(tabs).toEqual([
       { sheetId: 0, title: "문제은행" },
@@ -72,7 +72,10 @@ describe("getSheetValues", () => {
     expect(await getSheetValues("token", "sheet-1", "O'Brien / 문제")).toEqual([["0", "false", "", "true"]]);
     const [url, options] = fetchMock.mock.calls[0];
     expect(decodeURIComponent(url)).toContain("/values/'O''Brien / 문제'?valueRenderOption=UNFORMATTED_VALUE");
-    expect(options).toEqual({ headers: { Authorization: "Bearer token" } });
+    expect(options).toEqual({
+      headers: { Authorization: "Bearer token" },
+      signal: expect.any(AbortSignal),
+    });
   });
 
   afterEach(() => vi.unstubAllGlobals());
